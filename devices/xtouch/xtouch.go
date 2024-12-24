@@ -1,17 +1,28 @@
-package devices
+package xtouch
 
 import (
 	"fmt"
+
+	dev "github.com/jdginn/arpad/devices"
 
 	midi "gitlab.com/gomidi/midi/v2"
 )
 
 type XTouch struct {
-	base MidiDevice
+	base dev.MidiDevice
 }
 
-type XTouchFader struct {
-	MidiDevice
+// types:
+// Fader
+// Button
+// 7seg Display
+// Meter
+// Scribble Strip
+// Encoder
+// Jog Wheel
+
+type XTouchChannel struct {
+	dev.MidiDevice
 
 	sendToDevice func(msg midi.Message) error
 
@@ -51,14 +62,14 @@ func (d *XTouch) GetNumFaders() int {
 
 // TODO support aggregating devices
 
-func (d *XTouch) Fader(i int) (XTouchFader, error) {
+func (d *XTouch) Fader(i int) (XTouchChannel, error) {
 	if i > d.GetNumFaders()-1 {
-		return XTouchFader{}, fmt.Errorf("Fader %d out of range %d", i, d.GetNumFaders())
+		return XTouchChannel{}, fmt.Errorf("Fader %d out of range %d", i, d.GetNumFaders())
 	}
-	return XTouchFader{MidiDevice: d.base, Channel: i}, nil
+	return XTouchChannel{MidiDevice: d.base, Channel: i}, nil
 }
 
-func (f *XTouchFader) SendScribble() error {
+func (f *XTouchChannel) SendScribble() error {
 	b := make([]byte, 0, 20)
 	b = append(HeaderScribble, byte(f.Channel))
 	b = append(b, byte(f.scribbleColor))
@@ -67,30 +78,27 @@ func (f *XTouchFader) SendScribble() error {
 	return f.sendToDevice(midi.SysEx(b))
 }
 
-func (f *XTouchFader) SetScribbleColor(color ScribbleColor) error {
+func (f *XTouchChannel) SetScribbleColor(color ScribbleColor) error {
 	f.scribbleColor = color
 	return f.SendScribble()
 }
 
-func (f *XTouchFader) SetScribbleMessageTop(m string) error {
+func (f *XTouchChannel) SetScribbleMessageTop(m string) error {
 	// TODO: checking; downcasting
 	f.scribbleMessageTop = []byte(m)
 	return f.SendScribble()
 }
 
-func (f *XTouchFader) SetScribbleMessageBottom(m string) error {
+func (f *XTouchChannel) SetScribbleMessageBottom(m string) error {
 	// TODO: checking; downcasting
 	f.scribbleMessageBottom = []byte(m)
 	return f.SendScribble()
 }
 
-func (f *XTouchFader) RegisterFaderMove(effect EffectPitchBend) {
-	f.pitchBend = append(f.pitchBend, actionPitchBend{
-		channel: uint8(1 + f.Channel),
-		action:  effect,
-	})
+func (f *XTouchChannel) RegisterFaderMove(effect dev.EffectPitchBend) {
+	f.RegisterPitchBend(uint8(1+f.Channel), effect)
 }
 
-func (f *XTouchFader) SetFaderAbsolute(val int16) error {
-	return f.sendToDevice(midi.Pitchbend(uint8(1+f.Channel), val))
+func (f *XTouchChannel) SetFaderAbsolute(val int16) error {
+	return f.Send(midi.Pitchbend(uint8(1+f.Channel), val))
 }

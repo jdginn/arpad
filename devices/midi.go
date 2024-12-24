@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	midi "gitlab.com/gomidi/midi/v2"
+	"gitlab.com/gomidi/midi/v2/drivers"
 )
 
 type EffectCC func(uint8) error
@@ -30,9 +31,39 @@ type actionNote struct {
 }
 
 type MidiDevice struct {
+	inPort  drivers.In
+	outPort drivers.Out
+
 	cc        []actionCC
 	pitchBend []actionPitchBend
 	note      []actionNote
+}
+
+func (f *MidiDevice) RegisterCC(channel, controller uint8, action EffectCC) {
+	f.cc = append(f.cc, actionCC{
+		channel:    channel,
+		controller: controller,
+		action:     action,
+	})
+}
+
+func (f *MidiDevice) RegisterNote(channel, key uint8, action EffectNote) {
+	f.note = append(f.note, actionNote{
+		channel: channel,
+		key:     key,
+		action:  action,
+	})
+}
+
+func (f *MidiDevice) RegisterPitchBend(channel uint8, action EffectPitchBend) {
+	f.pitchBend = append(f.pitchBend, actionPitchBend{
+		channel: channel,
+		action:  action,
+	})
+}
+
+func (f *MidiDevice) Send(msg midi.Message) error {
+	return f.outPort.Send(msg)
 }
 
 func (f *MidiDevice) Run() {
