@@ -8,28 +8,42 @@ import (
 	midi "gitlab.com/gomidi/midi/v2"
 )
 
-type XTouch struct {
-	base dev.MidiDevice
-}
-
-// types:
-// Fader
-// Button
-// 7seg Display
-// Meter
-// Scribble Strip
-// Encoder
-// Jog Wheel
-
-type XTouchChannel struct {
+type Fader struct {
 	dev.MidiDevice
 
-	sendToDevice func(msg midi.Message) error
+	ChannelNo uint8
+}
 
-	Channel               int
-	scribbleColor         ScribbleColor
-	scribbleMessageTop    []byte
-	scribbleMessageBottom []byte
+func (f *Fader) SetFaderAbsolute(val int16) error {
+	return f.Send(midi.Pitchbend(uint8(1+f.ChannelNo), val))
+}
+
+type LEDState uint8
+
+const (
+	OFF LEDState = iota
+	ON
+	FLASHING
+)
+
+type Button struct {
+	dev.MidiDevice
+
+	channel uint8
+	key     uint8
+}
+
+func (f *Button) SetLED(state LEDState) error {
+	switch state {
+	case OFF:
+		return f.Send(midi.NoteOn(f.channel, f.key, 0))
+	case ON:
+		return f.Send(midi.NoteOn(f.channel, f.key, 1))
+	case FLASHING:
+		return f.Send(midi.NoteOn(f.channel, f.key, 127))
+	default:
+		return fmt.Errorf("Unrecognized LED state")
+	}
 }
 
 type ScribbleColor int
@@ -56,49 +70,86 @@ type SysExHeader []byte
 
 var HeaderScribble SysExHeader = []byte{0x00, 0x00, 0x66, 0x58}
 
-func (d *XTouch) GetNumFaders() int {
-	return 8 //TODO:
+type Scribble struct {
+	dev.MidiDevice
+
+	channel uint8
 }
 
-// TODO support aggregating devices
-
-func (d *XTouch) Fader(i int) (XTouchChannel, error) {
-	if i > d.GetNumFaders()-1 {
-		return XTouchChannel{}, fmt.Errorf("Fader %d out of range %d", i, d.GetNumFaders())
-	}
-	return XTouchChannel{MidiDevice: d.base, Channel: i}, nil
-}
-
-func (f *XTouchChannel) SendScribble() error {
+// TODO: consider making this take strings instead of []byte?
+func (s *Scribble) SendScribble(color ScribbleColor, msgTop, msgBottom []byte) error {
+	// TODO: check msg for length, support best-effort truncation?
 	b := make([]byte, 0, 20)
-	b = append(HeaderScribble, byte(f.Channel))
-	b = append(b, byte(f.scribbleColor))
-	b = append(b, f.scribbleMessageTop...)
-	b = append(b, f.scribbleMessageBottom...)
-	return f.sendToDevice(midi.SysEx(b))
+	b = append(HeaderScribble, byte(s.channel))
+	b = append(b, byte(color))
+	b = append(b, msgTop...)
+	b = append(b, msgBottom...)
+	return s.Send(midi.SysEx(b))
 }
 
-func (f *XTouchChannel) SetScribbleColor(color ScribbleColor) error {
-	f.scribbleColor = color
-	return f.SendScribble()
+type XTouch struct {
+	base dev.MidiDevice
 }
 
-func (f *XTouchChannel) SetScribbleMessageTop(m string) error {
-	// TODO: checking; downcasting
-	f.scribbleMessageTop = []byte(m)
-	return f.SendScribble()
+func (x *XTouch) NewFader(channelNo uint8, effects ...dev.EffectPitchBend) Fader {
+	for _, e := range effects {
+		x.base.RegisterPitchBend(uint8(1+channelNo), e)
+	}
+	return Fader{
+		MidiDevice: x.base,
+		ChannelNo:  channelNo,
+	}
 }
 
-func (f *XTouchChannel) SetScribbleMessageBottom(m string) error {
-	// TODO: checking; downcasting
-	f.scribbleMessageBottom = []byte(m)
-	return f.SendScribble()
+func (x *XTouch) NewButton(channel, key uint8, effects ...dev.EffectNote) Button {
+	for _, e := range effects {
+		x.base.RegisterNote(channel, key, e)
+	}
+	return Button{
+		MidiDevice: x.base,
+		channel:    channel,
+		key:        key,
+	}
 }
 
-func (f *XTouchChannel) RegisterFaderMove(effect dev.EffectPitchBend) {
-	f.RegisterPitchBend(uint8(1+f.Channel), effect)
+func (x *XTouch) NewScribble(channel uint8) Scribble {
+	return Scribble{
+		x.base,
+		channel,
+	}
 }
 
-func (f *XTouchChannel) SetFaderAbsolute(val int16) error {
-	return f.Send(midi.Pitchbend(uint8(1+f.Channel), val))
+// types:
+// 7seg Display
+// Meter
+// Encoder
+// Jog Wheel
+
+type channelStrip struct {
+	// Encoder
+	Scribble Scribble
+	Rec      Button
+	Solo     Button
+	Mute     Button
+	Select   Button
+	// Meter
+	Fader Fader
+}
+
+type Builder struct {
+	dev.MidiDevice
+
+	faders    map[string]Fader
+	channels  []channelStrip
+	transport map[string]Button
+	view      map[string]Button
+	functions map[string]Button
+}
+
+type XTouchDefault struct {
+	XTouch
+}
+
+type XTouchExtender struct {
+	XTouch
 }
