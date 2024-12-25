@@ -182,25 +182,25 @@ func (x *XTouch) NewChannelStrip(id uint8) channelStrip {
 type XTouchDefault struct {
 	XTouch
 
-	channels  []channelStrip
-	view      []Button
-	function  []Button
-	transport map[string]Button
+	Channels  []channelStrip
+	View      []Button
+	Function  []Button
+	Transport map[string]Button
 }
 
-func New() XTouchDefault {
+func New(d dev.MidiDevice) XTouchDefault {
 	x := XTouchDefault{
-		XTouch:    XTouch{},
-		channels:  make([]channelStrip, 8),
-		view:      make([]Button, 8),
-		function:  make([]Button, 8),
-		transport: make(map[string]Button),
+		XTouch:    XTouch{d},
+		Channels:  make([]channelStrip, 8),
+		View:      make([]Button, 8),
+		Function:  make([]Button, 8),
+		Transport: make(map[string]Button),
 	}
 	for i := 0; i < 8; i++ {
-		x.channels[i] = x.NewChannelStrip(uint8(i))
+		x.Channels[i] = x.NewChannelStrip(uint8(i))
 	}
 	for i := 0; i < 8; i++ {
-		x.function[i] = x.NewButton(0, 54+uint8(i))
+		x.Function[i] = x.NewButton(0, 54+uint8(i))
 	}
 	return x
 }
