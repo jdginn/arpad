@@ -30,13 +30,21 @@ type actionNote struct {
 	action  EffectNote
 }
 
+type actionAfterTouch struct {
+	channel uint8
+	action  EffectAftertouch
+}
+
+type EffectAftertouch func(uint8) error
+
 type MidiDevice struct {
 	inPort  drivers.In
 	outPort drivers.Out
 
-	cc        []actionCC
-	pitchBend []actionPitchBend
-	note      []actionNote
+	cc         []actionCC
+	pitchBend  []actionPitchBend
+	note       []actionNote
+	aftertouch []actionAfterTouch
 }
 
 func (f *MidiDevice) RegisterCC(channel, controller uint8, action EffectCC) {
@@ -60,6 +68,10 @@ func (f *MidiDevice) RegisterPitchBend(channel uint8, action EffectPitchBend) {
 		channel: channel,
 		action:  action,
 	})
+}
+
+func (f *MidiDevice) RegisterChannelPressure(channel uint8, action EffectAftertouch) {
+
 }
 
 func (f *MidiDevice) Send(msg midi.Message) error {
@@ -131,8 +143,19 @@ func (f *MidiDevice) Run() {
 					}
 				}
 			}
+		case midi.AfterTouchMsg:
+			var channel, pressure uint8
+			if ok := msg.GetAfterTouch(&channel, &pressure); !ok {
+				panic("bad")
+			}
+			for _, action := range f.aftertouch {
+				if action.channel == channel {
+					if err := action.action(pressure); err != nil {
+						panic("bad")
+					}
+				}
+			}
 		}
-
 	}, midi.UseSysEx())
 
 	if err != nil {
