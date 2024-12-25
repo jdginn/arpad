@@ -2,6 +2,7 @@ package xtouch
 
 import (
 	"fmt"
+	"math"
 
 	dev "github.com/jdginn/arpad/devices"
 
@@ -12,6 +13,10 @@ type Fader struct {
 	dev.MidiDevice
 
 	ChannelNo uint8
+}
+
+func (f *Fader) Effect(effect dev.EffectPitchBend) {
+	f.RegisterPitchBend(uint8(1+f.ChannelNo), effect)
 }
 
 func (f *Fader) SetFaderAbsolute(val int16) error {
@@ -31,6 +36,10 @@ type Button struct {
 
 	channel uint8
 	key     uint8
+}
+
+func (b *Button) Effect(effect dev.EffectNote) {
+	b.RegisterNote(b.channel, b.key, effect)
 }
 
 func (f *Button) SetLED(state LEDState) error {
@@ -87,6 +96,20 @@ func (s *Scribble) SendScribble(color ScribbleColor, msgTop, msgBottom []byte) e
 	return s.Send(midi.SysEx(b))
 }
 
+type Meter struct {
+	dev.MidiDevice
+
+	channel uint8
+}
+
+func (m *Meter) SendRelative(val float64) error {
+	if val > 1.0 {
+		return fmt.Errorf("Invalid val: val must be between 0 and 1.0")
+	}
+	offset := m.channel*16 + uint8(math.Round(8*val))
+	return m.Send(midi.AfterTouch(0, offset))
+}
+
 type XTouch struct {
 	base dev.MidiDevice
 }
@@ -119,9 +142,15 @@ func (x *XTouch) NewScribble(channel uint8) Scribble {
 	}
 }
 
-// types:
+func (x *XTouch) NewMeter(channel uint8) Meter {
+	return Meter{
+		x.base,
+		channel,
+	}
+}
+
+// TODO:
 // 7seg Display
-// Meter
 // Encoder
 // Jog Wheel
 
@@ -132,23 +161,53 @@ type channelStrip struct {
 	Solo     Button
 	Mute     Button
 	Select   Button
-	// Meter
-	Fader Fader
+	Meter    Meter
+	Fader    Fader
+	// 7Seg
+	// JogWheel
 }
 
-type Builder struct {
-	dev.MidiDevice
-
-	faders    map[string]Fader
-	channels  []channelStrip
-	transport map[string]Button
-	view      map[string]Button
-	functions map[string]Button
+func (x *XTouch) NewChannelStrip(id uint8) channelStrip {
+	return channelStrip{
+		Scribble: x.NewScribble(id + 20),
+		Rec:      x.NewButton(0, id),
+		Solo:     x.NewButton(0, id+8),
+		Mute:     x.NewButton(0, id+16),
+		Select:   x.NewButton(0, id+24),
+		Meter:    x.NewMeter(id),
+		Fader:    x.NewFader(id + 1),
+	}
 }
 
 type XTouchDefault struct {
 	XTouch
+
+	channels  []channelStrip
+	view      []Button
+	function  []Button
+	transport map[string]Button
 }
+
+func New() XTouchDefault {
+	x := XTouchDefault{
+		XTouch:    XTouch{},
+		channels:  make([]channelStrip, 8),
+		view:      make([]Button, 8),
+		function:  make([]Button, 8),
+		transport: make(map[string]Button),
+	}
+	for i := 0; i < 8; i++ {
+		x.channels[i] = x.NewChannelStrip(uint8(i))
+	}
+	for i := 0; i < 8; i++ {
+		x.function[i] = x.NewButton(0, 54+uint8(i))
+	}
+	return x
+}
+
+type (
+	x *XTouchDefault
+)
 
 type XTouchExtender struct {
 	XTouch
