@@ -170,15 +170,27 @@ func (d *HTTPDatastore) poll() {
 
 // TODO: do this with proper struct types
 func (d *HTTPDatastore) GetInt(key string) (int64, error) {
-	val, err := getAtPath(d.cache, key)
-	if err != nil {
-		return 0, err
-	}
-	cast, ok := val.(int64)
+	val, ok := d.cache[key]
 	if !ok {
-		return 0, fmt.Errorf("Type of %s is not int", key)
+		return 0, fmt.Errorf("Could not find %s", key)
 	}
-	return cast, nil
+	switch val := val.(type) {
+	case int64:
+		return int64(val), nil
+	case int:
+		return int64(val), nil
+	case float32:
+		return int64(val), nil
+	case float64:
+		return int64(val), nil
+	case string:
+		cast, err := strconv.Atoi(val)
+		if err != nil {
+			return 0, fmt.Errorf("Cannot cast %s to int", key)
+		}
+		return int64(cast), nil
+	}
+	panic(fmt.Sprintf("Unsupported type %T", val))
 }
 
 func (d *HTTPDatastore) GetFloat(key string) (float64, error) {
@@ -206,6 +218,8 @@ func (d *HTTPDatastore) GetStr(key string) (string, error) {
 }
 
 func (d *HTTPDatastore) SetInt(key string, value int64) error {
+	d.cache[key] = value
+
 	jsonData := []byte(fmt.Sprintf(`json={"%s":"%d"}`, key, value))
 
 	req, err := http.NewRequest(http.MethodPatch, d.url, bytes.NewBuffer(jsonData))
