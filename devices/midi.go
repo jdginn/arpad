@@ -47,6 +47,17 @@ type MidiDevice struct {
 	aftertouch []actionAfterTouch
 }
 
+func NewMidiDevice(inPort drivers.In, outPort drivers.Out) MidiDevice {
+	return MidiDevice{
+		inPort:     inPort,
+		outPort:    outPort,
+		cc:         []actionCC{},
+		pitchBend:  []actionPitchBend{},
+		note:       []actionNote{},
+		aftertouch: []actionAfterTouch{},
+	}
+}
+
 func (f *MidiDevice) RegisterCC(channel, controller uint8, action EffectCC) {
 	f.cc = append(f.cc, actionCC{
 		channel:    channel,
@@ -71,7 +82,6 @@ func (f *MidiDevice) RegisterPitchBend(channel uint8, action EffectPitchBend) {
 }
 
 func (f *MidiDevice) RegisterChannelPressure(channel uint8, action EffectAftertouch) {
-
 }
 
 func (f *MidiDevice) Send(msg midi.Message) error {
@@ -81,7 +91,7 @@ func (f *MidiDevice) Send(msg midi.Message) error {
 func (f *MidiDevice) Run() {
 	defer midi.CloseDriver()
 
-	//TODO: wtf
+	// TODO: wtf
 	in, err := midi.FindInPort("VMPK")
 	if err != nil {
 		fmt.Println("can't find VMPK")
@@ -89,7 +99,6 @@ func (f *MidiDevice) Run() {
 	}
 
 	stop, err := midi.ListenTo(in, func(msg midi.Message, timestampms int32) {
-
 		switch msg.Type() {
 		case midi.ControlChangeMsg:
 			var channel, control, value uint8
@@ -157,7 +166,6 @@ func (f *MidiDevice) Run() {
 			}
 		}
 	}, midi.UseSysEx())
-
 	if err != nil {
 		fmt.Printf("ERROR: %s\n", err)
 		return
