@@ -97,7 +97,7 @@ func (s *Scribble) SendScribble(color ScribbleColor, msgTop, msgBottom []byte) e
 }
 
 type Meter struct {
-	dev.MidiDevice
+	d dev.MidiDevice
 
 	channel uint8
 }
@@ -107,7 +107,7 @@ func (m *Meter) SendRelative(val float64) error {
 		return fmt.Errorf("Invalid val: val must be between 0 and 1.0")
 	}
 	offset := m.channel*16 + uint8(math.Round(8*val))
-	return m.Send(midi.AfterTouch(0, offset))
+	return m.d.Send(midi.AfterTouch(0, offset))
 }
 
 type XTouch struct {
