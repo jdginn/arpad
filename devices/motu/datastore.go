@@ -13,11 +13,6 @@ type allowedTypes interface {
 }
 
 type (
-	EffectInt   func(int64) error
-	EffectFloat func(float64) error
-	EffectStr   func(string) error
-	EffectBool  func(bool) error
-
 	Effect[T allowedTypes] func(T) error
 )
 
