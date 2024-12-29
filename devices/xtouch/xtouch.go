@@ -10,17 +10,17 @@ import (
 )
 
 type Fader struct {
-	dev.MidiDevice
+	d dev.MidiDevice
 
 	ChannelNo uint8
 }
 
 func (f *Fader) Effect(effect dev.EffectPitchBend) {
-	f.RegisterPitchBend(uint8(1+f.ChannelNo), effect)
+	f.d.RegisterPitchBend(uint8(1+f.ChannelNo), effect)
 }
 
 func (f *Fader) SetFaderAbsolute(val int16) error {
-	return f.Send(midi.Pitchbend(uint8(1+f.ChannelNo), val))
+	return f.d.Send(midi.Pitchbend(uint8(1+f.ChannelNo), val))
 }
 
 type LEDState uint8
@@ -32,24 +32,24 @@ const (
 )
 
 type Button struct {
-	dev.MidiDevice
+	d dev.MidiDevice
 
 	channel uint8
 	key     uint8
 }
 
 func (b *Button) Effect(effect dev.EffectNote) {
-	b.RegisterNote(b.channel, b.key, effect)
+	b.d.RegisterNote(b.channel, b.key, effect)
 }
 
 func (f *Button) SetLED(state LEDState) error {
 	switch state {
 	case OFF:
-		return f.Send(midi.NoteOn(f.channel, f.key, 0))
+		return f.d.Send(midi.NoteOn(f.channel, f.key, 0))
 	case ON:
-		return f.Send(midi.NoteOn(f.channel, f.key, 1))
+		return f.d.Send(midi.NoteOn(f.channel, f.key, 1))
 	case FLASHING:
-		return f.Send(midi.NoteOn(f.channel, f.key, 127))
+		return f.d.Send(midi.NoteOn(f.channel, f.key, 127))
 	default:
 		return fmt.Errorf("Unrecognized LED state")
 	}
@@ -80,7 +80,7 @@ type SysExHeader []byte
 var HeaderScribble SysExHeader = []byte{0x00, 0x00, 0x66, 0x58}
 
 type Scribble struct {
-	dev.MidiDevice
+	d dev.MidiDevice
 
 	channel uint8
 }
@@ -93,7 +93,7 @@ func (s *Scribble) SendScribble(color ScribbleColor, msgTop, msgBottom []byte) e
 	b = append(b, byte(color))
 	b = append(b, msgTop...)
 	b = append(b, msgBottom...)
-	return s.Send(midi.SysEx(b))
+	return s.d.Send(midi.SysEx(b))
 }
 
 type Meter struct {
@@ -119,8 +119,8 @@ func (x *XTouch) NewFader(channelNo uint8, effects ...dev.EffectPitchBend) Fader
 		x.base.RegisterPitchBend(uint8(1+channelNo), e)
 	}
 	return Fader{
-		MidiDevice: x.base,
-		ChannelNo:  channelNo,
+		d:         x.base,
+		ChannelNo: channelNo,
 	}
 }
 
@@ -129,9 +129,9 @@ func (x *XTouch) NewButton(channel, key uint8, effects ...dev.EffectNote) Button
 		x.base.RegisterNote(channel, key, e)
 	}
 	return Button{
-		MidiDevice: x.base,
-		channel:    channel,
-		key:        key,
+		d:       x.base,
+		channel: channel,
+		key:     key,
 	}
 }
 
