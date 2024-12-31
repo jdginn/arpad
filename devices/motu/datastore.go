@@ -51,15 +51,15 @@ func NewHTTPDatastore(url string) HTTPDatastore {
 	}
 }
 
-func (d *HTTPDatastore) RegisterIntEffect(key string, e Effect[int64]) {
+func (d *HTTPDatastore) RegisterInt(key string, e Effect[int64]) {
 	d.actionInt[key] = e
 }
 
-func (d *HTTPDatastore) RegisterFloatEffect(key string, e Effect[float64]) {
+func (d *HTTPDatastore) RegisterFloat(key string, e Effect[float64]) {
 	d.actionFloat[key] = e
 }
 
-func (d *HTTPDatastore) RegisterStrEffect(key string, e Effect[string]) {
+func (d *HTTPDatastore) RegisterStr(key string, e Effect[string]) {
 	d.actionStr[key] = e
 }
 
