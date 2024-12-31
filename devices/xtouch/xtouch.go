@@ -15,7 +15,7 @@ type Fader struct {
 	ChannelNo uint8
 }
 
-func (f *Fader) Effect(effect dev.EffectPitchBend) {
+func (f *Fader) Register(effect dev.EffectPitchBend) {
 	f.d.RegisterPitchBend(uint8(1+f.ChannelNo), effect)
 }
 
@@ -38,7 +38,7 @@ type Button struct {
 	key     uint8
 }
 
-func (b *Button) Effect(effect dev.EffectNote) {
+func (b *Button) Register(effect dev.EffectNote) {
 	b.d.RegisterNote(b.channel, b.key, effect)
 }
 
