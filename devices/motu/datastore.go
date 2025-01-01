@@ -6,14 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-)
 
-type allowedTypes interface {
-	int64 | float64 | string | bool
-}
-
-type (
-	Effect[T allowedTypes] func(T) error
+	dev "github.com/jdginn/arpad/devices"
 )
 
 type Datastore interface {
@@ -33,10 +27,10 @@ type HTTPDatastore struct {
 	url    string
 	cache  map[string]any
 
-	actionInt   map[string]Effect[int64]
-	actionFloat map[string]Effect[float64]
-	actionStr   map[string]Effect[string]
-	actionBool  map[string]Effect[bool]
+	actionInt   map[string]dev.Effect[int64]
+	actionFloat map[string]dev.Effect[float64]
+	actionStr   map[string]dev.Effect[string]
+	actionBool  map[string]dev.Effect[bool]
 }
 
 func NewHTTPDatastore(url string) HTTPDatastore {
@@ -44,26 +38,26 @@ func NewHTTPDatastore(url string) HTTPDatastore {
 		Client:      http.Client{},
 		url:         url,
 		cache:       make(map[string]any),
-		actionInt:   map[string]Effect[int64]{},
-		actionFloat: map[string]Effect[float64]{},
-		actionStr:   map[string]Effect[string]{},
-		actionBool:  map[string]Effect[bool]{},
+		actionInt:   map[string]dev.Effect[int64]{},
+		actionFloat: map[string]dev.Effect[float64]{},
+		actionStr:   map[string]dev.Effect[string]{},
+		actionBool:  map[string]dev.Effect[bool]{},
 	}
 }
 
-func (d *HTTPDatastore) RegisterInt(key string, e Effect[int64]) {
+func (d *HTTPDatastore) RegisterInt(key string, e dev.Effect[int64]) {
 	d.actionInt[key] = e
 }
 
-func (d *HTTPDatastore) RegisterFloat(key string, e Effect[float64]) {
+func (d *HTTPDatastore) RegisterFloat(key string, e dev.Effect[float64]) {
 	d.actionFloat[key] = e
 }
 
-func (d *HTTPDatastore) RegisterStr(key string, e Effect[string]) {
+func (d *HTTPDatastore) RegisterStr(key string, e dev.Effect[string]) {
 	d.actionStr[key] = e
 }
 
-func handleEffect[T allowedTypes](effects map[string]Effect[T], oldData, newData map[string]any) error {
+func handleEffect[T dev.BaseTypes](effects map[string]dev.Effect[T], oldData, newData map[string]any) error {
 	for k, e := range effects {
 		if new, inNew := newData[k]; inNew {
 			old, inOld := oldData[k]
