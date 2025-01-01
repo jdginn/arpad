@@ -43,11 +43,24 @@ func newLayer() layer {
 
 type Context struct {
 	currMode Mode
-	modes    map[Mode]layer
+	// For updating devices when we switch modes
+	modes map[Mode]layer
+}
+
+func NewContext() Context {
+	return Context{
+		currMode: MIX,
+		modes: map[Mode]layer{
+			MIX:    newLayer(),
+			RECORD: newLayer(),
+		},
+	}
 }
 
 func (c *Context) SetMode(mode Mode) {
 	c.currMode = mode
+	// Run any actions associated with this mode to update devices to match
+	// values stored for this mode while we were in a different mode
 	if _, ok := c.modes[mode]; !ok {
 		c.modes[mode] = newLayer()
 	}
@@ -76,16 +89,7 @@ func (c *Context) SetMode(mode Mode) {
 func (c *Context) RegisterInt(mode Mode, key string, r func(string, devices.Effect[int64]), e devices.Effect[int64]) devices.Effect[int64] {
 	r(key, e)
 
-	if _, ok := c.modes[mode]; !ok {
-		c.modes[mode] = newLayer()
-	}
-	layer := c.modes[mode]
-	if _, ok := layer.ints[key]; !ok {
-		layer.ints[key] = element[int64]{
-			actions: []devices.Effect[int64]{},
-		}
-	}
-	elem := layer.ints[key]
+	elem := c.modes[mode].ints[key]
 	elem.actions = append(elem.actions, e)
 
 	return func(v int64) error {
@@ -98,16 +102,7 @@ func (c *Context) RegisterInt(mode Mode, key string, r func(string, devices.Effe
 }
 
 func (c *Context) RegisterFloat(mode Mode, key string, r func(string, devices.Effect[float64]), e devices.Effect[float64]) {
-	if _, ok := c.modes[mode]; !ok {
-		c.modes[mode] = newLayer()
-	}
-	layer := c.modes[mode]
-	if _, ok := layer.floats[key]; !ok {
-		layer.floats[key] = element[float64]{
-			actions: []devices.Effect[float64]{},
-		}
-	}
-	elem := layer.floats[key]
+	elem := c.modes[mode].floats[key]
 	elem.actions = append(elem.actions, e)
 
 	r(key, func(v float64) error {
@@ -140,10 +135,7 @@ func main() {
 
 	r := reaper.OscServer{}
 
-	c := Context{
-		currMode: MIX,
-		modes:    map[Mode]layer{},
-	}
+	c := NewContext()
 
 	for i := 0; i < 8; i++ {
 		x.Channels[i].Fader.Register(func(rel int16, abs uint16) error {
@@ -207,6 +199,3 @@ func main() {
 		return nil
 	})
 }
-
-//
-// m.RegisterFloat("mix/main/1/fader", c.Register(RECORD, func(v float64) error {}))
