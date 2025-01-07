@@ -9,16 +9,22 @@ import (
 	midi "gitlab.com/gomidi/midi/v2"
 )
 
+// Fader represents a motorized fader on an xtouch controller.
+//
+// Faders send MIDI PitchBend data on their specified channel.
+// Faders can be remotely moved at will using SetFader*.
 type Fader struct {
 	d dev.MidiDevice
 
 	ChannelNo uint8
 }
 
-func (f *Fader) Register(effect dev.EffectPitchBend) {
-	f.d.RegisterPitchBend(uint8(1+f.ChannelNo), effect)
+// Bind specifies the callback to run when this fader is moved.
+func (f *Fader) Bind(effect dev.CallbackPitchBend) {
+	f.d.BindPitchBend(uint8(1+f.ChannelNo), effect)
 }
 
+// SetFaderAbsolute moves this fader to a value between 0 and max(int16).
 func (f *Fader) SetFaderAbsolute(val int16) error {
 	return f.d.Send(midi.Pitchbend(uint8(1+f.ChannelNo), val))
 }
@@ -31,6 +37,10 @@ const (
 	FLASHING
 )
 
+// Button represents a button on an xtouch controller.
+//
+// Buttons send MIDI notes on a specified channel and key.
+// Buttons incorporate LEDs, which can either be off, on, or flashing.
 type Button struct {
 	d dev.MidiDevice
 
@@ -38,8 +48,9 @@ type Button struct {
 	key     uint8
 }
 
-func (b *Button) Register(effect dev.EffectNote) {
-	b.d.RegisterNote(b.channel, b.key, effect)
+// Bind specifies the callback to run when this button is pressed.
+func (b *Button) Bind(effect dev.CallbackNote) {
+	b.d.BindNote(b.channel, b.key, effect)
 }
 
 func (f *Button) SetLED(state LEDState) error {
@@ -114,9 +125,12 @@ type XTouch struct {
 	base dev.MidiDevice
 }
 
-func (x *XTouch) NewFader(channelNo uint8, effects ...dev.EffectPitchBend) Fader {
-	for _, e := range effects {
-		x.base.RegisterPitchBend(uint8(1+channelNo), e)
+// NewFader returns a new fader on the gien channel.
+//
+// NewFader accepts an optional, variadic list of callbacks to run when the fader is moved.
+func (x *XTouch) NewFader(channelNo uint8, callbacks ...dev.CallbackPitchBend) Fader {
+	for _, e := range callbacks {
+		x.base.BindPitchBend(uint8(1+channelNo), e)
 	}
 	return Fader{
 		d:         x.base,
@@ -124,9 +138,12 @@ func (x *XTouch) NewFader(channelNo uint8, effects ...dev.EffectPitchBend) Fader
 	}
 }
 
-func (x *XTouch) NewButton(channel, key uint8, effects ...dev.EffectNote) Button {
-	for _, e := range effects {
-		x.base.RegisterNote(channel, key, e)
+// NewButton returns a new button corresponding to the given channel and MIDI key.
+//
+// NewButton accepts an optional, variadic list of callbacks to run when the button is pressed.
+func (x *XTouch) NewButton(channel, key uint8, callbacks ...dev.CallbackNote) Button {
+	for _, e := range callbacks {
+		x.base.BindNote(channel, key, e)
 	}
 	return Button{
 		d:       x.base,
@@ -149,13 +166,10 @@ func (x *XTouch) NewMeter(channel uint8) Meter {
 	}
 }
 
-// TODO:
-// 7seg Display
-// Encoder
-// Jog Wheel
-
+// channelStrip is a convenience struct that organizes all the components that are replicated
+// for each channel strip under control.
 type channelStrip struct {
-	// Encoder
+	// TODO: Encoder
 	Scribble Scribble
 	Rec      Button
 	Solo     Button
@@ -163,10 +177,12 @@ type channelStrip struct {
 	Select   Button
 	Meter    Meter
 	Fader    Fader
-	// 7Seg
-	// JogWheel
+	// TODO: 7Seg
+	// TODO: JogWheel
 }
 
+// NewChannelStrip returns a new channelStrip corresponding to the given index into a
+// bank of channelStrips. For typical devices, id will be between 0 and 7.
 func (x *XTouch) NewChannelStrip(id uint8) channelStrip {
 	return channelStrip{
 		Scribble: x.NewScribble(id + 20),
@@ -179,6 +195,7 @@ func (x *XTouch) NewChannelStrip(id uint8) channelStrip {
 	}
 }
 
+// XTouchDefault represents a Behringer XTouch DAW control surface.
 type XTouchDefault struct {
 	XTouch
 
@@ -188,6 +205,7 @@ type XTouchDefault struct {
 	Transport map[string]Button
 }
 
+// New returns a properly initialized XTouchDefault struct.
 func New(d dev.MidiDevice) XTouchDefault {
 	x := XTouchDefault{
 		XTouch:    XTouch{d},
@@ -205,10 +223,7 @@ func New(d dev.MidiDevice) XTouchDefault {
 	return x
 }
 
-type (
-	x *XTouchDefault
-)
-
+// XTouchExtender represents a Behringer XTouchExtender DAW control surface.
 type XTouchExtender struct {
 	XTouch
 }

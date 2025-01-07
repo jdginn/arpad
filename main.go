@@ -20,44 +20,63 @@ const (
 	MIX
 )
 
-type element[T devices.BaseTypes] struct {
+// event holds a collection of events that should all update the same underlying value.
+//
+// The value is cached.
+type event[T devices.BaseTypes] struct {
 	value   T
-	actions []devices.Effect[T]
+	actions []devices.Callback[T]
 }
 
-type layer struct {
-	ints    map[string]element[int64]
-	floats  map[string]element[float64]
-	strings map[string]element[string]
-	bools   map[string]element[bool]
+// layerObserver is a bundle of all the elements registered for a particular mode
+//
+// Each element is referenced by a descriptive string name.
+type layerObserver struct {
+	ints    map[string]event[int64]
+	floats  map[string]event[float64]
+	strings map[string]event[string]
+	bools   map[string]event[bool]
 }
 
-func newLayer() layer {
-	return layer{
-		ints:    map[string]element[int64]{},
-		floats:  map[string]element[float64]{},
-		strings: map[string]element[string]{},
-		bools:   map[string]element[bool]{},
+func newLayer() layerObserver {
+	return layerObserver{
+		ints:    map[string]event[int64]{},
+		floats:  map[string]event[float64]{},
+		strings: map[string]event[string]{},
+		bools:   map[string]event[bool]{},
 	}
 }
 
-type Context struct {
+// ModeManager sets the current mode and manages which effects are active depending on the active mode.
+//
+// Effects of elements in the currently active mode take immediate effect.
+//
+// All inactive modes' effects will not be run until that mode is activated. ModeManager maintains a copy of the value of each element so that the effects
+// can be applied with the correct value immediately when the mode is activated.
+type ModeManager struct {
 	currMode Mode
 	// For updating devices when we switch modes
-	modes map[Mode]layer
+	modes map[Mode]layerObserver
 }
 
-func NewContext() Context {
-	return Context{
+func NewModeManager() ModeManager {
+	return ModeManager{
 		currMode: MIX,
-		modes: map[Mode]layer{
+		// These modes are hand-written since the list of modes does not change often.
+		modes: map[Mode]layerObserver{
 			MIX:    newLayer(),
 			RECORD: newLayer(),
 		},
 	}
 }
 
-func (c *Context) SetMode(mode Mode) {
+// SetMode sets the currently active mode.
+//
+// If the new mode is not the same as the current mode, run each effect of each element with its cached value.
+func (c *ModeManager) SetMode(mode Mode) {
+	if c.currMode == mode {
+		return
+	}
 	c.currMode = mode
 	// Run any actions associated with this mode to update devices to match
 	// values stored for this mode while we were in a different mode
@@ -86,22 +105,22 @@ func (c *Context) SetMode(mode Mode) {
 	}
 }
 
-func (c *Context) RegisterInt(mode Mode, key string, r func(string, devices.Effect[int64]), e devices.Effect[int64]) devices.Effect[int64] {
-	r(key, e)
+func (c *ModeManager) RegisterInt(mode Mode, key string, foreignRegister func(string, devices.Callback[int64]), effect devices.Callback[int64]) devices.Callback[int64] {
+	foreignRegister(key, effect)
 
 	elem := c.modes[mode].ints[key]
-	elem.actions = append(elem.actions, e)
+	elem.actions = append(elem.actions, effect)
 
 	return func(v int64) error {
 		elem.value = v
 		if c.currMode == mode {
-			return e(v)
+			return effect(v)
 		}
 		return nil
 	}
 }
 
-func (c *Context) RegisterFloat(mode Mode, key string, r func(string, devices.Effect[float64]), e devices.Effect[float64]) {
+func (c *ModeManager) RegisterFloat(mode Mode, key string, r func(string, devices.Callback[float64]), e devices.Callback[float64]) {
 	elem := c.modes[mode].floats[key]
 	elem.actions = append(elem.actions, e)
 
@@ -135,10 +154,10 @@ func main() {
 
 	r := reaper.OscServer{}
 
-	c := NewContext()
+	c := NewModeManager()
 
 	for i := 0; i < 8; i++ {
-		x.Channels[i].Fader.Register(func(rel int16, abs uint16) error {
+		x.Channels[i].Fader.Bind(func(rel int16, abs uint16) error {
 			normalized := float64(abs) / 4 / float64(math.MaxUint16)
 			switch c.currMode {
 			case RECORD:
@@ -147,7 +166,7 @@ func main() {
 				return r.SetFloat(fmt.Sprintf("channels/%d/fader", i), normalized) // TODO:
 			}
 		})
-		x.Channels[i].Mute.Register(func(b bool) error {
+		x.Channels[i].Mute.Bind(func(b bool) error {
 			switch c.currMode {
 			case RECORD:
 				return m.SetBool(fmt.Sprintf("mix/main/%d/matrix/mute", i), b)
@@ -155,7 +174,7 @@ func main() {
 				return r.SetBool(fmt.Sprintf("channels/%d/mute", i), b)
 			}
 		})
-		x.Channels[i].Solo.Register(func(b bool) error {
+		x.Channels[i].Solo.Bind(func(b bool) error {
 			switch c.currMode {
 			case RECORD:
 				return m.SetBool(fmt.Sprintf("mix/main/%d/matrix/solo", i), b)
@@ -164,13 +183,13 @@ func main() {
 			}
 		})
 
-		m.RegisterFloat(fmt.Sprintf("mix/main/%d/matrix/fader", i),
+		m.BindFloat(fmt.Sprintf("mix/main/%d/matrix/fader", i),
 			func(v float64) error {
 				x.Channels[i].Fader.SetFaderAbsolute(int16(v / 4 * float64(math.MaxUint16)))
 				return nil
 			})
 		// TODO: is there a better way to provide levels to meters?
-		c.RegisterFloat(RECORD, "ext/ibank/0/ch/%d/vlLimit", m.RegisterFloat, func(v float64) error {
+		c.RegisterFloat(RECORD, "ext/ibank/0/ch/%d/vlLimit", m.BindFloat, func(v float64) error {
 			x.Channels[i].Meter.SendRelative(0.9)
 			return nil
 		})
@@ -178,7 +197,7 @@ func main() {
 			x.Channels[i].Meter.SendRelative(0.9)
 			return nil
 		})
-		c.RegisterFloat(RECORD, "ext/ibank/0/ch/%d/vlClip", m.RegisterFloat, func(v float64) error {
+		c.RegisterFloat(RECORD, "ext/ibank/0/ch/%d/vlClip", m.BindFloat, func(v float64) error {
 			x.Channels[i].Rec.SetLED(xtouch.FLASHING)
 			return nil
 		})
@@ -189,7 +208,7 @@ func main() {
 		// TODO: trim on encoders
 	}
 
-	x.Function[0].Register(func(b bool) error {
+	x.Function[0].Bind(func(b bool) error {
 		switch c.currMode {
 		case MIX:
 			c.SetMode(RECORD)

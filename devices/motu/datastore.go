@@ -10,54 +10,51 @@ import (
 	dev "github.com/jdginn/arpad/devices"
 )
 
-type Datastore interface {
-	Fetch(key string) error
-
-	GetInt(key string) (int64, error)
-	GetFloat(key string) (float64, error)
-	GetStr(key string) (string, error)
-
-	SetInt(key string, value int64) error
-	SetFloat(key string, value float64) error
-	SetStr(key, value string) error
-}
-
 type HTTPDatastore struct {
 	Client http.Client
 	url    string
 	cache  map[string]any
 
-	actionInt   map[string]dev.Effect[int64]
-	actionFloat map[string]dev.Effect[float64]
-	actionStr   map[string]dev.Effect[string]
-	actionBool  map[string]dev.Effect[bool]
+	callbackInt   map[string]dev.Callback[int64]
+	callbackFloat map[string]dev.Callback[float64]
+	callbackStr   map[string]dev.Callback[string]
+	callbackBool  map[string]dev.Callback[bool]
 }
 
 func NewHTTPDatastore(url string) HTTPDatastore {
 	return HTTPDatastore{
-		Client:      http.Client{},
-		url:         url,
-		cache:       make(map[string]any),
-		actionInt:   map[string]dev.Effect[int64]{},
-		actionFloat: map[string]dev.Effect[float64]{},
-		actionStr:   map[string]dev.Effect[string]{},
-		actionBool:  map[string]dev.Effect[bool]{},
+		Client:        http.Client{},
+		url:           url,
+		cache:         make(map[string]any),
+		callbackInt:   map[string]dev.Callback[int64]{},
+		callbackFloat: map[string]dev.Callback[float64]{},
+		callbackStr:   map[string]dev.Callback[string]{},
+		callbackBool:  map[string]dev.Callback[bool]{},
 	}
 }
 
-func (d *HTTPDatastore) RegisterInt(key string, e dev.Effect[int64]) {
-	d.actionInt[key] = e
+// BindInt binds a callback to run whenever the given key changes values in the datastore.
+//
+// The given key MUST return an integer.
+func (d *HTTPDatastore) BindInt(key string, cb dev.Callback[int64]) {
+	d.callbackInt[key] = cb
 }
 
-func (d *HTTPDatastore) RegisterFloat(key string, e dev.Effect[float64]) {
-	d.actionFloat[key] = e
+// BindFloat binds a callback to run whenever the given key changes values in the datastore.
+//
+// The given key MUST return an float.
+func (d *HTTPDatastore) BindFloat(key string, cb dev.Callback[float64]) {
+	d.callbackFloat[key] = cb
 }
 
-func (d *HTTPDatastore) RegisterStr(key string, e dev.Effect[string]) {
-	d.actionStr[key] = e
+// BindString binds a callback to run whenever the given key changes values in the datastore.
+//
+// The given key MUST return an string.
+func (d *HTTPDatastore) BindString(key string, cb dev.Callback[string]) {
+	d.callbackStr[key] = cb
 }
 
-func handleEffect[T dev.BaseTypes](effects map[string]dev.Effect[T], oldData, newData map[string]any) error {
+func handleEffect[T dev.BaseTypes](effects map[string]dev.Callback[T], oldData, newData map[string]any) error {
 	for k, e := range effects {
 		if new, inNew := newData[k]; inNew {
 			old, inOld := oldData[k]
@@ -104,12 +101,12 @@ func (d *HTTPDatastore) poll() {
 			if err := json.NewDecoder(resp.Body).Decode(&newData); err != nil {
 				panic(err)
 			}
-			if err := handleEffect[int64](d.actionInt, d.cache, newData); err != nil {
+			if err := handleEffect[int64](d.callbackInt, d.cache, newData); err != nil {
 				panic(err)
 			}
 			// Check for changes in any entries that have an effect registered
 			// Don't bother checking the rest
-			for k, e := range d.actionInt {
+			for k, e := range d.callbackInt {
 				if new, inNew := newData[k]; inNew {
 					old, inOld := d.cache[k]
 					if !inOld {
@@ -126,7 +123,7 @@ func (d *HTTPDatastore) poll() {
 					}
 				}
 			}
-			for k, e := range d.actionFloat {
+			for k, e := range d.callbackFloat {
 				if new, inNew := newData[k]; inNew {
 					old, inOld := d.cache[k]
 					if !inOld {
@@ -143,7 +140,7 @@ func (d *HTTPDatastore) poll() {
 					}
 				}
 			}
-			for k, e := range d.actionStr {
+			for k, e := range d.callbackStr {
 				if new, inNew := newData[k]; inNew {
 					old, inOld := d.cache[k]
 					if !inOld {
@@ -160,7 +157,7 @@ func (d *HTTPDatastore) poll() {
 					}
 				}
 			}
-			for k, e := range d.actionBool {
+			for k, e := range d.callbackBool {
 				if new, inNew := newData[k]; inNew {
 					old, inOld := d.cache[k]
 					if !inOld {
@@ -251,7 +248,7 @@ func (d *HTTPDatastore) GetBool(key string) (bool, error) {
 func (d *HTTPDatastore) SetInt(key string, value int64) error {
 	d.cache[key] = value
 
-	// if effect, ok := d.actionInt[key]; ok {
+	// if effect, ok := d.callbackInt[key]; ok {
 	// 	if err := effect(value); err != nil {
 	// 		// TODO: log this instead of returning
 	// 		return err
@@ -279,7 +276,7 @@ func (d *HTTPDatastore) SetInt(key string, value int64) error {
 func (d *HTTPDatastore) SetFloat(key string, value float64) error {
 	d.cache[key] = value
 
-	// if effect, ok := d.actionFloat[key]; ok {
+	// if effect, ok := d.callbackFloat[key]; ok {
 	// 	if err := effect(value); err != nil {
 	// 		// TODO: log this instead of returning
 	// 		return err
@@ -307,7 +304,7 @@ func (d *HTTPDatastore) SetFloat(key string, value float64) error {
 func (d *HTTPDatastore) SetString(key string, value string) error {
 	d.cache[key] = value
 
-	// if effect, ok := d.actionStr[key]; ok {
+	// if effect, ok := d.callbackStr[key]; ok {
 	// 	if err := effect(value); err != nil {
 	// 		// TODO: log this instead of returning
 	// 		return err
@@ -335,7 +332,7 @@ func (d *HTTPDatastore) SetString(key string, value string) error {
 func (d *HTTPDatastore) SetBool(key string, value bool) error {
 	d.cache[key] = value
 
-	// if effect, ok := d.actionBool[key]; ok {
+	// if effect, ok := d.callbackBool[key]; ok {
 	// 	if err := effect(value); err != nil {
 	// 		// TODO: log this instead of returning
 	// 		return err

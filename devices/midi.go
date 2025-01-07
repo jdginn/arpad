@@ -7,38 +7,38 @@ import (
 	"gitlab.com/gomidi/midi/v2/drivers"
 )
 
-// EffectCC defines a callback function that operates as a result of a control change message.
-type EffectCC func(uint8) error
+// CallbackCC operates on a control change message.
+type CallbackCC func(uint8) error
 
-type actionCC struct {
+type eventCC struct {
 	channel    uint8
 	controller uint8
-	action     EffectCC
+	callback   CallbackCC
 }
 
-// EffectPitchBend defines a callback function that operates as a result of a pitch bend message.
-type EffectPitchBend func(int16, uint16) error
+// CallbackPitchBend operates on a pitch bend message.
+type CallbackPitchBend func(int16, uint16) error
 
-type actionPitchBend struct {
-	channel uint8
-	action  EffectPitchBend
+type eventPitchBend struct {
+	channel  uint8
+	callback CallbackPitchBend
 }
 
-// EffectNote defines a callback function that operates as a result of a note message.
-type EffectNote func(bool) error
+// CallbackNote operates on the result of a note message.
+type CallbackNote func(bool) error
 
-type actionNote struct {
-	channel uint8
-	key     uint8
-	action  EffectNote
+type eventNote struct {
+	channel  uint8
+	key      uint8
+	callback CallbackNote
 }
 
-// EffectNote defines a callback function that operates as a result of an AfterTouch message.
-type EffectAftertouch func(uint8) error
+// CallbackAftertouchtoperates on an AfterTouch message.
+type CallbackAftertouch func(uint8) error
 
-type actionAfterTouch struct {
-	channel uint8
-	action  EffectAftertouch
+type eventAfterTouch struct {
+	channel  uint8
+	callback CallbackAftertouch
 }
 
 // MidiDevice represents a generic MIDI device and allows registering effects for various messages the device may receive.
@@ -46,51 +46,51 @@ type MidiDevice struct {
 	inPort  drivers.In
 	outPort drivers.Out
 
-	cc         []actionCC
-	pitchBend  []actionPitchBend
-	note       []actionNote
-	aftertouch []actionAfterTouch
+	cc         []eventCC
+	pitchBend  []eventPitchBend
+	note       []eventNote
+	aftertouch []eventAfterTouch
 }
 
 func NewMidiDevice(inPort drivers.In, outPort drivers.Out) MidiDevice {
 	return MidiDevice{
 		inPort:     inPort,
 		outPort:    outPort,
-		cc:         []actionCC{},
-		pitchBend:  []actionPitchBend{},
-		note:       []actionNote{},
-		aftertouch: []actionAfterTouch{},
+		cc:         []eventCC{},
+		pitchBend:  []eventPitchBend{},
+		note:       []eventNote{},
+		aftertouch: []eventAfterTouch{},
 	}
 }
 
-// RegisterNote specifies an action that should be run each time a control change message is received for the specifeid channel and controller.
-func (f *MidiDevice) RegisterCC(channel, controller uint8, action EffectCC) {
-	f.cc = append(f.cc, actionCC{
+// BindCC specifies an callback that should be run each time a control change message is received for the specifeid channel and controller.
+func (f *MidiDevice) BindCC(channel, controller uint8, callback CallbackCC) {
+	f.cc = append(f.cc, eventCC{
 		channel:    channel,
 		controller: controller,
-		action:     action,
+		callback:   callback,
 	})
 }
 
-// RegisterNote specifies an action that should be run each time a note message is received for the specifeid channel and key.
-func (f *MidiDevice) RegisterNote(channel, key uint8, action EffectNote) {
-	f.note = append(f.note, actionNote{
-		channel: channel,
-		key:     key,
-		action:  action,
+// BindNote specifies an callback that should be run each time a note message is received for the specifeid channel and key.
+func (f *MidiDevice) BindNote(channel, key uint8, callback CallbackNote) {
+	f.note = append(f.note, eventNote{
+		channel:  channel,
+		key:      key,
+		callback: callback,
 	})
 }
 
-// RegisterPitchBend specifies an action that should be run each time a pitchbend message is received for the specified channel.
-func (f *MidiDevice) RegisterPitchBend(channel uint8, action EffectPitchBend) {
-	f.pitchBend = append(f.pitchBend, actionPitchBend{
-		channel: channel,
-		action:  action,
+// BindPitchBend specifies an callback that should be run each time a pitchbend message is received for the specified channel.
+func (f *MidiDevice) BindPitchBend(channel uint8, callback CallbackPitchBend) {
+	f.pitchBend = append(f.pitchBend, eventPitchBend{
+		channel:  channel,
+		callback: callback,
 	})
 }
 
-// RegisterPitchBend specifies an action that should be run each time a channel pressure message is received for the specified channel.
-func (f *MidiDevice) RegisterChannelPressure(channel uint8, action EffectAftertouch) {
+// RegisterPitchBend specifies an callback that should be run each time a channel pressure message is received for the specified channel.
+func (f *MidiDevice) BindChannelPressure(channel uint8, callback CallbackAftertouch) {
 }
 
 // Send sends a message to this device's outPort.
@@ -119,9 +119,9 @@ func (f *MidiDevice) Run() {
 				fmt.Println("failed to parse Control Change message:", err)
 				return
 			}
-			for _, action := range f.cc {
-				if action.channel == channel && action.controller == control {
-					if err := action.action(value); err != nil {
+			for _, callback := range f.cc {
+				if callback.channel == channel && callback.controller == control {
+					if err := callback.callback(value); err != nil {
 						fmt.Println("failed to process Control Change:", err)
 					}
 					break
@@ -135,9 +135,9 @@ func (f *MidiDevice) Run() {
 				fmt.Println("failed to parse Pitch Bend message:", err)
 				return
 			}
-			for _, action := range f.pitchBend {
-				if action.channel == channel {
-					if err := action.action(relative, absolute); err != nil {
+			for _, callback := range f.pitchBend {
+				if callback.channel == channel {
+					if err := callback.callback(relative, absolute); err != nil {
 						fmt.Println("failed to process Pitch Bend:", err)
 					}
 					break
@@ -149,9 +149,9 @@ func (f *MidiDevice) Run() {
 				fmt.Println("failed to parse Note On message:", err)
 				return
 			}
-			for _, action := range f.note {
-				if action.key == key {
-					if err := action.action(true); err != nil {
+			for _, callback := range f.note {
+				if callback.key == key {
+					if err := callback.callback(true); err != nil {
 						fmt.Println("failed to process Note On:", err)
 					}
 				}
@@ -162,9 +162,9 @@ func (f *MidiDevice) Run() {
 				fmt.Println("failed to parse Note Off message:", err)
 				return
 			}
-			for _, action := range f.note {
-				if action.key == key {
-					if err := action.action(false); err != nil {
+			for _, callback := range f.note {
+				if callback.key == key {
+					if err := callback.callback(false); err != nil {
 						fmt.Println("failed to process Note Off:", err)
 					}
 				}
@@ -175,9 +175,9 @@ func (f *MidiDevice) Run() {
 				fmt.Println("failed to parse After Touch message:", err)
 				return
 			}
-			for _, action := range f.aftertouch {
-				if action.channel == channel {
-					if err := action.action(pressure); err != nil {
+			for _, callback := range f.aftertouch {
+				if callback.channel == channel {
+					if err := callback.callback(pressure); err != nil {
 						fmt.Println("failed to process After Touch:", err)
 					}
 				}
