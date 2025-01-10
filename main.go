@@ -132,29 +132,29 @@ func (c *ModeManager) SetMode(mode Mode) {
 	}
 }
 
-func (c *ModeManager) RegisterInt(mode Mode, key string, foreignRegister func(string, devices.Callback[int64]), effect devices.Callback[int64]) devices.Callback[int64] {
-	foreignRegister(key, effect)
+func (c *ModeManager) BindInt(mode Mode, key string, foreignRegister func(string, devices.Callback[int64]), callback devices.Callback[int64]) devices.Callback[int64] {
+	foreignRegister(key, callback)
 
 	elem := c.modes[mode].ints[key]
-	elem.actions = append(elem.actions, effect)
+	elem.actions = append(elem.actions, callback)
 
 	return func(v int64) error {
 		elem.value = v
 		if c.currMode == mode {
-			return effect(v)
+			return callback(v)
 		}
 		return nil
 	}
 }
 
-func (c *ModeManager) RegisterFloat(mode Mode, key string, r func(string, devices.Callback[float64]), e devices.Callback[float64]) {
+func (c *ModeManager) BindFloat(mode Mode, key string, r func(string, devices.Callback[float64]), callback devices.Callback[float64]) {
 	elem := c.modes[mode].floats[key]
-	elem.actions = append(elem.actions, e)
+	elem.actions = append(elem.actions, callback)
 
 	r(key, func(v float64) error {
 		elem.value = v
 		if c.currMode == mode {
-			return e(v)
+			return callback(v)
 		}
 		return nil
 	})
@@ -193,7 +193,7 @@ func main() {
 				return r.SetFloat(fmt.Sprintf("channels/%d/fader", i), normalized) // TODO:
 			}
 		})
-		x.RegisterFloat(RECORD, fmt.Sprintf("mix/main/%d/matrix/fader", i),
+		m.BindFloat(fmt.Sprintf("mix/main/%d/matrix/fader", i),
 			func(v float64) error {
 				x.Channels[i].Fader.SetFaderAbsolute(int16(v / 4 * float64(math.MaxUint16)))
 				return nil
@@ -217,19 +217,19 @@ func main() {
 		})
 
 		// TODO: is there a better way to provide levels to meters?
-		c.RegisterFloat(RECORD, "ext/ibank/0/ch/%d/vlLimit", m.BindFloat, func(v float64) error {
+		c.BindFloat(RECORD, "ext/ibank/0/ch/%d/vlLimit", m.BindFloat, func(v float64) error {
 			x.Channels[i].Meter.SendRelative(0.9)
 			return nil
 		})
-		c.RegisterFloat(MIX, "channels/%d/meter", r.RegisterFloat, func(v float64) error { // TODO: path
+		c.BindFloat(MIX, "channels/%d/meter", r.RegisterFloat, func(v float64) error { // TODO: path
 			x.Channels[i].Meter.SendRelative(0.9)
 			return nil
 		})
-		c.RegisterFloat(RECORD, "ext/ibank/0/ch/%d/vlClip", m.BindFloat, func(v float64) error {
+		c.BindFloat(RECORD, "ext/ibank/0/ch/%d/vlClip", m.BindFloat, func(v float64) error {
 			x.Channels[i].Rec.SetLED(xtouch.FLASHING)
 			return nil
 		})
-		c.RegisterFloat(MIX, "channels/%d/clip", r.RegisterFloat, func(v float64) error { // TODO: path
+		c.BindFloat(MIX, "channels/%d/clip", r.RegisterFloat, func(v float64) error { // TODO: path
 			x.Channels[i].Rec.SetLED(xtouch.FLASHING)
 			return nil
 		})
