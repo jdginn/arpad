@@ -20,6 +20,33 @@ const (
 	MIX
 )
 
+// Modes:
+//
+// Mix: baseline mode for interacting with the DAW. Primarily mimics traditional MCU features. Supports submodes (triggered by "Flip" button based on context):
+// -> This track sends on fader
+// -> This send all input tracks
+// 		In this mode, the 9th fader controls the level for this send
+// In Mix mode, encoders are mapped to pan by default. Push in to trim gain.
+// -> Marker mode (while holding marker button)
+// Lists all markers on the scribble strips and allows jumping to marker by clicking in the encoder
+//
+// Record: baseline mode for interacting with the audio interface's internal mixer. Attempts to mimic the behavior of a large-format analog recording console. Supports submodes (triggered by "Flip" button based on context):
+// -> This track sends to fader (separately label effect auxes vs. outputs)
+// -> This output all input tracks
+// -> This aux all input tracks
+// In record mode, encoders are mapped to gain by default. Push in to control pan.
+//
+// Timecode display lists the current mode using ascii-to-7seg characters
+//
+// Mode selection is mapped to Encoder Assign
+//
+// The following buttons are active in every mode:
+// - Modify, Utility, Automation, Transport buttons and jog wheel control the DAW at all times.
+// - Talkback (mapped to Display button)
+// - Global mute (mapped to Global View)
+// - Control room monitoring selection (main monitors, mono mixcube, nearfield monitors, headphones-only, other?) mapped to View bttons (excluding Global View)
+// - Per-channel record arm always controls the DAW
+
 // event holds a collection of events that should all update the same underlying value.
 //
 // The value is cached.
@@ -166,6 +193,12 @@ func main() {
 				return r.SetFloat(fmt.Sprintf("channels/%d/fader", i), normalized) // TODO:
 			}
 		})
+		x.RegisterFloat(RECORD, fmt.Sprintf("mix/main/%d/matrix/fader", i),
+			func(v float64) error {
+				x.Channels[i].Fader.SetFaderAbsolute(int16(v / 4 * float64(math.MaxUint16)))
+				return nil
+			})
+
 		x.Channels[i].Mute.Bind(func(b bool) error {
 			switch c.currMode {
 			case RECORD:
@@ -183,11 +216,6 @@ func main() {
 			}
 		})
 
-		m.BindFloat(fmt.Sprintf("mix/main/%d/matrix/fader", i),
-			func(v float64) error {
-				x.Channels[i].Fader.SetFaderAbsolute(int16(v / 4 * float64(math.MaxUint16)))
-				return nil
-			})
 		// TODO: is there a better way to provide levels to meters?
 		c.RegisterFloat(RECORD, "ext/ibank/0/ch/%d/vlLimit", m.BindFloat, func(v float64) error {
 			x.Channels[i].Meter.SendRelative(0.9)
@@ -206,15 +234,23 @@ func main() {
 			return nil
 		})
 		// TODO: trim on encoders
-	}
 
-	x.Function[0].Bind(func(b bool) error {
-		switch c.currMode {
-		case MIX:
-			c.SetMode(RECORD)
-		case RECORD:
-			c.SetMode(MIX)
-		}
-		return nil
-	})
+		x.EncoderAssign.TRACK.Bind(func(b bool) error {
+			if b {
+				c.currMode = MIX
+			}
+			// TODO: make a radio button group
+			x.EncoderAssign.TRACK.SetLED(xtouch.ON)
+			x.EncoderAssign.PAN_SURROUND.SetLED(xtouch.OFF)
+			return nil
+		})
+		x.EncoderAssign.PAN_SURROUND.Bind(func(b bool) error {
+			if b {
+				c.currMode = RECORD
+			}
+			x.EncoderAssign.TRACK.SetLED(xtouch.OFF)
+			x.EncoderAssign.PAN_SURROUND.SetLED(xtouch.ON)
+			return nil
+		})
+	}
 }
