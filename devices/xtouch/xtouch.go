@@ -41,16 +41,35 @@ const (
 //
 // Buttons send MIDI notes on a specified channel and key.
 // Buttons incorporate LEDs, which can either be off, on, or flashing.
+//
+// TODO: need toggle vs. momentary functionality
 type Button struct {
 	d dev.MidiDevice
 
 	channel uint8
 	key     uint8
+
+	isToggled bool
+	isPressed bool
 }
 
 // Bind specifies the callback to run when this button is pressed.
 func (b *Button) Bind(effect dev.CallbackNote) {
-	b.d.BindNote(b.channel, b.key, effect)
+	b.d.BindNote(b.channel, b.key, func(v bool) error {
+		b.isPressed = v
+		if v {
+			b.isToggled = !b.isToggled
+		}
+		return effect(v)
+	})
+}
+
+func (b *Button) IsToggled() bool {
+	return b.isToggled
+}
+
+func (b *Button) IsPressed() bool {
+	return b.isPressed
 }
 
 func (f *Button) SetLED(state LEDState) error {
