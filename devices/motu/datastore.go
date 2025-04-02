@@ -54,6 +54,13 @@ func (d *HTTPDatastore) BindString(key string, cb dev.Callback[string]) {
 	d.callbackStr[key] = cb
 }
 
+// BindBool binds a callback to run whenever the given key changes values in the datastore.
+//
+// The given key MUST return a bool.
+func (d *HTTPDatastore) BindBool(key string, cb dev.Callback[bool]) {
+	d.callbackBool[key] = cb
+}
+
 func handleEffect[T dev.BaseTypes](effects map[string]dev.Callback[T], oldData, newData map[string]any) error {
 	for k, e := range effects {
 		if new, inNew := newData[k]; inNew {
