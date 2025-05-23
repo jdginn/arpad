@@ -20,8 +20,10 @@ type Fader struct {
 }
 
 // Bind specifies the callback to run when this fader is moved.
-func (f *Fader) Bind(effect dev.CallbackPitchBend) {
-	f.d.BindPitchBend(uint8(1+f.ChannelNo), effect)
+//
+// NOTE: the nil first argument is to satisfy the dev.Binding interface
+func (f *Fader) Bind(nil, callback func(dev.ArgsPitchBend) error) {
+	f.d.BindPitchBend(dev.PathPitchBend{uint8(1 + f.ChannelNo)}, callback)
 }
 
 // SetFaderAbsolute moves this fader to a value between 0 and max(int16).
@@ -54,13 +56,13 @@ type Button struct {
 }
 
 // Bind specifies the callback to run when this button is pressed.
-func (b *Button) Bind(effect dev.CallbackNote) {
-	b.d.BindNote(b.channel, b.key, func(v bool) error {
+func (b *Button) Bind(nil, callback func(bool) error) {
+	b.d.BindNote(dev.PathNote{b.channel, b.key}, func(v bool) error {
 		b.isPressed = v
 		if v {
 			b.isToggled = !b.isToggled
 		}
-		return effect(v)
+		return callback(v)
 	})
 }
 
@@ -92,8 +94,8 @@ type Encoder struct {
 	controller uint8
 }
 
-func (e *Encoder) Bind(effect dev.CallbackCC) {
-	e.d.BindCC(e.channel, e.controller, effect)
+func (e *Encoder) Bind(nil, callback func(dev.ArgsCC) error) {
+	e.d.BindCC(dev.PathCC{e.channel, e.controller}, callback)
 }
 
 // TODO: does this need any special wrapping?
@@ -163,9 +165,9 @@ type XTouch struct {
 // NewFader returns a new fader on the gien channel.
 //
 // NewFader accepts an optional, variadic list of callbacks to run when the fader is moved.
-func (x *XTouch) NewFader(channelNo uint8, callbacks ...dev.CallbackPitchBend) Fader {
+func (x *XTouch) NewFader(channelNo uint8, callbacks ...func(dev.ArgsPitchBend) error) Fader {
 	for _, e := range callbacks {
-		x.base.BindPitchBend(uint8(1+channelNo), e)
+		x.base.BindPitchBend(dev.PathPitchBend{uint8(1 + channelNo)}, e)
 	}
 	return Fader{
 		d:         x.base,
@@ -173,9 +175,9 @@ func (x *XTouch) NewFader(channelNo uint8, callbacks ...dev.CallbackPitchBend) F
 	}
 }
 
-func (x *XTouch) NewEncoder(channelNo uint8, control uint8, callbacks ...dev.CallbackCC) Encoder {
+func (x *XTouch) NewEncoder(channelNo uint8, control uint8, callbacks ...func(dev.ArgsCC) error) Encoder {
 	for _, e := range callbacks {
-		x.base.BindCC(channelNo, control, e)
+		x.base.BindCC(dev.PathCC{channelNo, control}, e)
 	}
 	return Encoder{
 		d:          x.base,
@@ -187,9 +189,9 @@ func (x *XTouch) NewEncoder(channelNo uint8, control uint8, callbacks ...dev.Cal
 // NewButton returns a new button corresponding to the given channel and MIDI key.
 //
 // NewButton accepts an optional, variadic list of callbacks to run when the button is pressed.
-func (x *XTouch) NewButton(channel, key uint8, callbacks ...dev.CallbackNote) Button {
+func (x *XTouch) NewButton(channel, key uint8, callbacks ...func(bool) error) Button {
 	for _, e := range callbacks {
-		x.base.BindNote(channel, key, e)
+		x.base.BindNote(dev.PathNote{channel, key}, e)
 	}
 	return Button{
 		d:       x.base,

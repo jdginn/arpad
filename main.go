@@ -7,7 +7,7 @@ import (
 	"gitlab.com/gomidi/midi/v2"
 	_ "gitlab.com/gomidi/midi/v2/drivers/midicatdrv"
 
-	"github.com/jdginn/arpad/devices"
+	dev "github.com/jdginn/arpad/devices"
 	motulib "github.com/jdginn/arpad/devices/motu"
 	reaperlib "github.com/jdginn/arpad/devices/reaper"
 	xtouchlib "github.com/jdginn/arpad/devices/xtouch"
@@ -55,27 +55,21 @@ const (
 // event holds a collection of events that should all update the same underlying value.
 //
 // The value is cached.
-type event[T devices.BaseTypes] struct {
-	value   T
-	actions []devices.Callback[T]
+type event struct {
+	value   any
+	actions []func(any) error
 }
 
 // layerObserver is a bundle of all the elements registered for a particular mode
 //
 // Each element is referenced by a descriptive string name.
 type layerObserver struct {
-	ints    map[string]event[int64]
-	floats  map[string]event[float64]
-	strings map[string]event[string]
-	bools   map[string]event[bool]
+	internal map[any]event
 }
 
 func newLayer() layerObserver {
 	return layerObserver{
-		ints:    map[string]event[int64]{},
-		floats:  map[string]event[float64]{},
-		strings: map[string]event[string]{},
-		bools:   map[string]event[bool]{},
+		internal: map[any]event{},
 	}
 }
 
@@ -94,8 +88,8 @@ type ModeManager struct {
 	selectedTrackRecord int
 }
 
-func NewModeManager() ModeManager {
-	return ModeManager{
+func NewModeManager() *ModeManager {
+	return &ModeManager{
 		currMode: MIX,
 		// These modes are hand-written since the list of modes does not change often.
 		modes: map[Mode]layerObserver{
@@ -123,80 +117,46 @@ func (c *ModeManager) SetMode(mode Mode) {
 	if _, ok := c.modes[mode]; !ok {
 		c.modes[mode] = newLayer()
 	}
-	for _, e := range c.modes[c.currMode].ints {
-		for _, a := range e.actions {
-			a(e.value)
-		}
-	}
-	for _, e := range c.modes[c.currMode].floats {
-		for _, a := range e.actions {
-			a(e.value)
-		}
-	}
-	for _, e := range c.modes[c.currMode].strings {
-		for _, a := range e.actions {
-			a(e.value)
-		}
-	}
-	for _, e := range c.modes[c.currMode].bools {
+
+	for _, e := range c.modes[c.currMode].internal {
 		for _, a := range e.actions {
 			a(e.value)
 		}
 	}
 }
 
-func (c *ModeManager) BindInt(mode Mode, key string, foreignRegister func(string, devices.Callback[int64]), callback devices.Callback[int64]) devices.Callback[int64] {
-	foreignRegister(key, callback)
-
-	elem := c.modes[mode].ints[key]
-	elem.actions = append(elem.actions, callback)
-
-	return func(v int64) error {
-		elem.value = v
-		if c.currMode == mode {
-			return callback(v)
-		}
-		return nil
-	}
-}
-
-func (c *ModeManager) BindFloat(mode Mode, key string, r func(string, devices.Callback[float64]), callback devices.Callback[float64]) {
-	elem := c.modes[mode].floats[key]
-	elem.actions = append(elem.actions, callback)
-
-	r(key, func(v float64) error {
-		elem.value = v
-		if c.currMode == mode {
-			return callback(v)
-		}
-		return nil
+// Bind binds the callback to the binding site and adds a guard to ensure that the callback is only called for the specified mode
+//
+// The most important thing about this function is that defines its generic types from the types in the passed binder function.
+// This function will come from the device we are binding to, and it is that device's responsibility to tell us the types it expects.
+// Once you have provided the bind function, the language server knows the types you need to provide for the path and callback. This ensures type-safety
+// and gives the language server maximum latitude to help you write a valid callback.
+//
+// There are some functional shenanigans to support proper binding to the device and proper automatic callbacks on mode change within the mode manager.
+// Note that this function doesn't care about the types of the bind path or args to the callback as long as the bind function accepts that pair.
+func Bind[P, A any](mm *ModeManager, mode Mode, binder func(P, func(A) error), path P, callback func(A) error) {
+	// First, we need to tell the mode manager to call the callback with the cached value any time we toggle to this mode
+	elem := mm.modes[mode].internal[path]
+	// We need to type-delete V because it allows us to store all of these actions in one slice (nifty!)
+	elem.actions = append(elem.actions, func(v any) error {
+		// Undo the type deletion here in this closure
+		// Now everything is type-safe again
+		castV := v.(A)
+		return callback(castV)
 	})
-}
 
-func (c *ModeManager) BindBool(mode Mode, key string, r func(string, devices.Callback[bool]), callback devices.Callback[bool]) {
-	elem := c.modes[mode].bools[key]
-	elem.actions = append(elem.actions, callback)
-
-	r(key, func(v bool) error {
-		elem.value = v
-		if c.currMode == mode {
-			return callback(v)
-		}
-		return nil
-	})
-}
-
-func (c *ModeManager) BindString(mode Mode, key string, r func(string, devices.Callback[string]), callback devices.Callback[string]) {
-	elem := c.modes[mode].strings[key]
-	elem.actions = append(elem.actions, callback)
-
-	r(key, func(v string) error {
-		elem.value = v
-		if c.currMode == mode {
-			return callback(v)
-		}
-		return nil
-	})
+	// Now bind the callback to the device, but first wrap it in another closure with guards to only run this for the specified mode.
+	binder(
+		path,
+		func(args A) error {
+			// TODO: instead of this check we could do a bitwise OR on mode and currMode
+			// That way we can easily define multipole modes for an action
+			if mm.currMode == mode {
+				return callback(args)
+			}
+			return nil
+		},
+	)
 }
 
 func main() {
@@ -214,282 +174,279 @@ func main() {
 	}
 	fmt.Println(out)
 
-	xtouch := xtouchlib.New(devices.NewMidiDevice(in, out))
+	xtouch := xtouchlib.New(dev.NewMidiDevice(in, out))
 
 	motu := motulib.NewHTTPDatastore("http://localhost:8888")
 
 	reaper := reaperlib.OscServer{}
 
-	modes := NewModeManager()
+	m := NewModeManager()
 
-	for i := 0; i < 8; i++ {
+	for trackNum := 0; trackNum < 8; trackNum++ {
+		c := xtouch.Channels[trackNum]
+
 		// Scribble strip
-		modes.BindString(RECORD, fmt.Sprintf("ext/ibank/%d/name", i), motu.BindString, func(s string) error {
-			return xtouch.Channels[i].Scribble.SendScribble(xtouchlib.Green, []byte(s), []byte("input"))
+		Bind(m, RECORD, motu.BindString, fmt.Sprintf("ext/ibank/%d/name", trackNum), func(s string) error {
+			return xtouch.Channels[trackNum].Scribble.SendScribble(xtouchlib.Green, []byte(s), []byte("input"))
 		})
 
 		// Fader
-		xtouch.Channels[i].Fader.Bind(func(rel int16, abs uint16) error {
-			normalized := float64(abs) / 4 / float64(math.MaxUint16)
-			switch modes.currMode {
-			case RECORD:
-				return motu.SetFloat(fmt.Sprintf("mix/main/%d/matrix/fader", i), normalized)
-			case RECORD_THIS_TRACK_SENDS:
-				return motu.SetFloat(fmt.Sprintf("mix/main/%d/matrix/fader", i), normalized)
-			case MIX:
-				return reaper.SetFloat(fmt.Sprintf("channels/%d/fader", i), normalized) // TODO:
-			}
-			return nil
+		normalizeFader := func(abs uint16) float64 {
+			return float64(abs) / 4 / float64(math.MaxUint16)
+		}
+		Bind(m, RECORD, c.Fader.Bind, nil, func(args dev.ArgsPitchBend) error {
+			return motu.SetFloat(fmt.Sprintf("mix/main/%d/matrix/fader", trackNum), normalizeFader(args.Absolute))
 		})
-		modes.BindFloat(RECORD, fmt.Sprintf("mix/main/%d/matrix/fader"), motu.BindFloat, func(f float64) error {
-			return xtouch.Channels[i].Fader.SetFaderAbsolute(int16(f / 4 * float64(math.MaxUint16)))
+		Bind(m, RECORD_THIS_TRACK_SENDS, c.Fader.Bind, nil, func(args dev.ArgsPitchBend) error {
+			return motu.SetFloat(fmt.Sprintf("mix/main/%d/matrix/fader", trackNum), normalizeFader(args.Absolute))
 		})
-		modes.BindFloat(MIX, fmt.Sprintf("channels/%d/fader"), motu.BindFloat, func(f float64) error {
-			return xtouch.Channels[i].Fader.SetFaderAbsolute(int16(f / 4 * float64(math.MaxUint16)))
+		Bind(m, MIX, c.Fader.Bind, nil, func(args dev.ArgsPitchBend) error {
+			return reaper.SetFloat(fmt.Sprintf("channels/%d/fader", trackNum), normalizeFader(args.Absolute))
+		})
+
+		Bind(m, RECORD, motu.BindFloat, fmt.Sprintf("mix/main/%d/matrix/fader", trackNum), func(f float64) error {
+			return c.Fader.SetFaderAbsolute(int16(f / 4 * float64(math.MaxUint16)))
+		})
+		Bind(m, MIX, reaper.BindFloat, fmt.Sprintf("channels/%d/fader", trackNum), func(f float64) error {
+			return c.Fader.SetFaderAbsolute(int16(f / 4 * float64(math.MaxUint16)))
 		})
 
 		// Encoders
-		xtouch.Channels[i].Encoder.Bind(func(u uint8) error {
-			switch modes.currMode {
-			case RECORD:
-				if xtouch.Channels[i].EncoderButton.IsPressed() {
-					return reaper.SetInt(fmt.Sprintf("mix/chan/%d/pan", i), int64(u)) // TODO:
-				}
-				return reaper.SetInt(fmt.Sprintf("ext/ibank/0/chan/%d/trim", i), int64(u))
-			case MIX:
-				if xtouch.Channels[i].EncoderButton.IsPressed() {
-					return reaper.SetInt(fmt.Sprintf("channels/%d/trim", i), int64(u)) // TODO:
-				}
-				return reaper.SetInt(fmt.Sprintf("channels/%d/pan", i), int64(u))
+		Bind(m, RECORD, c.Encoder.Bind, nil, func(args dev.ArgsCC) error {
+			if c.EncoderButton.IsPressed() {
+				return reaper.SetInt(fmt.Sprintf("ext/ibank/0/chan/%d/trim", trackNum), int64(args.Value))
 			}
-			return nil
+			return reaper.SetInt(fmt.Sprintf("mix/chan/%d/pan", trackNum), int64(args.Value)) // TODO:
+		})
+		Bind(m, MIX, c.Encoder.Bind, nil, func(args dev.ArgsCC) error {
+			if c.EncoderButton.IsPressed() {
+				return reaper.SetInt(fmt.Sprintf("channels/%d/trim", trackNum), int64(args.Value)) // TODO:
+			}
+			return reaper.SetInt(fmt.Sprintf("channels/%d/trim", trackNum), int64(args.Value))
 		})
 
 		// Select
-		xtouch.Channels[i].Select.Bind(func(b bool) error {
-			switch modes.currMode {
-			case MIX:
-				modes.selectedTrackMix, err = motu.GetStr("channels/%d/name")
-				if err != nil {
-					return err
-				}
-			case RECORD:
-				modes.selectedTrackRecord = i
-				xtouch.Channels[i].Select.SetLED(xtouchlib.ON)
-				// TODO: turn off other LEDs
+		Bind(m, MIX, c.Select.Bind, nil, func(b bool) error {
+			if m.selectedTrackMix, err = motu.GetStr("channels/%d/name"); err != nil {
+				return err
 			}
 			return nil
+		})
+		Bind(m, RECORD, c.Select.Bind, nil, func(b bool) error {
+			m.selectedTrackRecord = trackNum
+			return c.Select.SetLED(xtouchlib.ON)
 		})
 		// TODO: bind incoming select from DAW
 
 		// Mute
-		xtouch.Channels[i].Mute.Bind(func(b bool) error {
+		Bind(m, RECORD, c.Mute.Bind, nil, func(b bool) error {
 			// TODO: need toggle funcionality
-			switch modes.currMode {
-			case RECORD:
-				return motu.SetBool(fmt.Sprintf("mix/main/%d/matrix/mute", i), b)
-			default:
-				return reaper.SetBool(fmt.Sprintf("channels/%d/mute", i), b)
-			}
+			return motu.SetBool(fmt.Sprintf("mix/main/%d/matrix/mute", trackNum), b)
 		})
-		modes.BindBool(RECORD, fmt.Sprintf("mix/main/%d/matrix/mute", i), motu.BindBool, func(b bool) error {
+		// TODO: default mode
+		Bind(m, RECORD, c.Mute.Bind, nil, func(b bool) error {
+			// TODO: need toggle funcionality
+			return reaper.SetBool(fmt.Sprintf("channels/%d/mute", trackNum), b)
+		})
+		Bind(m, RECORD, motu.BindBool, fmt.Sprintf("mix/main/%d/matrix/mute", trackNum), func(b bool) error {
 			if b {
-				xtouch.Channels[i].Mute.SetLED(xtouchlib.ON)
+				xtouch.Channels[trackNum].Mute.SetLED(xtouchlib.ON)
 			} else {
-				xtouch.Channels[i].Mute.SetLED(xtouchlib.OFF)
+				xtouch.Channels[trackNum].Mute.SetLED(xtouchlib.OFF)
 			}
 			return nil
 		})
-		modes.BindBool(MIX, fmt.Sprintf("channels/%d/mute", i), motu.BindBool, func(b bool) error {
+		Bind(m, RECORD, motu.BindBool, fmt.Sprintf("channels/%d/mute", trackNum), func(b bool) error {
 			if b {
-				xtouch.Channels[i].Mute.SetLED(xtouchlib.ON)
+				xtouch.Channels[trackNum].Mute.SetLED(xtouchlib.ON)
 			} else {
-				xtouch.Channels[i].Mute.SetLED(xtouchlib.OFF)
+				xtouch.Channels[trackNum].Mute.SetLED(xtouchlib.OFF)
 			}
 			return nil
 		})
 
-		// Solo
-		xtouch.Channels[i].Solo.Bind(func(b bool) error {
-			switch modes.currMode {
-			case RECORD:
-				return motu.SetBool(fmt.Sprintf("mix/main/%d/matrix/solo", i), b)
-			default:
-				return reaper.SetBool(fmt.Sprintf("channels/%d/solo", i), b)
-			}
-		})
-		modes.BindBool(RECORD, fmt.Sprintf("mix/main/%d/matrix/solo", i), motu.BindBool, func(b bool) error {
-			if b {
-				xtouch.Channels[i].Solo.SetLED(xtouchlib.ON)
-			} else {
-				xtouch.Channels[i].Solo.SetLED(xtouchlib.OFF)
-			}
-			return nil
-		})
-		modes.BindBool(MIX, fmt.Sprintf("channels/%d/solo", i), motu.BindBool, func(b bool) error {
-			if b {
-				xtouch.Channels[i].Solo.SetLED(xtouchlib.ON)
-			} else {
-				xtouch.Channels[i].Solo.SetLED(xtouchlib.OFF)
-			}
-			return nil
-		})
-
-		// TODO: is there a better way to provide levels to meters?
-		modes.BindFloat(RECORD, "ext/ibank/0/ch/%d/vlLimit", motu.BindFloat, func(v float64) error {
-			xtouch.Channels[i].Meter.SendRelative(0.9)
-			return nil
-		})
-		modes.BindFloat(MIX, "channels/%d/meter", reaper.RegisterFloat, func(v float64) error { // TODO: path
-			xtouch.Channels[i].Meter.SendRelative(0.9)
-			return nil
-		})
-		modes.BindFloat(RECORD, "ext/ibank/0/ch/%d/vlClip", motu.BindFloat, func(v float64) error {
-			xtouch.Channels[i].Rec.SetLED(xtouchlib.FLASHING)
-			return nil
-		})
-		modes.BindFloat(MIX, "channels/%d/clip", reaper.RegisterFloat, func(v float64) error { // TODO: path
-			xtouch.Channels[i].Rec.SetLED(xtouchlib.FLASHING)
-			return nil
-		})
-		// TODO: trim on encoders
-
-	} // end per-channel assignments
-
-	// -----------------------------------
-	// Select primary mode (MIX vs RECORD)
-	// -----------------------------------
-
-	// Select MIX mode
-	xtouch.EncoderAssign.TRACK.Bind(func(b bool) error {
-		if b {
-			modes.currMode = MIX
-		}
-		// TODO: make a radio button group
-		xtouch.EncoderAssign.TRACK.SetLED(xtouchlib.ON)
-		xtouch.EncoderAssign.PAN_SURROUND.SetLED(xtouchlib.OFF)
-		return nil
-	})
-
-	// Select RECORD mode
-	xtouch.EncoderAssign.PAN_SURROUND.Bind(func(b bool) error {
-		if b {
-			modes.currMode = RECORD
-		}
-		xtouch.EncoderAssign.TRACK.SetLED(xtouchlib.OFF)
-		xtouch.EncoderAssign.PAN_SURROUND.SetLED(xtouchlib.ON)
-		return nil
-	})
-
-	// -----------------------
-	// Select fader assignment
-	// -----------------------
-
-	// Set to track levels
-	xtouch.View.MIDI.Bind(func(b bool) error {
-		if b {
-			switch modes.currMode {
-			case MIX:
-				// no-op
-			case MIX_THIS_TRACK_SENDS:
-				modes.SetMode(MIX)
-			case MIX_SENDS_TO_THIS_BUS:
-				modes.SetMode(MIX)
-			case RECORD:
-				// no-op
-			case RECORD_THIS_TRACK_SENDS:
-				modes.SetMode(RECORD)
-			case RECORD_SENDS_TO_THIS_AUX:
-				modes.SetMode(RECORD)
-			case RECORD_SENDS_TO_THIS_OUTPUT:
-				modes.SetMode(RECORD)
-			}
-		}
-		xtouch.View.MIDI.SetLED(xtouchlib.ON)
-		xtouch.View.INPUTS.SetLED(xtouchlib.OFF)
-		xtouch.View.AUDIO_TRACKS.SetLED(xtouchlib.OFF)
-		xtouch.View.AUDIO_INST.SetLED(xtouchlib.OFF)
-		return nil
-	})
-
-	// Set faders to all sends from this track
-	xtouch.View.INPUTS.Bind(func(b bool) error {
-		if b {
-			switch modes.currMode {
-			case MIX:
-				modes.SetMode(MIX_THIS_TRACK_SENDS)
-			case MIX_THIS_TRACK_SENDS:
-				// no-op
-			case MIX_SENDS_TO_THIS_BUS:
-				modes.SetMode(MIX_THIS_TRACK_SENDS)
-			case RECORD:
-				modes.SetMode(RECORD_THIS_TRACK_SENDS)
-			case RECORD_THIS_TRACK_SENDS:
-				// no-op
-			case RECORD_SENDS_TO_THIS_AUX:
-				modes.SetMode(RECORD_THIS_TRACK_SENDS)
-			case RECORD_SENDS_TO_THIS_OUTPUT:
-				modes.SetMode(RECORD_THIS_TRACK_SENDS)
-			}
-		}
-		xtouch.View.MIDI.SetLED(xtouchlib.OFF)
-		xtouch.View.INPUTS.SetLED(xtouchlib.ON)
-		xtouch.View.AUDIO_TRACKS.SetLED(xtouchlib.OFF)
-		xtouch.View.AUDIO_INST.SetLED(xtouchlib.OFF)
-		return nil
-	})
-
-	// Set faders to all inputs to this bus/aux
-	xtouch.View.AUDIO_TRACKS.Bind(func(b bool) error {
-		if b {
-			switch modes.currMode {
-			case MIX:
-				modes.SetMode(MIX_SENDS_TO_THIS_BUS)
-			case MIX_THIS_TRACK_SENDS:
-				modes.SetMode(MIX_SENDS_TO_THIS_BUS)
-			case MIX_SENDS_TO_THIS_BUS:
-				// no-op
-			case RECORD:
-				modes.SetMode(RECORD_SENDS_TO_THIS_AUX)
-			case RECORD_THIS_TRACK_SENDS:
-				modes.SetMode(RECORD_SENDS_TO_THIS_AUX)
-			case RECORD_SENDS_TO_THIS_AUX:
-				// no-op
-			case RECORD_SENDS_TO_THIS_OUTPUT:
-				modes.SetMode(RECORD_SENDS_TO_THIS_AUX)
-			}
-		}
-		xtouch.View.MIDI.SetLED(xtouchlib.OFF)
-		xtouch.View.INPUTS.SetLED(xtouchlib.OFF)
-		xtouch.View.AUDIO_TRACKS.SetLED(xtouchlib.ON)
-		xtouch.View.AUDIO_INST.SetLED(xtouchlib.OFF)
-		return nil
-	})
-
-	// Set faders to all inputs to this output
-	xtouch.View.AUDIO_INST.Bind(func(b bool) error {
-		if b {
-			switch modes.currMode {
-			case MIX:
-				// no-op
-			case MIX_THIS_TRACK_SENDS:
-				// no-op
-			case MIX_SENDS_TO_THIS_BUS:
-				// no-op
-			case RECORD:
-				modes.SetMode(RECORD_SENDS_TO_THIS_OUTPUT)
-			case RECORD_THIS_TRACK_SENDS:
-				modes.SetMode(RECORD_SENDS_TO_THIS_OUTPUT)
-			case RECORD_SENDS_TO_THIS_AUX:
-				modes.SetMode(RECORD_SENDS_TO_THIS_OUTPUT)
-			case RECORD_SENDS_TO_THIS_OUTPUT:
-				// no-op
-			}
-		}
-		xtouch.View.MIDI.SetLED(xtouchlib.OFF)
-		xtouch.View.INPUTS.SetLED(xtouchlib.OFF)
-		xtouch.View.AUDIO_TRACKS.SetLED(xtouchlib.OFF)
-		xtouch.View.AUDIO_INST.SetLED(xtouchlib.ON)
-		return nil
-	})
+		//		// Solo
+		//		xtouch.Channels[trackNum].Solo.Bind(func(b bool) error {
+		//			switch m.currMode {
+		//			case RECORD:
+		//				return motu.SetBool(fmt.Sprintf("mix/main/%d/matrix/solo", trackNum), b)
+		//			default:
+		//				return reaper.SetBool(fmt.Sprintf("channels/%d/solo", trackNum), b)
+		//			}
+		//		})
+		//		m.BindBool(RECORD, fmt.Sprintf("mix/main/%d/matrix/solo", trackNum), motu.BindBool, func(b bool) error {
+		//			if b {
+		//				xtouch.Channels[trackNum].Solo.SetLED(xtouchlib.ON)
+		//			} else {
+		//				xtouch.Channels[trackNum].Solo.SetLED(xtouchlib.OFF)
+		//			}
+		//			return nil
+		//		})
+		//		m.BindBool(MIX, fmt.Sprintf("channels/%d/solo", trackNum), motu.BindBool, func(b bool) error {
+		//			if b {
+		//				xtouch.Channels[trackNum].Solo.SetLED(xtouchlib.ON)
+		//			} else {
+		//				xtouch.Channels[trackNum].Solo.SetLED(xtouchlib.OFF)
+		//			}
+		//			return nil
+		//		})
+		//
+		//		// TODO: is there a better way to provide levels to meters?
+		//		m.BindFloat(RECORD, "ext/ibank/0/ch/%d/vlLimit", motu.BindFloat, func(v float64) error {
+		//			xtouch.Channels[trackNum].Meter.SendRelative(0.9)
+		//			return nil
+		//		})
+		//		m.BindFloat(MIX, "channels/%d/meter", reaper.RegisterFloat, func(v float64) error { // TODO: path
+		//			xtouch.Channels[trackNum].Meter.SendRelative(0.9)
+		//			return nil
+		//		})
+		//		m.BindFloat(RECORD, "ext/ibank/0/ch/%d/vlClip", motu.BindFloat, func(v float64) error {
+		//			xtouch.Channels[trackNum].Rec.SetLED(xtouchlib.FLASHING)
+		//			return nil
+		//		})
+		//		m.BindFloat(MIX, "channels/%d/clip", reaper.RegisterFloat, func(v float64) error { // TODO: path
+		//			xtouch.Channels[trackNum].Rec.SetLED(xtouchlib.FLASHING)
+		//			return nil
+		//		})
+		//		// TODO: trim on encoders
+		//
+		//	} // end per-channel assignments
+		//
+		//	// -----------------------------------
+		//	// Select primary mode (MIX vs RECORD)
+		//	// -----------------------------------
+		//
+		//	// Select MIX mode
+		//	xtouch.EncoderAssign.TRACK.Bind(func(b bool) error {
+		//		if b {
+		//			m.currMode = MIX
+		//		}
+		//		// TODO: make a radio button group
+		//		xtouch.EncoderAssign.TRACK.SetLED(xtouchlib.ON)
+		//		xtouch.EncoderAssign.PAN_SURROUND.SetLED(xtouchlib.OFF)
+		//		return nil
+		//	})
+		//
+		//	// Select RECORD mode
+		//	xtouch.EncoderAssign.PAN_SURROUND.Bind(func(b bool) error {
+		//		if b {
+		//			m.currMode = RECORD
+		//		}
+		//		xtouch.EncoderAssign.TRACK.SetLED(xtouchlib.OFF)
+		//		xtouch.EncoderAssign.PAN_SURROUND.SetLED(xtouchlib.ON)
+		//		return nil
+		//	})
+		//
+		//	// -----------------------
+		//	// Select fader assignment
+		//	// -----------------------
+		//
+		//	// Set to track levels
+		//	xtouch.View.MIDI.Bind(func(b bool) error {
+		//		if b {
+		//			switch m.currMode {
+		//			case MIX:
+		//				// no-op
+		//			case MIX_THIS_TRACK_SENDS:
+		//				m.SetMode(MIX)
+		//			case MIX_SENDS_TO_THIS_BUS:
+		//				m.SetMode(MIX)
+		//			case RECORD:
+		//				// no-op
+		//			case RECORD_THIS_TRACK_SENDS:
+		//				m.SetMode(RECORD)
+		//			case RECORD_SENDS_TO_THIS_AUX:
+		//				m.SetMode(RECORD)
+		//			case RECORD_SENDS_TO_THIS_OUTPUT:
+		//				m.SetMode(RECORD)
+		//			}
+		//		}
+		//		xtouch.View.MIDI.SetLED(xtouchlib.ON)
+		//		xtouch.View.INPUTS.SetLED(xtouchlib.OFF)
+		//		xtouch.View.AUDIO_TRACKS.SetLED(xtouchlib.OFF)
+		//		xtouch.View.AUDIO_INST.SetLED(xtouchlib.OFF)
+		//		return nil
+		//	})
+		//
+		//	// Set faders to all sends from this track
+		//	xtouch.View.INPUTS.Bind(func(b bool) error {
+		//		if b {
+		//			switch m.currMode {
+		//			case MIX:
+		//				m.SetMode(MIX_THIS_TRACK_SENDS)
+		//			case MIX_THIS_TRACK_SENDS:
+		//				// no-op
+		//			case MIX_SENDS_TO_THIS_BUS:
+		//				m.SetMode(MIX_THIS_TRACK_SENDS)
+		//			case RECORD:
+		//				m.SetMode(RECORD_THIS_TRACK_SENDS)
+		//			case RECORD_THIS_TRACK_SENDS:
+		//				// no-op
+		//			case RECORD_SENDS_TO_THIS_AUX:
+		//				m.SetMode(RECORD_THIS_TRACK_SENDS)
+		//			case RECORD_SENDS_TO_THIS_OUTPUT:
+		//				m.SetMode(RECORD_THIS_TRACK_SENDS)
+		//			}
+		//		}
+		//		xtouch.View.MIDI.SetLED(xtouchlib.OFF)
+		//		xtouch.View.INPUTS.SetLED(xtouchlib.ON)
+		//		xtouch.View.AUDIO_TRACKS.SetLED(xtouchlib.OFF)
+		//		xtouch.View.AUDIO_INST.SetLED(xtouchlib.OFF)
+		//		return nil
+		//	})
+		//
+		//	// Set faders to all inputs to this bus/aux
+		//	xtouch.View.AUDIO_TRACKS.Bind(func(b bool) error {
+		//		if b {
+		//			switch m.currMode {
+		//			case MIX:
+		//				m.SetMode(MIX_SENDS_TO_THIS_BUS)
+		//			case MIX_THIS_TRACK_SENDS:
+		//				m.SetMode(MIX_SENDS_TO_THIS_BUS)
+		//			case MIX_SENDS_TO_THIS_BUS:
+		//				// no-op
+		//			case RECORD:
+		//				m.SetMode(RECORD_SENDS_TO_THIS_AUX)
+		//			case RECORD_THIS_TRACK_SENDS:
+		//				m.SetMode(RECORD_SENDS_TO_THIS_AUX)
+		//			case RECORD_SENDS_TO_THIS_AUX:
+		//				// no-op
+		//			case RECORD_SENDS_TO_THIS_OUTPUT:
+		//				m.SetMode(RECORD_SENDS_TO_THIS_AUX)
+		//			}
+		//		}
+		//		xtouch.View.MIDI.SetLED(xtouchlib.OFF)
+		//		xtouch.View.INPUTS.SetLED(xtouchlib.OFF)
+		//		xtouch.View.AUDIO_TRACKS.SetLED(xtouchlib.ON)
+		//		xtouch.View.AUDIO_INST.SetLED(xtouchlib.OFF)
+		//		return nil
+		//	})
+		//
+		//	// Set faders to all inputs to this output
+		//	xtouch.View.AUDIO_INST.Bind(func(b bool) error {
+		//		if b {
+		//			switch m.currMode {
+		//			case MIX:
+		//				// no-op
+		//			case MIX_THIS_TRACK_SENDS:
+		//				// no-op
+		//			case MIX_SENDS_TO_THIS_BUS:
+		//				// no-op
+		//			case RECORD:
+		//				m.SetMode(RECORD_SENDS_TO_THIS_OUTPUT)
+		//			case RECORD_THIS_TRACK_SENDS:
+		//				m.SetMode(RECORD_SENDS_TO_THIS_OUTPUT)
+		//			case RECORD_SENDS_TO_THIS_AUX:
+		//				m.SetMode(RECORD_SENDS_TO_THIS_OUTPUT)
+		//			case RECORD_SENDS_TO_THIS_OUTPUT:
+		//				// no-op
+		//			}
+		//		}
+		//		xtouch.View.MIDI.SetLED(xtouchlib.OFF)
+		//		xtouch.View.INPUTS.SetLED(xtouchlib.OFF)
+		//		xtouch.View.AUDIO_TRACKS.SetLED(xtouchlib.OFF)
+		//		xtouch.View.AUDIO_INST.SetLED(xtouchlib.ON)
+		//		return nil
+		//	})
+	}
 }

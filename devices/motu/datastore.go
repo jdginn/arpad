@@ -43,21 +43,21 @@ func (d *HTTPDatastore) BindInt(key string, cb dev.Callback[int64]) {
 // BindFloat binds a callback to run whenever the given key changes values in the datastore.
 //
 // The given key MUST return an float.
-func (d *HTTPDatastore) BindFloat(key string, cb dev.Callback[float64]) {
+func (d *HTTPDatastore) BindFloat(key string, cb func(float64) error) {
 	d.callbackFloat[key] = cb
 }
 
 // BindString binds a callback to run whenever the given key changes values in the datastore.
 //
 // The given key MUST return an string.
-func (d *HTTPDatastore) BindString(key string, cb dev.Callback[string]) {
+func (d *HTTPDatastore) BindString(key string, cb func(string) error) {
 	d.callbackStr[key] = cb
 }
 
 // BindBool binds a callback to run whenever the given key changes values in the datastore.
 //
 // The given key MUST return a bool.
-func (d *HTTPDatastore) BindBool(key string, cb dev.Callback[bool]) {
+func (d *HTTPDatastore) BindBool(key string, cb func(bool) error) {
 	d.callbackBool[key] = cb
 }
 

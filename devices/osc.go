@@ -35,7 +35,7 @@ func (o *Osc) SetBool(key string, val bool) error {
 // The given address should return a value that can be interpreted as an int.
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as an int.
-func (o *Osc) RegisterInt(addr string, effect Callback[int64]) {
+func (o *Osc) BindInt(addr string, effect func(int64) error) {
 	o.d.AddMsgHandler(addr, func(msg *osc.Message) {
 		val := msg.Arguments[len(msg.Arguments)-1]
 		switch val := val.(type) {
@@ -59,7 +59,7 @@ func (o *Osc) RegisterInt(addr string, effect Callback[int64]) {
 //
 // The given address MUST return a float or be convertable to float.
 // WARNING: Conversions are best-effort and could panic.
-func (o *Osc) RegisterFloat(key string, effect Callback[float64]) {
+func (o *Osc) BindFloat(key string, effect func(float64) error) {
 	o.d.AddMsgHandler(key, func(msg *osc.Message) {
 		val := msg.Arguments[len(msg.Arguments)-1]
 		switch val := val.(type) {
@@ -88,7 +88,7 @@ func (o *Osc) RegisterFloat(key string, effect Callback[float64]) {
 // The given address should return a value that can be interpreted as a string.
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as a string.
-func (o *Osc) RegisterString(key string, effect func(string) error) {
+func (o *Osc) BindString(key string, effect func(string) error) {
 	o.d.AddMsgHandler(key, func(msg *osc.Message) {
 		val := msg.Arguments[len(msg.Arguments)-1]
 		switch val := val.(type) {
@@ -113,7 +113,7 @@ func (o *Osc) RegisterString(key string, effect func(string) error) {
 // The given address should return a value that can be interpreted as a boolean.
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as a boolean.
-func (o *Osc) RegisterBool(key string, effect func(bool) error) {
+func (o *Osc) BindBool(key string, effect func(bool) error) {
 	o.d.AddMsgHandler(key, func(msg *osc.Message) {
 		val := msg.Arguments[len(msg.Arguments)-1]
 		switch val := val.(type) {
