@@ -13,16 +13,18 @@ import (
 	xtouchlib "github.com/jdginn/arpad/devices/xtouch"
 )
 
-type Mode int
+type Mode uint64
 
 const (
-	MIX Mode = iota
+	DEFAULT Mode = 1 << iota
+	MIX
 	MIX_THIS_TRACK_SENDS
 	MIX_SENDS_TO_THIS_BUS
 	RECORD
 	RECORD_THIS_TRACK_SENDS
 	RECORD_SENDS_TO_THIS_OUTPUT
 	RECORD_SENDS_TO_THIS_AUX
+	ALL = 0xFFFFFFFFFFFFFFFF
 )
 
 // Modes:
@@ -82,6 +84,9 @@ func newLayer() layerObserver {
 type ModeManager struct {
 	currMode Mode
 	// For updating devices when we switch modes
+	//
+	// For now at least, we are YOLOing any bitwise set of modes as a key and then checking if the current mode is a subset of the key
+	// when we need to update the layer
 	modes map[Mode]layerObserver
 
 	selectedTrackMix    string
@@ -118,9 +123,13 @@ func (c *ModeManager) SetMode(mode Mode) {
 		c.modes[mode] = newLayer()
 	}
 
-	for _, e := range c.modes[c.currMode].internal {
-		for _, a := range e.actions {
-			a(e.value)
+	for m, l := range c.modes {
+		if m|c.currMode != 0 {
+			for _, e := range l.internal {
+				for _, a := range e.actions {
+					a(e.value)
+				}
+			}
 		}
 	}
 }
@@ -149,9 +158,7 @@ func Bind[P, A any](mm *ModeManager, mode Mode, binder func(P, func(A) error), p
 	binder(
 		path,
 		func(args A) error {
-			// TODO: instead of this check we could do a bitwise OR on mode and currMode
-			// That way we can easily define multipole modes for an action
-			if mm.currMode == mode {
+			if mm.currMode|mode != 0 {
 				return callback(args)
 			}
 			return nil
@@ -194,10 +201,7 @@ func main() {
 		normalizeFader := func(abs uint16) float64 {
 			return float64(abs) / 4 / float64(math.MaxUint16)
 		}
-		Bind(m, RECORD, c.Fader.Bind, nil, func(args dev.ArgsPitchBend) error {
-			return motu.SetFloat(fmt.Sprintf("mix/main/%d/matrix/fader", trackNum), normalizeFader(args.Absolute))
-		})
-		Bind(m, RECORD_THIS_TRACK_SENDS, c.Fader.Bind, nil, func(args dev.ArgsPitchBend) error {
+		Bind(m, RECORD|RECORD_THIS_TRACK_SENDS, c.Fader.Bind, nil, func(args dev.ArgsPitchBend) error {
 			return motu.SetFloat(fmt.Sprintf("mix/main/%d/matrix/fader", trackNum), normalizeFader(args.Absolute))
 		})
 		Bind(m, MIX, c.Fader.Bind, nil, func(args dev.ArgsPitchBend) error {
