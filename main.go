@@ -166,6 +166,17 @@ func Bind[P, A any](mm *ModeManager, mode Mode, binder func(P, func(A) error), p
 	)
 }
 
+var mm *ModeManager
+
+func init() {
+	mm = NewModeManager()
+}
+
+// This is just eliding the first argument because it never changes and visual clarity is at a premium
+func bind[P, A any](mode Mode, binder func(P, func(A) error), path P, callback func(A) error) {
+	Bind(mm, mode, binder, path, callback)
+}
+
 func main() {
 	defer midi.CloseDriver()
 	fmt.Printf("outports:\n" + midi.GetOutPorts().String() + "\n")
@@ -193,7 +204,7 @@ func main() {
 		c := xtouch.Channels[trackNum]
 
 		// Scribble strip
-		Bind(m, RECORD, motu.BindString, fmt.Sprintf("ext/ibank/%d/name", trackNum), func(s string) error {
+		bind(RECORD, motu.BindString, fmt.Sprintf("ext/ibank/%d/name", trackNum), func(s string) error {
 			return xtouch.Channels[trackNum].Scribble.SendScribble(xtouchlib.Green, []byte(s), []byte("input"))
 		})
 
@@ -201,28 +212,28 @@ func main() {
 		normalizeFader := func(abs uint16) float64 {
 			return float64(abs) / 4 / float64(math.MaxUint16)
 		}
-		Bind(m, RECORD|RECORD_THIS_TRACK_SENDS, c.Fader.Bind, nil, func(args dev.ArgsPitchBend) error {
+		bind(RECORD|RECORD_THIS_TRACK_SENDS, c.Fader.Bind, nil, func(args dev.ArgsPitchBend) error {
 			return motu.SetFloat(fmt.Sprintf("mix/main/%d/matrix/fader", trackNum), normalizeFader(args.Absolute))
 		})
-		Bind(m, MIX, c.Fader.Bind, nil, func(args dev.ArgsPitchBend) error {
+		bind(MIX, c.Fader.Bind, nil, func(args dev.ArgsPitchBend) error {
 			return reaper.SetFloat(fmt.Sprintf("channels/%d/fader", trackNum), normalizeFader(args.Absolute))
 		})
 
-		Bind(m, RECORD, motu.BindFloat, fmt.Sprintf("mix/main/%d/matrix/fader", trackNum), func(f float64) error {
+		bind(RECORD, motu.BindFloat, fmt.Sprintf("mix/main/%d/matrix/fader", trackNum), func(f float64) error {
 			return c.Fader.SetFaderAbsolute(int16(f / 4 * float64(math.MaxUint16)))
 		})
-		Bind(m, MIX, reaper.BindFloat, fmt.Sprintf("channels/%d/fader", trackNum), func(f float64) error {
+		bind(MIX, reaper.BindFloat, fmt.Sprintf("channels/%d/fader", trackNum), func(f float64) error {
 			return c.Fader.SetFaderAbsolute(int16(f / 4 * float64(math.MaxUint16)))
 		})
 
 		// Encoders
-		Bind(m, RECORD, c.Encoder.Bind, nil, func(args dev.ArgsCC) error {
+		bind(RECORD, c.Encoder.Bind, nil, func(args dev.ArgsCC) error {
 			if c.EncoderButton.IsPressed() {
 				return reaper.SetInt(fmt.Sprintf("ext/ibank/0/chan/%d/trim", trackNum), int64(args.Value))
 			}
 			return reaper.SetInt(fmt.Sprintf("mix/chan/%d/pan", trackNum), int64(args.Value)) // TODO:
 		})
-		Bind(m, MIX, c.Encoder.Bind, nil, func(args dev.ArgsCC) error {
+		bind(MIX, c.Encoder.Bind, nil, func(args dev.ArgsCC) error {
 			if c.EncoderButton.IsPressed() {
 				return reaper.SetInt(fmt.Sprintf("channels/%d/trim", trackNum), int64(args.Value)) // TODO:
 			}
@@ -230,29 +241,29 @@ func main() {
 		})
 
 		// Select
-		Bind(m, MIX, c.Select.Bind, nil, func(b bool) error {
+		bind(MIX, c.Select.Bind, nil, func(b bool) error {
 			if m.selectedTrackMix, err = motu.GetStr("channels/%d/name"); err != nil {
 				return err
 			}
 			return nil
 		})
-		Bind(m, RECORD, c.Select.Bind, nil, func(b bool) error {
+		bind(RECORD, c.Select.Bind, nil, func(b bool) error {
 			m.selectedTrackRecord = trackNum
 			return c.Select.SetLED(xtouchlib.ON)
 		})
 		// TODO: bind incoming select from DAW
 
 		// Mute
-		Bind(m, RECORD, c.Mute.Bind, nil, func(b bool) error {
+		bind(RECORD, c.Mute.Bind, nil, func(b bool) error {
 			// TODO: need toggle funcionality
 			return motu.SetBool(fmt.Sprintf("mix/main/%d/matrix/mute", trackNum), b)
 		})
 		// TODO: default mode
-		Bind(m, RECORD, c.Mute.Bind, nil, func(b bool) error {
+		bind(RECORD, c.Mute.Bind, nil, func(b bool) error {
 			// TODO: need toggle funcionality
 			return reaper.SetBool(fmt.Sprintf("channels/%d/mute", trackNum), b)
 		})
-		Bind(m, RECORD, motu.BindBool, fmt.Sprintf("mix/main/%d/matrix/mute", trackNum), func(b bool) error {
+		bind(RECORD, motu.BindBool, fmt.Sprintf("mix/main/%d/matrix/mute", trackNum), func(b bool) error {
 			if b {
 				xtouch.Channels[trackNum].Mute.SetLED(xtouchlib.ON)
 			} else {
@@ -260,7 +271,7 @@ func main() {
 			}
 			return nil
 		})
-		Bind(m, RECORD, motu.BindBool, fmt.Sprintf("channels/%d/mute", trackNum), func(b bool) error {
+		bind(RECORD, motu.BindBool, fmt.Sprintf("channels/%d/mute", trackNum), func(b bool) error {
 			if b {
 				xtouch.Channels[trackNum].Mute.SetLED(xtouchlib.ON)
 			} else {
