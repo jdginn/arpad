@@ -480,7 +480,7 @@ func (g *Generator) getMethodSuffix(pattern, mainPattern Pattern) string {
 // getCallbackType returns the Go type for the callback parameter
 func (g *Generator) getCallbackType(pattern Pattern) string {
 	switch pattern.Type {
-	case "n", "f":
+	case "n", "f", "r":
 		return "float64"
 	case "i":
 		return "int64"
@@ -488,8 +488,10 @@ func (g *Generator) getCallbackType(pattern Pattern) string {
 		return "bool"
 	case "s":
 		return "string"
+	case "t":
+		return ""
 	default:
-		return "interface{}"
+		panic("unknown pattern type: " + pattern.Type)
 	}
 }
 
@@ -516,30 +518,6 @@ func (g *Generator) getPathStructName(pattern Pattern) string {
 }
 
 func (g *Generator) generateMethodBody(buf *bytes.Buffer, action *Action, pattern Pattern) {
-	methodName := g.getMethodName(action.Name, "")
-
-	// If this isn't the main pattern, we need to add a suffix
-	if action.MainPath != nil && !patternEquals(*action.MainPath, pattern) {
-		suffix := g.getMethodSuffix(pattern, *action.MainPath)
-		methodName = g.getMethodName(action.Name, suffix)
-	}
-
-	// Generate method signature
-	callbackType := getCallbackSignature(pattern.Type)
-
-	if pattern.NumWildcards > 1 {
-		// For multiple wildcards, we need a struct to hold the parameters
-		structName := g.getPathStructName(pattern)
-		fmt.Fprintf(buf, "func (r *Reaper) %s(path %s, callback %s) error {\n",
-			methodName, structName, callbackType)
-	} else if pattern.NumWildcards == 1 {
-		fmt.Fprintf(buf, "func (r *Reaper) %s(param int64, callback %s) error {\n",
-			methodName, callbackType)
-	} else {
-		fmt.Fprintf(buf, "func (r *Reaper) %s(callback %s) error {\n",
-			methodName, callbackType)
-	}
-
 	// Generate the address string
 	fmt.Fprintf(buf, "\taddr := %q\n", pattern.Path)
 
@@ -565,9 +543,9 @@ func (g *Generator) generateMethodBody(buf *bytes.Buffer, action *Action, patter
 	switch pattern.Type {
 	case "t":
 		bindMethod = "BindTrigger"
-	case "i", "n":
+	case "i":
 		bindMethod = "BindInt"
-	case "f":
+	case "n", "f", "r":
 		bindMethod = "BindFloat"
 	case "s":
 		bindMethod = "BindString"
@@ -576,5 +554,4 @@ func (g *Generator) generateMethodBody(buf *bytes.Buffer, action *Action, patter
 	}
 
 	fmt.Fprintf(buf, "\treturn r.%s(addr, callback)\n", bindMethod)
-	fmt.Fprintf(buf, "}\n\n")
 }

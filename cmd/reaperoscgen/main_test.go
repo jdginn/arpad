@@ -332,7 +332,7 @@ func TestMethodNames(t *testing.T) {
 			patterns: []string{
 				"FX_EQ_NEXT_PRESET s/fxeq/preset+ s/track/@/fxeq/preset+",
 			},
-			wantMethodNames: []string{"BindFxEqNextPreset", "BindFxEqNextPresetTrackFxeqPreset"},
+			wantMethodNames: []string{"BindFxEqNextPreset", "BindFxEqNextPresetTrackFxeqPresetPlus"},
 		},
 	}
 
