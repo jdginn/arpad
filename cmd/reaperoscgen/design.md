@@ -62,6 +62,7 @@ This document describes the design of a Go source code generator that processes 
    - For each action:
      - Store all patterns for extensibility.
      - Associate documentation with the action.
+   - If the action has no valid patterns, skip it.
 
 2. **Group and Filter Patterns for Generation**
 
@@ -83,6 +84,7 @@ This document describes the design of a Go source code generator that processes 
    - Generate `Bind<ActionName>` for the main path.
    - For all other remaining paths, generate `Bind<ActionName><Suffix>`, where `<Suffix>` is the CamelCase of the segments after the main path.
      - Never generate duplicate method names for the same action.
+   - Some action names or path elements may contain `+` or `-`, which should be replaced with `Plus` and `Minus`, respectively
 
 4. **Wildcard Handling**
 
