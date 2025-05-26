@@ -66,16 +66,22 @@ This document describes the design of a Go source code generator that processes 
 2. **Group and Filter Patterns for Generation**
 
    - For each action, group all patterns (across all config lines) by action name.
-   - For each unique OSC path:
-     - If both numeric (n, f, i, b, t, r) and string (s) variants exist for the same base path, only the numeric is kept.
-     - If only string exists for a base path, generate a binding for it.
+
+   **NOTE:** when comparing paths within the same action, we must always compare element-by-element from left to right, ignoring wildcards. It is not sufficient simply to compare path lengths.
+
+   - If there are two patterns that have identical elements other than wildcards, keep only the pattern with the most wildcards.
+   - Note that this requires comparing paths element by element, where wildcards are simply ignored in the comparison.
+   - Sometimes there are multiple patterns that are identical up to some point and then one or more paths add additional elements to the right of that point (e.g., `/track/@/volume` and `/track/@/volume/str`). In this case the following rules apply:
+     - The path which serves as the base of the other paths (i.e. the one that does not append any additional elements) is the "main" path
+     - Ignore paths that append `/str`
+     - Keep the other paths
+
+   **NOTE**: the above rules would not apply in a situation where the only path for an action ends in `/str`. In that case, simply use the path without any modifications, since the above rules only apply if there are multiple paths for an action.
 
 3. **Determine Method Naming**
 
-   - The "main" path for an action is the **shortest** remaining path (by segment count).
-     - Generate `Bind<ActionName>` for the main path.
+   - Generate `Bind<ActionName>` for the main path.
    - For all other remaining paths, generate `Bind<ActionName><Suffix>`, where `<Suffix>` is the CamelCase of the segments after the main path.
-     - If the suffix is `Str` but the binding is not for a string, still use `Str`.
      - Never generate duplicate method names for the same action.
 
 4. **Wildcard Handling**
@@ -97,27 +103,6 @@ This document describes the design of a Go source code generator that processes 
 6. **Emit Output**
    - Write all generated types and methods to a single Go source file.
    - Include a package-level comment noting the file is generated.
-
----
-
-## Rules for Path and Method Selection
-
-1. **Grouping and Filtering**
-
-   - Group all patterns by action name.
-   - For each action, group patterns by their "base path" (the unique OSC address ignoring type and `/str` as a suffix).
-
-2. **String-vs-Numeric**
-
-   - If a numeric (n, f, i, b, t, r) and a string (s) pattern exist for the same base path, **only keep the numeric**.
-   - If only string exists for a base path, generate a binding for it.
-
-3. **Main Path and Suffixes**
-   - The "main" path for an action is the **shortest** kept path (by segment count).
-   - Generate `Bind<ActionName>()` for this main path.
-   - For all other remaining paths, generate `Bind<ActionName><Suffix>()` where `<Suffix>` is the CamelCase of the remaining segments after the main path.
-     - If the suffix is `Str` but the method is not for a string binding, still use the `Str` suffix as a fallback.
-     - Never generate duplicate method names for the same action.
 
 ---
 
