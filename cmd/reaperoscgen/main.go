@@ -289,6 +289,33 @@ func (g *Generator) generateCode() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// sanitizeIdentifier converts a string into a valid Go identifier by:
+// - Converting + to Plus
+// - Converting - to Minus
+// - Converting @ to Param
+// - Converting / to Slash
+// - Converting . to Dot
+// - Ensuring the string starts with a letter
+func (g *Generator) sanitizeIdentifier(s string) string {
+	// Replace special characters with their word equivalents
+	replacer := strings.NewReplacer(
+		"+", "Plus",
+		"-", "Minus",
+		"@", "Param",
+		"/", "Slash",
+		".", "Dot",
+	)
+
+	s = replacer.Replace(s)
+
+	// Ensure it starts with a letter
+	if len(s) > 0 && !unicode.IsLetter(rune(s[0])) {
+		s = "X" + s
+	}
+
+	return s
+}
+
 // generatePathStructs generates structs for paths with multiple wildcards
 func (g *Generator) generatePathStructs(buf *bytes.Buffer) {
 	seenPaths := make(map[string]bool)
@@ -297,6 +324,7 @@ func (g *Generator) generatePathStructs(buf *bytes.Buffer) {
 		for _, pattern := range append([]Pattern{*action.MainPath}, action.ExtraPaths...) {
 			if pattern.NumWildcards > 1 {
 				structName := g.getPathStructName(pattern)
+				structName = g.sanitizeIdentifier(structName)
 				if !seenPaths[structName] {
 					seenPaths[structName] = true
 
@@ -417,7 +445,15 @@ func (g *Generator) getPathStructName(pattern Pattern) string {
 		if elem == "@" {
 			name += "Param"
 		} else if elem != "" {
-			name += strings.Title(elem)
+			// Convert to lowercase first
+			elem = strings.ToLower(elem)
+			// Convert the element to a valid identifier
+			elem = g.sanitizeIdentifier(elem)
+			if len(elem) > 0 {
+				runes := []rune(elem)
+				runes[0] = unicode.ToUpper(runes[0])
+				name += string(runes)
+			}
 		}
 	}
 	return name

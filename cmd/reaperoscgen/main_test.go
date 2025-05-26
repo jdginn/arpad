@@ -6,6 +6,60 @@ import (
 	"testing"
 )
 
+func TestSanitizeIdentifier(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "Plus sign",
+			input: "volume+",
+			want:  "volumePlus",
+		},
+		{
+			name:  "Minus sign",
+			input: "volume-",
+			want:  "volumeMinus",
+		},
+		{
+			name:  "At sign",
+			input: "@",
+			want:  "Param",
+		},
+		{
+			name:  "Multiple special chars",
+			input: "track/@/fx+",
+			want:  "trackSlashParamSlashfxPlus",
+		},
+		{
+			name:  "Starts with number",
+			input: "123test",
+			want:  "X123test",
+		},
+		{
+			name:  "Dots",
+			input: "test.name",
+			want:  "testDotname",
+		},
+		{
+			name:  "Combined case",
+			input: "fx/@/preset+/1",
+			want:  "fxSlashParamSlashpresetPlusSlash1",
+		},
+	}
+
+	g := NewGenerator()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := g.sanitizeIdentifier(tt.input)
+			if got != tt.want {
+				t.Errorf("sanitizeIdentifier(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestPatternParsing(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -148,6 +202,89 @@ func TestPatternFiltering(t *testing.T) {
 
 			if len(action.ExtraPaths) != tt.wantExtraCount {
 				t.Errorf("Test '%s' failed: Extra paths count = %v, want %v", tt.name, len(action.ExtraPaths), tt.wantExtraCount)
+			}
+		})
+	}
+}
+
+func TestPathStructNames(t *testing.T) {
+	tests := []struct {
+		name            string
+		patterns        []string
+		wantStructNames []string
+	}{
+		{
+			name: "Special characters in path",
+			patterns: []string{
+				"FX_PRESET t/track/@/fx/@/preset+",
+			},
+			wantStructNames: []string{"PathTrackParamFxParamPresetPlus"},
+		},
+		{
+			name: "Multiple wildcards with minus",
+			patterns: []string{
+				"SCROLL_X- b/track/@/scroll/@/x/minus",
+			},
+			wantStructNames: []string{"PathTrackParamScrollParamXMinus"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Logf("Running test: %s", tt.name)
+			g := NewGenerator()
+
+			// Add all patterns
+			for _, p := range tt.patterns {
+				if err := g.parseLine(p); err != nil {
+					t.Errorf("Test '%s' failed: Failed to parse pattern: %v", tt.name, err)
+					return
+				}
+			}
+
+			// Process patterns
+			g.processPatterns()
+
+			// Generate code and check struct names
+			code, err := g.generateCode()
+			if err != nil {
+				t.Errorf("Test '%s' failed: Failed to generate code: %v", tt.name, err)
+				return
+			}
+
+			// Find all struct names in generated code
+			structRegex := regexp.MustCompile(`type (Path[a-zA-Z0-9]+) struct`)
+			matches := structRegex.FindAllStringSubmatch(string(code), -1)
+
+			gotStructNames := make(map[string]bool)
+			for _, match := range matches {
+				if len(match) > 1 {
+					gotStructNames[match[1]] = true
+				}
+			}
+
+			// Compare sets of struct names
+			wantStructSet := make(map[string]bool)
+			for _, name := range tt.wantStructNames {
+				wantStructSet[name] = true
+			}
+
+			// Check for missing struct names
+			for wanted := range wantStructSet {
+				if !gotStructNames[wanted] {
+					t.Errorf("Test '%s' failed: Missing struct name: %s", tt.name, wanted)
+				}
+			}
+
+			// Check for unexpected struct names
+			for got := range gotStructNames {
+				if !wantStructSet[got] {
+					t.Errorf("Test '%s' failed: Unexpected struct name: %s", tt.name, got)
+				}
+			}
+
+			if t.Failed() {
+				t.Logf("Generated code:\n%s", string(code))
 			}
 		})
 	}
