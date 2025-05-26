@@ -11,8 +11,8 @@ This document describes the design of a Go source code generator that processes 
 - Parse the REAPER OSC config file and extract all actions, patterns, argument types, wildcards, and documentation.
 - Generate idiomatic Go methods on a `Reaper` struct for binding handlers to each action.
 - Prefer numeric bindings (int/float/bool) over string bindings when multiple pattern types exist for an action.
-- Handle wildcards in OSC paths. If there are multiple wildcards, create `PathXXX` structs containing the full complement.
-- Use appropriate Go types in callbacks, based on the OSC pattern's argument type. No multi-argument handlers are needed for the current REAPER spec.
+- Handle wildcards in OSC paths via parameterized `PathXXX` structs or single parameters when only one wildcard exists.
+- Use appropriate Go types in callbacks, based on the OSC pattern's argument type.
 - Copy and preserve relevant documentation/comments from the config file to generated Go code.
 - Emit a single Go source file containing all bindings.
 - Store all patterns and paths for each action, even if only the "best" is used in the generated API, for future extensibility.
@@ -23,7 +23,7 @@ This document describes the design of a Go source code generator that processes 
 
 - **Config File:**
   - Path is a constant string in the generator source, easily changeable.
-  - Follows REAPER's documented OSC pattern config syntax (see included excerpt).
+  - Follows REAPER's documented OSC pattern config syntax.
   - Each action line is formatted as:  
     `<ACTION_NAME> <type_1>/<osc/path/1> <type_2>/<osc/path/2> ...`
   - Comments and documentation may appear before actions and should be associated with subsequent actions.
@@ -63,67 +63,147 @@ This document describes the design of a Go source code generator that processes 
      - Store all patterns for extensibility.
      - Associate documentation with the action.
 
-2. **Select Patterns for Code Generation**
+2. **Group and Filter Patterns for Generation**
 
-   - For each action, select the "best" pattern according to:
-     1. Prefer numeric (n, f, b, t, r, i) types over string (s).
-     2. If multiple numeric types, prefer in order: `n`, `f`, `i`, `b`, `t`, `r`.
-     3. If only string type exists, use it.
-   - Only generate a binding method for the "best" pattern for now.
+   - For each action, group all patterns (across all config lines) by action name.
+   - For each unique OSC path:
+     - If both numeric (n, f, i, b, t, r) and string (s) variants exist for the same base path, only the numeric is kept.
+     - If only string exists for a base path, generate a binding for it.
 
-3. **Data Modeling**
+3. **Determine Method Naming**
 
-   - For each action:
-     - If the selected pattern includes _multiple_ wildcards (`@`), generate a `PathXXX` struct with one field per wildcard (type `int64`).
-     - Document each struct.
+   - The "main" path for an action is the **shortest** remaining path (by segment count).
+     - Generate `Bind<ActionName>` for the main path.
+   - For all other remaining paths, generate `Bind<ActionName><Suffix>`, where `<Suffix>` is the CamelCase of the segments after the main path.
+     - If the suffix is `Str` but the binding is not for a string, still use `Str`.
+     - Never generate duplicate method names for the same action.
 
-4. **API Method Generation**
+4. **Wildcard Handling**
 
-   - For each action:
+   - If multiple wildcards in a path, generate a `PathXXX` struct.
+   - If exactly one wildcard, use a single int64 parameter.
+   - If no wildcards, the `path` parameter is `nil` or empty struct.
+
+5. **API Method Generation**
+
+   - For each action path:
      - Generate a method:  
-       `func (r *Reaper) Bind<ActionName>(path PathXXX, callback func(<type>) error) error`
-     - Parameters:
-       - `path <type>` if exactly one wildcard; `path PathXXX` if multiple wildcards; otherwise `nil`/empty struct or omit.
-       - `callback func(<type>) error`, where `<type>` is the primitive (int64, float64, bool, string) as needed.
-     - Method body:
-       - Compose the OSC address with wildcards filled in from `path`.
-       - Call the appropriate low-level `BindInt`, `BindFloat`, `BindBool`, or `BindString` method.
+       `func (r *Reaper) Bind<ActionName>[<Suffix>](<wildcard params>, callback func(<type>) error) error`
+       where `<wildcard params>` may be `_`, `int64`, or `PathXXX` as needed.
+     - Compose the OSC address with wildcards filled in from the parameters.
+     - Call the appropriate low-level `BindInt`, `BindFloat`, `BindBool`, or `BindString` method.
      - Add doc-comments above the method, including any relevant config comments.
 
-5. **Emit Output**
+6. **Emit Output**
    - Write all generated types and methods to a single Go source file.
    - Include a package-level comment noting the file is generated.
 
 ---
 
-## Example: Config to API
+## Rules for Path and Method Selection
 
-### Config Line
+1. **Grouping and Filtering**
 
-```plaintext
-# Sets the track volume.
-TRACK_VOLUME n/track/@/volume n/track/volume
+   - Group all patterns by action name.
+   - For each action, group patterns by their "base path" (the unique OSC address ignoring type and `/str` as a suffix).
+
+2. **String-vs-Numeric**
+
+   - If a numeric (n, f, i, b, t, r) and a string (s) pattern exist for the same base path, **only keep the numeric**.
+   - If only string exists for a base path, generate a binding for it.
+
+3. **Main Path and Suffixes**
+   - The "main" path for an action is the **shortest** kept path (by segment count).
+   - Generate `Bind<ActionName>()` for this main path.
+   - For all other remaining paths, generate `Bind<ActionName><Suffix>()` where `<Suffix>` is the CamelCase of the remaining segments after the main path.
+     - If the suffix is `Str` but the method is not for a string binding, still use the `Str` suffix as a fallback.
+     - Never generate duplicate method names for the same action.
+
+---
+
+## Examples
+
+### Example 1: Numeric and String for Same Path
+
+```
+TRACK_VOLUME n/track/volume
+TRACK_VOLUME s/track/volume/str
 ```
 
-### Parsed Representation
-
-- **Action Name:** `TRACK_VOLUME`
-- **Patterns:**
-  - `n/track/@/volume` (numeric, with wildcard)
-  - `n/track/volume` (numeric, no wildcard)
-- **Documentation:** "Sets the track volume."
-
-### Generated Go Code
+**Result:** Only generate
 
 ```go
-// Sets the track volume.
-type PathTrackVolume struct {
-    TrackIdx int64
-}
+func (r *Reaper) BindTrackVolume(callback func(float64) error) error
+```
 
-func (r *Reaper) BindTrackVolume(p PathTrackVolume, callback func(float64) error) error {
-    return r.BindFloat(fmt.Sprintf("/track/%d/volume", p.TrackIdx), callback)
-}
+(No `BindTrackVolumeStr`.)
+
+---
+
+### Example 2: Multiple Numeric Paths
+
+```
+TRACK_VOLUME n/track/volume
+TRACK_VOLUME f/track/volume/db
+```
+
+**Result:** Generate
+
+```go
+func (r *Reaper) BindTrackVolume(callback func(float64) error) error
+func (r *Reaper) BindTrackVolumeDb(callback func(float64) error) error
+```
+
+---
+
+### Example 3: Only String Path
+
+```
+MY_FOOBAR s/foo/bar/str
+```
+
+**Result:** Only generate
+
+```go
+func (r *Reaper) BindMyFoobar(callback func(string) error) error
+```
+
+(No `BindMyFoobarStr`.)
+
+---
+
+### Example 4: Multiple Numeric and String Paths (string only present for one path)
+
+```
+MY_MULTI n/foo/bar
+MY_MULTI s/foo/bar/str
+MY_MULTI f/foo/bar/baz
+```
+
+**Result:** Generate
+
+```go
+func (r *Reaper) BindMyMulti(callback func(float64) error) error // for n/foo/bar
+func (r *Reaper) BindMyMultiBaz(callback func(float64) error) error // for f/foo/bar/baz
+```
+
+(No `BindMyMultiStr`.)
+
+---
+
+### Example 5: Suffix is Multi-Segment
+
+```
+MY_FOO n/foo/bar f/foo/bar/baz f/foo/bar/quz f/foo/bar/howdy/baz
+```
+
+**Result:** Generate
+
+```go
+func (r *Reaper) BindMyFoo(callback func(float64) error) error // for n/foo/bar
+func (r *Reaper) BindMyFooBaz(callback func(float64) error) error // for f/foo/bar/baz
+func (r *Reaper) BindMyFooQuz(callback func(float64) error) error // for f/foo/bar/quz
+func (r *Reaper) BindMyFooHowdyBaz(callback func(float64) error) error // for f/foo/bar/howdy/baz
 ```
 
 ---
@@ -153,7 +233,8 @@ func (r *Reaper) BindTrackVolume(p PathTrackVolume, callback func(float64) error
 - **Generator main function:**
 
   - Parse config file into internal structs (`Action`, `Pattern`, etc.).
-  - For each action, select best pattern, prepare types, generate code.
+  - For each action, group and filter patterns as specified.
+  - Determine method names and generate code.
   - Write to output file.
 
 - **Structs:**
