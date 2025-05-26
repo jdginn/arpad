@@ -327,6 +327,13 @@ func TestMethodNames(t *testing.T) {
 			},
 			wantMethodNames: []string{"BindLastTouchedFxName"},
 		},
+		{
+			name: "Ends with +",
+			patterns: []string{
+				"FX_EQ_NEXT_PRESET s/fxeq/preset+ s/track/@/fxeq/preset+",
+			},
+			wantMethodNames: []string{"BindFxEqNextPreset", "BindFxEqNextPresetTrackFxeqPreset"},
+		},
 	}
 
 	for _, tt := range tests {

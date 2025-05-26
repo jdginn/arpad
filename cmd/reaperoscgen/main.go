@@ -145,6 +145,16 @@ func (g *Generator) filterPatternsForAction(action *Action) {
 		return
 	}
 
+	// First, sort the patterns to ensure deterministic processing
+	sort.Slice(action.Patterns, func(i, j int) bool {
+		// First compare paths
+		if action.Patterns[i].Path != action.Patterns[j].Path {
+			return action.Patterns[i].Path < action.Patterns[j].Path
+		}
+		// If paths are equal, compare types
+		return action.Patterns[i].Type < action.Patterns[j].Type
+	})
+
 	// Group patterns by their base structure (ignoring wildcards)
 	groups := make(map[string][]Pattern)
 	for _, pattern := range action.Patterns {
@@ -152,8 +162,16 @@ func (g *Generator) filterPatternsForAction(action *Action) {
 		groups[key] = append(groups[key], pattern)
 	}
 
+	// Sort the group keys for deterministic processing
+	var keys []string
+	for k := range groups {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
 	// For each group, apply the filtering rules
-	for _, patterns := range groups {
+	for _, key := range keys {
+		patterns := groups[key]
 		// Sort patterns by preference (numeric over string, more wildcards preferred)
 		sort.Slice(patterns, func(i, j int) bool {
 			// Prefer numeric types over string
@@ -161,7 +179,11 @@ func (g *Generator) filterPatternsForAction(action *Action) {
 				return isNumericType(patterns[i].Type)
 			}
 			// For same types, prefer more wildcards
-			return patterns[i].NumWildcards > patterns[j].NumWildcards
+			if patterns[i].NumWildcards != patterns[j].NumWildcards {
+				return patterns[i].NumWildcards > patterns[j].NumWildcards
+			}
+			// If still equal, use path for deterministic ordering
+			return patterns[i].Path < patterns[j].Path
 		})
 
 		// The first pattern after sorting becomes the main pattern for this group
@@ -177,6 +199,11 @@ func (g *Generator) filterPatternsForAction(action *Action) {
 			}
 		}
 	}
+
+	// Sort ExtraPaths for deterministic order
+	sort.Slice(action.ExtraPaths, func(i, j int) bool {
+		return action.ExtraPaths[i].Path < action.ExtraPaths[j].Path
+	})
 }
 
 // isNumericType returns true if the pattern type is numeric
@@ -263,8 +290,9 @@ func (g *Generator) generateCode() ([]byte, error) {
 
 	// Write imports
 	fmt.Fprintf(&buf, "import (\n")
-	fmt.Fprintf(&buf, "\t\"fmt\"\n")
+	// fmt.Fprintf(&buf, "\t\"fmt\"\n")
 	fmt.Fprintf(&buf, "\t\"strconv\"\n")
+	fmt.Fprintf(&buf, "\t\"strings\"\n")
 	fmt.Fprintf(&buf, ")\n\n")
 
 	// Generate path structs for multi-wildcard patterns
@@ -347,6 +375,26 @@ func (g *Generator) generatePathStructs(buf *bytes.Buffer) {
 	}
 }
 
+func getCallbackSignature(patternType string) string {
+	switch patternType {
+	case "t":
+		return "func() error"
+	case "i", "n":
+		return "func(int64) error"
+	case "f":
+		return "func(float64) error"
+	case "r":
+		return "func(float64) error"
+	case "s":
+		return "func(string) error"
+	case "b":
+		return "func(bool) error"
+	default:
+		// This shouldn't happen if we validate pattern types properly
+		panic(fmt.Sprintf("unknown pattern type: %s", patternType))
+	}
+}
+
 // generateBindingMethod generates a single binding method
 func (g *Generator) generateBindingMethod(buf *bytes.Buffer, action *Action, pattern Pattern, suffix string) {
 	// Write documentation
@@ -372,7 +420,7 @@ func (g *Generator) generateBindingMethod(buf *bytes.Buffer, action *Action, pat
 	fmt.Fprintf(buf, "callback func(%s) error) error {\n", g.getCallbackType(pattern))
 
 	// Generate method body
-	g.generateMethodBody(buf, pattern)
+	g.generateMethodBody(buf, action, pattern)
 
 	fmt.Fprintf(buf, "}\n\n")
 }
@@ -414,7 +462,15 @@ func (g *Generator) getMethodSuffix(pattern, mainPattern Pattern) string {
 	for i := 0; i < len(pattern.Elements); i++ {
 		if i >= len(mainPattern.Elements) || pattern.Elements[i] != mainPattern.Elements[i] {
 			if pattern.Elements[i] != "@" {
-				suffix += strings.Title(pattern.Elements[i])
+				// Sanitize each element of the suffix
+				elem := pattern.Elements[i]
+				elem = strings.ToLower(elem)
+				elem = g.sanitizeIdentifier(elem)
+				if len(elem) > 0 {
+					runes := []rune(elem)
+					runes[0] = unicode.ToUpper(runes[0])
+					suffix += string(runes)
+				}
 			}
 		}
 	}
@@ -459,45 +515,66 @@ func (g *Generator) getPathStructName(pattern Pattern) string {
 	return name
 }
 
-// generateMethodBody generates the body of a binding method
-func (g *Generator) generateMethodBody(buf *bytes.Buffer, pattern Pattern) {
-	// Build the OSC address pattern
-	fmt.Fprintf(buf, "\taddr := \"%s\"\n", pattern.Path)
+func (g *Generator) generateMethodBody(buf *bytes.Buffer, action *Action, pattern Pattern) {
+	methodName := g.getMethodName(action.Name, "")
 
+	// If this isn't the main pattern, we need to add a suffix
+	if action.MainPath != nil && !patternEquals(*action.MainPath, pattern) {
+		suffix := g.getMethodSuffix(pattern, *action.MainPath)
+		methodName = g.getMethodName(action.Name, suffix)
+	}
+
+	// Generate method signature
+	callbackType := getCallbackSignature(pattern.Type)
+
+	if pattern.NumWildcards > 1 {
+		// For multiple wildcards, we need a struct to hold the parameters
+		structName := g.getPathStructName(pattern)
+		fmt.Fprintf(buf, "func (r *Reaper) %s(path %s, callback %s) error {\n",
+			methodName, structName, callbackType)
+	} else if pattern.NumWildcards == 1 {
+		fmt.Fprintf(buf, "func (r *Reaper) %s(param int64, callback %s) error {\n",
+			methodName, callbackType)
+	} else {
+		fmt.Fprintf(buf, "func (r *Reaper) %s(callback %s) error {\n",
+			methodName, callbackType)
+	}
+
+	// Generate the address string
+	fmt.Fprintf(buf, "\taddr := %q\n", pattern.Path)
+
+	// Generate parameter substitutions
 	if pattern.NumWildcards > 0 {
-		// Replace wildcards with actual values
-		if pattern.NumWildcards == 1 {
-			fmt.Fprintf(buf, "\taddr = strings.Replace(addr, \"@\", strconv.FormatInt(param, 10), 1)\n")
-		} else {
-			fmt.Fprintf(buf, "\taddr = addr\n")
-			wildcardCount := 0
-			for _, elem := range pattern.Elements {
-				if elem == "@" {
-					wildcardCount++
-					fmt.Fprintf(buf, "\taddr = strings.Replace(addr, \"@\", strconv.FormatInt(path.Param%d, 10), 1)\n", wildcardCount)
+		paramNum := 1
+		for _, elem := range pattern.Elements {
+			if elem == "@" {
+				var paramValue string
+				if pattern.NumWildcards > 1 {
+					paramValue = fmt.Sprintf("path.Param%d", paramNum)
+				} else {
+					paramValue = "param"
 				}
+				fmt.Fprintf(buf, "\taddr = strings.Replace(addr, \"@\", strconv.FormatInt(%s, 10), 1)\n", paramValue)
+				paramNum++
 			}
 		}
 	}
 
-	// Call the appropriate binding method based on type
-	bindMethod := ""
+	// Generate the binding call
+	var bindMethod string
 	switch pattern.Type {
-	case "n", "f":
-		bindMethod = "BindFloat"
-	case "i":
-		bindMethod = "BindInt"
-	case "b":
-		bindMethod = "BindBool"
-	case "s":
-		bindMethod = "BindString"
 	case "t":
 		bindMethod = "BindTrigger"
-	case "r":
-		bindMethod = "BindRotary"
-	default:
-		bindMethod = "BindGeneric"
+	case "i", "n":
+		bindMethod = "BindInt"
+	case "f":
+		bindMethod = "BindFloat"
+	case "s":
+		bindMethod = "BindString"
+	case "b":
+		bindMethod = "BindBool"
 	}
 
 	fmt.Fprintf(buf, "\treturn r.%s(addr, callback)\n", bindMethod)
+	fmt.Fprintf(buf, "}\n\n")
 }
