@@ -1,6 +1,7 @@
 package main
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -147,6 +148,106 @@ func TestPatternFiltering(t *testing.T) {
 
 			if len(action.ExtraPaths) != tt.wantExtraCount {
 				t.Errorf("Test '%s' failed: Extra paths count = %v, want %v", tt.name, len(action.ExtraPaths), tt.wantExtraCount)
+			}
+		})
+	}
+}
+
+func TestMethodNames(t *testing.T) {
+	tests := []struct {
+		name            string
+		patterns        []string
+		wantMethodNames []string
+	}{
+		{
+			name: "Test suffixes",
+			patterns: []string{
+				"TEST n/test/path",
+				"TEST n/test/path/suffix",
+			},
+			wantMethodNames: []string{"BindTest", "BindTestSuffix"},
+		},
+		{
+			name: "Track volume patterns",
+			patterns: []string{
+				"TRACK_VOLUME n/track/@/volume",
+				"TRACK_VOLUME f/track/@/volume/db",
+			},
+			wantMethodNames: []string{"BindTrackVolume", "BindTrackVolumeDb"},
+		},
+		{
+			name: "Special characters",
+			patterns: []string{
+				"SCROLL_X+ n/scroll/x/plus",
+				"SCROLL_X- n/scroll/x/minus",
+			},
+			wantMethodNames: []string{"BindScrollXPlus", "BindScrollXMinus"},
+		},
+		{
+			name: "Multiple words with underscore",
+			patterns: []string{
+				"LAST_TOUCHED_FX_NAME s/fx/last_touched/name",
+			},
+			wantMethodNames: []string{"BindLastTouchedFxName"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Logf("Running test: %s", tt.name)
+			g := NewGenerator()
+
+			// Add all patterns
+			for _, p := range tt.patterns {
+				if err := g.parseLine(p); err != nil {
+					t.Errorf("Test '%s' failed: Failed to parse pattern: %v", tt.name, err)
+					return
+				}
+			}
+
+			// Process patterns
+			g.processPatterns()
+
+			// Generate code and extract method names
+			code, err := g.generateCode()
+			if err != nil {
+				t.Errorf("Test '%s' failed: Failed to generate code: %v", tt.name, err)
+				return
+			}
+
+			// Find all method names in generated code
+			methodRegex := regexp.MustCompile(`func \(r \*Reaper\) (Bind[a-zA-Z0-9]+)`)
+			matches := methodRegex.FindAllStringSubmatch(string(code), -1)
+
+			gotMethodNames := make(map[string]bool)
+			for _, match := range matches {
+				if len(match) > 1 {
+					gotMethodNames[match[1]] = true
+				}
+			}
+
+			// Compare sets of method names
+			wantMethodSet := make(map[string]bool)
+			for _, name := range tt.wantMethodNames {
+				wantMethodSet[name] = true
+			}
+
+			// Check for missing method names
+			for wanted := range wantMethodSet {
+				if !gotMethodNames[wanted] {
+					t.Errorf("Test '%s' failed: Missing method name: %s", tt.name, wanted)
+				}
+			}
+
+			// Check for unexpected method names
+			for got := range gotMethodNames {
+				if !wantMethodSet[got] {
+					t.Errorf("Test '%s' failed: Unexpected method name: %s", tt.name, got)
+				}
+			}
+
+			if t.Failed() {
+				t.Logf("Generated code:\n%s", string(code))
 			}
 		})
 	}

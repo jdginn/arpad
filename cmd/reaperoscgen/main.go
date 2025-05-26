@@ -9,6 +9,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"unicode"
 )
 
 // Constants for the generator
@@ -350,9 +351,26 @@ func (g *Generator) generateBindingMethod(buf *bytes.Buffer, action *Action, pat
 
 // getMethodName generates the method name for a pattern
 func (g *Generator) getMethodName(actionName, suffix string) string {
-	name := "Bind" + strings.ReplaceAll(actionName, "_", "")
-	name = strings.ReplaceAll(name, "+", "Plus")
-	name = strings.ReplaceAll(name, "-", "Minus")
+	name := "Bind"
+
+	// Split by underscore and capitalize each part
+	parts := strings.Split(actionName, "_")
+	for _, part := range parts {
+		// Convert to lowercase first, then capitalize first letter
+		part = strings.ToLower(part)
+
+		// Handle special characters
+		part = strings.ReplaceAll(part, "+", "Plus")
+		part = strings.ReplaceAll(part, "-", "Minus")
+
+		// Capitalize first letter of each part
+		if len(part) > 0 {
+			runes := []rune(part)
+			runes[0] = unicode.ToUpper(runes[0])
+			name += string(runes)
+		}
+	}
+
 	return name + suffix
 }
 
