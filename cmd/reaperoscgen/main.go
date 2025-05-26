@@ -145,19 +145,50 @@ func (g *Generator) filterPatternsForAction(action *Action) {
 		return
 	}
 
-	// First, sort the patterns to ensure deterministic processing
-	sort.Slice(action.Patterns, func(i, j int) bool {
-		// First compare paths
-		if action.Patterns[i].Path != action.Patterns[j].Path {
-			return action.Patterns[i].Path < action.Patterns[j].Path
+	// First group patterns by their base path (ignoring trailing /@)
+	baseGroups := make(map[string][]Pattern)
+	for _, pattern := range action.Patterns {
+		basePath := pattern.Path
+		if strings.HasSuffix(basePath, "/@") {
+			basePath = strings.TrimSuffix(basePath, "/@")
 		}
-		// If paths are equal, compare types
-		return action.Patterns[i].Type < action.Patterns[j].Type
+		baseGroups[basePath] = append(baseGroups[basePath], pattern)
+	}
+
+	// For each base path group, select the preferred pattern
+	var selectedPatterns []Pattern
+	for _, patterns := range baseGroups {
+		// Sort patterns within each group
+		sort.Slice(patterns, func(i, j int) bool {
+			// Prefer patterns ending with /@ over their base counterparts
+			iHasWildcard := strings.HasSuffix(patterns[i].Path, "/@")
+			jHasWildcard := strings.HasSuffix(patterns[j].Path, "/@")
+			if iHasWildcard != jHasWildcard {
+				return iHasWildcard
+			}
+			// If neither or both have wildcards, prefer numeric types
+			if isNumericType(patterns[i].Type) != isNumericType(patterns[j].Type) {
+				return isNumericType(patterns[i].Type)
+			}
+			// If types are same category, use path for deterministic ordering
+			return patterns[i].Path < patterns[j].Path
+		})
+
+		// Take only the first (most preferred) pattern from each group
+		selectedPatterns = append(selectedPatterns, patterns[0])
+	}
+
+	// Now process the selected patterns as before
+	sort.Slice(selectedPatterns, func(i, j int) bool {
+		return selectedPatterns[i].Path < selectedPatterns[j].Path
 	})
 
-	// Group patterns by their base structure (ignoring wildcards)
+	// Clear existing patterns and store only selected ones
+	action.Patterns = selectedPatterns
+
+	// Group patterns by their normalized structure for main/extra path selection
 	groups := make(map[string][]Pattern)
-	for _, pattern := range action.Patterns {
+	for _, pattern := range selectedPatterns {
 		key := getPatternBaseKey(pattern)
 		groups[key] = append(groups[key], pattern)
 	}
@@ -169,24 +200,9 @@ func (g *Generator) filterPatternsForAction(action *Action) {
 	}
 	sort.Strings(keys)
 
-	// For each group, apply the filtering rules
+	// Select main path and extra paths
 	for _, key := range keys {
 		patterns := groups[key]
-		// Sort patterns by preference (numeric over string, more wildcards preferred)
-		sort.Slice(patterns, func(i, j int) bool {
-			// Prefer numeric types over string
-			if isNumericType(patterns[i].Type) != isNumericType(patterns[j].Type) {
-				return isNumericType(patterns[i].Type)
-			}
-			// For same types, prefer more wildcards
-			if patterns[i].NumWildcards != patterns[j].NumWildcards {
-				return patterns[i].NumWildcards > patterns[j].NumWildcards
-			}
-			// If still equal, use path for deterministic ordering
-			return patterns[i].Path < patterns[j].Path
-		})
-
-		// The first pattern after sorting becomes the main pattern for this group
 		if action.MainPath == nil {
 			mainPattern := patterns[0]
 			action.MainPath = &mainPattern
