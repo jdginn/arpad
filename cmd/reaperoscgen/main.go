@@ -2,863 +2,448 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"go/format"
+	"log"
 	"os"
-	"regexp"
 	"sort"
 	"strings"
-	"text/template"
 )
 
-// Path to the REAPER OSC config file.
-const ConfigPath = "./config/reaper_osc_config.txt"
+// Constants for the generator
+const (
+	inputConfigPath  = "./config/reaper_osc_config.txt"              // Default input config file
+	outputSourcePath = "../../devices/reaper/reaper_bindings_gen.go" // Default output Go file
+	packageName      = "reaper"                                      // Package name for generated code
+)
 
-// Output file for generated code.
-const OutputFile = "../../devices/reaper/reaper_bindings_gen.go"
-
-// PatternType ranking for preference (lower is better)
-var patternTypeRank = map[string]int{
-	"n": 1, // normalized float64
-	"f": 2, // float64
-	"i": 3, // int64
-	"b": 4, // bool
-	"t": 5, // bool (toggle)
-	"r": 6, // float64 (rotary)
-	"s": 9, // string (lowest)
+var validPatternTypes = map[string]bool{
+	"n": true, // normalized float
+	"f": true, // raw float
+	"b": true, // binary
+	"t": true, // trigger
+	"r": true, // rotary
+	"s": true, // string
+	"i": true, // integer
 }
 
-// Action represents a single OSC action from the config file.
-type Action struct {
-	Name     string
-	DocLines []string
-	Patterns []Pattern // all patterns, including filtered ones
-}
-
-// Pattern represents a single OSC pattern (type/path).
+// Pattern represents a single OSC pattern with its type and path
 type Pattern struct {
-	ArgType   string   // n, f, i, b, t, r, s
-	Path      string   // /osc/path/@/etc
-	Wildcards []string // List of wildcard placeholder names (e.g. TrackIdx)
-	Raw       string   // original type/path string (for reference)
-	Doc       []string // doc lines associated with this pattern, if any
+	Type         string   // n, f, b, t, r, s, i
+	Path         string   // The OSC path pattern
+	HasStr       bool     // Whether this pattern ends with /str
+	Elements     []string // Path elements split by /
+	NumWildcards int      // Number of @ wildcards in the path
 }
 
-type groupedPattern struct {
-	// The "base path" is the OSC path with no type, and with "/str" stripped if present at the end.
-	BaseSegments []string
-	OrigSegments []string
-	Patterns     []Pattern
-	Best         *Pattern // selected for output
+// Action represents a REAPER action with its patterns and documentation
+type Action struct {
+	Name       string
+	Patterns   []Pattern
+	Doc        []string
+	MainPath   *Pattern  // The "main" pattern after filtering
+	ExtraPaths []Pattern // Additional patterns that need their own methods
 }
 
-// parseConfig parses the config file and returns a slice of Actions.
-func parseConfig(path string) ([]*Action, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	var actions []*Action
-	var currDoc []string
-	actionRE := regexp.MustCompile(`^([A-Z0-9_\-\+]+)\s+(.+)$`)
-	// Pattern: type/path (e.g. n/track/@/volume)
-	patternRE := regexp.MustCompile(`([nfbtris])\/([^ ]+)`)
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		if strings.HasPrefix(line, "#") {
-			currDoc = append(currDoc, strings.TrimPrefix(line, "# "))
-			continue
-		}
-		m := actionRE.FindStringSubmatch(line)
-		if m == nil {
-			currDoc = nil // clear doc if line is not an action
-			continue
-		}
-		actionName := m[1]
-		patterns := []Pattern{}
-		for _, match := range patternRE.FindAllStringSubmatch(m[2], -1) {
-			typ := match[1]
-			path := match[2]
-			wildcards := getWildcards(path)
-			patterns = append(patterns, Pattern{
-				ArgType:   typ,
-				Path:      "/" + path,
-				Wildcards: wildcards,
-				Raw:       fmt.Sprintf("%s/%s", typ, path),
-				Doc:       currDoc,
-			})
-		}
-		// Only keep actions with at least one valid OSC path pattern.
-		if len(patterns) > 0 {
-			actions = append(actions, &Action{
-				Name:     actionName,
-				DocLines: currDoc,
-				Patterns: patterns,
-			})
-		}
-		currDoc = nil
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-	return actions, nil
+// Generator holds the state for generating code
+type Generator struct {
+	actions    map[string]*Action
+	currentDoc []string
 }
 
-// getWildcards returns a slice of wildcard names for the given OSC path string.
-func getWildcards(path string) []string {
-	// For each "@", generate a name based on the preceding segment.
-	var wildcards []string
-	parts := strings.Split(path, "/")
-	for i, part := range parts {
-		if part == "@" {
-			// Use the previous segment as the base name, capitalize, add "Idx"
-			base := "Idx"
-			if i > 0 {
-				base = toCamel(parts[i-1]) + "Idx"
-			}
-			wildcards = append(wildcards, base)
-		}
-	}
-	return wildcards
-}
-
-// toCamel converts a snake_case or ALL_CAPS string to CamelCase.
-func toCamel(s string) string {
-	if s == "" {
-		return ""
-	}
-	// Replace + and - with Plus and Minus for Go identifier safety
-	s = strings.ReplaceAll(s, "+", "Plus")
-	s = strings.ReplaceAll(s, "-", "Minus")
-	// // First, handle ALL_CAPS (e.g. MASTER_VOLUME -> MasterVolume)
-	// if strings.ToUpper(s) == s {
-	// 	parts := strings.Split(s, "_")
-	// 	for i := range parts {
-	// 		if len(parts[i]) > 0 {
-	// 			parts[i] = strings.ToUpper(parts[i][:1]) + strings.ToLower(parts[i][1:])
-	// 		}
-	// 	}
-	// 	return strings.Join(parts, "")
-	// }
-	parts := strings.Split(s, "_")
-	for i := range parts {
-		if len(parts[i]) > 0 {
-			// parts[i] = strings.ToUpper(parts[i][:1]) + parts[i][1:]
-			parts[i] = strings.ToUpper(parts[i][:1]) + strings.ToLower(parts[i][1:])
-		}
-	}
-	return strings.Join(parts, "")
-}
-
-// argTypeToGo maps a pattern arg type to a Go type and the bind method to use.
-func argTypeToGo(argType string) (goType, bindFunc string) {
-	switch argType {
-	case "n", "f", "r":
-		return "float64", "BindFloat"
-	case "i":
-		return "int64", "BindInt"
-	case "b", "t":
-		return "bool", "BindBool"
-	case "s":
-		return "string", "BindString"
-	default:
-		return "interface{}", "BindUnknown"
+// Create a new Generator
+func NewGenerator() *Generator {
+	return &Generator{
+		actions: make(map[string]*Action),
 	}
 }
 
-// getSingleWildcardType returns the Go type for a single wildcard argument (always int64).
-func getSingleWildcardType() string {
-	return "int64"
+// AddPattern adds a pattern to an action
+func (g *Generator) AddPattern(actionName, patternType, path string) {
+	action, exists := g.actions[actionName]
+	if !exists {
+		action = &Action{
+			Name:     actionName,
+			Doc:      append([]string{}, g.currentDoc...),
+			Patterns: make([]Pattern, 0),
+		}
+		g.actions[actionName] = action
+		g.currentDoc = nil // Clear current doc after associating with action
+	}
+
+	elements := strings.Split(path, "/")
+	numWildcards := strings.Count(path, "@")
+
+	pattern := Pattern{
+		Type:         patternType,
+		Path:         path,
+		HasStr:       strings.HasSuffix(path, "/str"),
+		Elements:     elements,
+		NumWildcards: numWildcards,
+	}
+
+	action.Patterns = append(action.Patterns, pattern)
 }
 
-// groupAndFilterPatterns applies the grouping/filtering/naming rules and returns an ordered list of output methods for this action.
-func groupAndFilterPatterns(act *Action) []struct {
-	MethodName     string
-	Pattern        Pattern
-	PathParam      string
-	PathStructDecl string
-	AddrExpr       string
-	Doc            string
-} {
-	// Step 1: Group all patterns by their base path (strip trailing "/str" for s-type if numeric present)
-	type basePathKey struct {
-		segments []string
-	}
-	groupMap := map[string]*groupedPattern{}
+// AddDoc adds documentation lines for the next action
+func (g *Generator) AddDoc(line string) {
+	g.currentDoc = append(g.currentDoc, line)
+}
 
-	for _, pat := range act.Patterns {
-		// Remove leading slash and split into segments
-		segments := strings.Split(strings.TrimPrefix(pat.Path, "/"), "/")
-		baseSegments := segments
-		// If the last segment is "str", remove it for grouping
-		if len(segments) > 0 && segments[len(segments)-1] == "str" {
-			baseSegments = segments[:len(segments)-1]
-		}
-		baseKey := strings.Join(baseSegments, "/")
-		g, ok := groupMap[baseKey]
-		if !ok {
-			g = &groupedPattern{
-				BaseSegments: baseSegments,
-				OrigSegments: segments,
-			}
-			groupMap[baseKey] = g
-		}
-		g.Patterns = append(g.Patterns, pat)
-	}
+// parseLine parses a single line from the config file
+func (g *Generator) parseLine(line string) error {
+	line = strings.TrimSpace(line)
 
-	// Step 2: For each group, select preferred pattern (numeric > string)
-	filteredGroups := []*groupedPattern{}
-	for _, g := range groupMap {
-		bestIdx := -1
-		bestRank := 99
-		for i, pat := range g.Patterns {
-			rank := patternTypeRank[pat.ArgType]
-			if rank < bestRank {
-				bestRank = rank
-				bestIdx = i
-			}
+	// Skip empty lines and comments
+	if line == "" || line[0] == '#' {
+		if line != "" && line[0] == '#' {
+			g.AddDoc(line[1:]) // Store comments as documentation
 		}
-		if bestIdx < 0 {
-			continue
-		}
-		pat := g.Patterns[bestIdx]
-		g.Best = &pat
-		filteredGroups = append(filteredGroups, g)
-	}
-
-	if len(filteredGroups) == 0 {
 		return nil
 	}
 
-	// Step 3: Sort groups by base path length (main path is shortest)
-	sort.Slice(filteredGroups, func(i, j int) bool {
-		a, b := filteredGroups[i], filteredGroups[j]
-		if len(a.BaseSegments) != len(b.BaseSegments) {
-			return len(a.BaseSegments) < len(b.BaseSegments)
-		}
-		return strings.Join(a.BaseSegments, "/") < strings.Join(b.BaseSegments, "/")
-	})
-
-	// Step 4: Determine method names and parameters
-	mainSegments := filteredGroups[0].BaseSegments
-	result := []struct {
-		MethodName     string
-		Pattern        Pattern
-		PathParam      string
-		PathStructDecl string
-		AddrExpr       string
-		Doc            string
-	}{}
-
-	methodNames := map[string]struct{}{}
-
-	for idx, g := range filteredGroups {
-		pat := *g.Best
-		// Suffix logic
-		var methodName string
-		if idx == 0 {
-			methodName = "Bind" + toCamel(act.Name)
-		} else {
-			// Suffix is the segments after mainSegments
-			suffixSegments := g.BaseSegments[len(mainSegments):]
-			if len(suffixSegments) == 0 {
-				// Should not happen, but fall back to ArgType
-				suffixSegments = []string{pat.ArgType}
-			}
-			var filteredSuffixSegments []string
-			for _, seg := range suffixSegments {
-				if seg != "@" {
-					filteredSuffixSegments = append(filteredSuffixSegments, seg)
-				}
-			}
-			// If suffix is "str" and not a string pattern, keep Str per safety rule
-			suffix := ""
-			for _, seg := range filteredSuffixSegments {
-				suffix += toCamel(seg)
-			}
-			methodName = "Bind" + toCamel(act.Name) + suffix
-		}
-		// If a method with this name already exists, append ArgType to avoid collision
-		originalMethodName := methodName
-		for i := 2; ; i++ {
-			if _, exists := methodNames[methodName]; !exists {
-				break
-			}
-			methodName = fmt.Sprintf("%s%d", originalMethodName, i)
-		}
-		methodNames[methodName] = struct{}{}
-
-		// Path param handling (single wildcard: int64, multiple: struct, none: none)
-		var pathParam, pathStructDecl, addrExpr string
-		wilds := pat.Wildcards
-		if len(wilds) > 1 {
-			pathStructName := "Path" + toCamel(act.Name)
-			pathParam = "p " + pathStructName
-			// Generate struct decl once
-			if idx == 0 {
-				var fields []string
-				for _, w := range wilds {
-					fields = append(fields, fmt.Sprintf("\t%s int64", w))
-				}
-				doc := ""
-				if len(pat.Doc) > 0 {
-					doc = "// " + strings.Join(pat.Doc, "\n// ") + "\n"
-				}
-				pathStructDecl = fmt.Sprintf("%stype %s struct {\n%s\n}\n", doc, pathStructName, strings.Join(fields, "\n"))
-			}
-			// Address with struct fields
-			segments := strings.Split(strings.TrimPrefix(pat.Path, "/"), "/")
-			var fmtSegments []string
-			var args []string
-			wildIdx := 0
-			for _, seg := range segments {
-				if seg == "@" {
-					fmtSegments = append(fmtSegments, "%d")
-					args = append(args, fmt.Sprintf("p.%s", wilds[wildIdx]))
-					wildIdx++
-				} else {
-					fmtSegments = append(fmtSegments, seg)
-				}
-			}
-			formatStr := "\"" + "/" + strings.Join(fmtSegments, "/") + "\""
-			addrExpr = fmt.Sprintf("fmt.Sprintf(%s, %s)", formatStr, strings.Join(args, ", "))
-		} else if len(wilds) == 1 {
-			wildName := wilds[0]
-			paramName := strings.ToLower(wildName[:1]) + wildName[1:]
-			pathParam = fmt.Sprintf("%s int64", paramName)
-			segments := strings.Split(strings.TrimPrefix(pat.Path, "/"), "/")
-			var fmtSegments []string
-			for _, seg := range segments {
-				if seg == "@" {
-					fmtSegments = append(fmtSegments, "%d")
-				} else {
-					fmtSegments = append(fmtSegments, seg)
-				}
-			}
-			formatStr := "\"" + "/" + strings.Join(fmtSegments, "/") + "\""
-			addrExpr = fmt.Sprintf("fmt.Sprintf(%s, %s)", formatStr, paramName)
-		} else {
-			addrExpr = fmt.Sprintf("\"%s\"", pat.Path)
-		}
-		doc := ""
-		if len(pat.Doc) > 0 {
-			doc = strings.Join(pat.Doc, "\n// ")
-		}
-		result = append(result, struct {
-			MethodName     string
-			Pattern        Pattern
-			PathParam      string
-			PathStructDecl string
-			AddrExpr       string
-			Doc            string
-		}{
-			MethodName:     methodName,
-			Pattern:        pat,
-			PathParam:      pathParam,
-			PathStructDecl: pathStructDecl,
-			AddrExpr:       addrExpr,
-			Doc:            doc,
-		})
+	// Split the line into tokens
+	fields := strings.Fields(line)
+	if len(fields) < 2 {
+		return fmt.Errorf("invalid line format: %s", line)
 	}
-	return result
+
+	actionName := fields[0]
+
+	// Process each pattern in the line
+	for _, pattern := range fields[1:] {
+		parts := strings.SplitN(pattern, "/", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid pattern format: %s", pattern)
+		}
+
+		patternType := parts[0]
+		if !validPatternTypes[patternType] {
+			return fmt.Errorf("invalid pattern type: %s", patternType)
+		}
+
+		path := "/" + parts[1]
+
+		g.AddPattern(actionName, patternType, path)
+	}
+
+	return nil
+}
+
+// processPatterns processes all patterns according to the rules in the spec
+func (g *Generator) processPatterns() {
+	for _, action := range g.actions {
+		g.filterPatternsForAction(action)
+	}
+}
+
+// filterPatternsForAction implements the pattern filtering rules from the spec
+func (g *Generator) filterPatternsForAction(action *Action) {
+	if len(action.Patterns) == 0 {
+		return
+	}
+
+	// Group patterns by their base structure (ignoring wildcards)
+	groups := make(map[string][]Pattern)
+	for _, pattern := range action.Patterns {
+		key := getPatternBaseKey(pattern)
+		groups[key] = append(groups[key], pattern)
+	}
+
+	// For each group, apply the filtering rules
+	for _, patterns := range groups {
+		// Sort patterns by preference (numeric over string, more wildcards preferred)
+		sort.Slice(patterns, func(i, j int) bool {
+			// Prefer numeric types over string
+			if isNumericType(patterns[i].Type) != isNumericType(patterns[j].Type) {
+				return isNumericType(patterns[i].Type)
+			}
+			// For same types, prefer more wildcards
+			return patterns[i].NumWildcards > patterns[j].NumWildcards
+		})
+
+		// The first pattern after sorting becomes the main pattern for this group
+		if action.MainPath == nil {
+			mainPattern := patterns[0]
+			action.MainPath = &mainPattern
+		} else {
+			// Add as extra path if it doesn't end in /str
+			for _, p := range patterns {
+				if !p.HasStr && !patternEquals(*action.MainPath, p) {
+					action.ExtraPaths = append(action.ExtraPaths, p)
+				}
+			}
+		}
+	}
+}
+
+// isNumericType returns true if the pattern type is numeric
+func isNumericType(t string) bool {
+	switch t {
+	case "n", "f", "i":
+		return true
+	default:
+		return false
+	}
+}
+
+// getPatternBaseKey returns a key for grouping similar patterns
+func getPatternBaseKey(p Pattern) string {
+	// Replace wildcards with placeholder for comparison
+	normalized := strings.ReplaceAll(p.Path, "@", "_WILD_")
+	return normalized
+}
+
+// patternEquals compares two patterns for equality
+func patternEquals(a, b Pattern) bool {
+	if len(a.Elements) != len(b.Elements) {
+		return false
+	}
+	for i := range a.Elements {
+		if a.Elements[i] != b.Elements[i] &&
+			a.Elements[i] != "@" && b.Elements[i] != "@" {
+			return false
+		}
+	}
+	return true
 }
 
 func main() {
-	actions, err := parseConfig(ConfigPath)
+	g := NewGenerator()
+
+	// Read and parse the input file
+	file, err := os.Open(inputConfigPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing config: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Generate code.
-	if err := generateBindings(actions, OutputFile); err != nil {
-		fmt.Fprintf(os.Stderr, "Error generating: %v\n", err)
-		os.Exit(1)
-	}package main
-
-import (
-	"bufio"
-	"fmt"
-	"os"
-	"regexp"
-	"sort"
-	"strings"
-	"text/template"
-)
-
-// Path to the REAPER OSC config file.
-const ConfigPath = "reaper_osc_config.txt" // TODO: set to your actual config path
-
-// Output file for generated code.
-const OutputFile = "reaper_bindings_gen.go"
-
-// PatternType ranking for preference (lower is better)
-var patternTypeRank = map[string]int{
-	"n": 1, // normalized float64
-	"f": 2, // float64
-	"i": 3, // int64
-	"b": 4, // bool
-	"t": 5, // bool (toggle)
-	"r": 6, // float64 (rotary)
-	"s": 9, // string (lowest)
-}
-
-// Action represents a single OSC action from the config file.
-type Action struct {
-	Name      string
-	DocLines  []string
-	Patterns  []Pattern // all patterns, including filtered ones
-}
-
-// Pattern represents a single OSC pattern (type/path).
-type Pattern struct {
-	ArgType    string   // n, f, i, b, t, r, s
-	Path       string   // /osc/path/@/etc
-	Wildcards  []string // List of wildcard placeholder names (e.g. TrackIdx)
-	Raw        string   // original type/path string (for reference)
-	Doc        []string // doc lines associated with this pattern, if any
-}
-
-type groupedPattern struct {
-	// The "base path" is the OSC path with no type, and with "/str" stripped if present at the end.
-	BaseSegments []string
-	OrigSegments []string
-	Patterns     []Pattern
-	Best         *Pattern // selected for output
-}
-
-// parseConfig parses the config file and returns a slice of Actions.
-func parseConfig(path string) ([]*Action, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
+		log.Fatalf("Failed to open input file: %v", err)
 	}
 	defer file.Close()
 
-	var actions []*Action
-	var currDoc []string
-	actionRE := regexp.MustCompile(`^([A-Z0-9_]+)\s+(.+)$`)
-	// Pattern: type/path (e.g. n/track/@/volume)
-	patternRE := regexp.MustCompile(`([nfbtris])\/([^ ]+)`)
-
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		line := scanner.Text()
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
+		if err := g.parseLine(scanner.Text()); err != nil {
+			log.Printf("Warning: %v", err)
 		}
-		if strings.HasPrefix(line, "#") {
-			currDoc = append(currDoc, strings.TrimPrefix(line, "# "))
-			continue
-		}
-		m := actionRE.FindStringSubmatch(line)
-		if m == nil {
-			currDoc = nil // clear doc if line is not an action
-			continue
-		}
-		actionName := m[1]
-		patterns := []Pattern{}
-		for _, match := range patternRE.FindAllStringSubmatch(m[2], -1) {
-			typ := match[1]
-			path := match[2]
-			wildcards := getWildcards(path)
-			patterns = append(patterns, Pattern{
-				ArgType:   typ,
-				Path:      "/" + path,
-				Wildcards: wildcards,
-				Raw:       fmt.Sprintf("%s/%s", typ, path),
-				Doc:       currDoc,
-			})
-		}
-		actions = append(actions, &Action{
-			Name:     actionName,
-			DocLines: currDoc,
-			Patterns: patterns,
-		})
-		currDoc = nil
 	}
+
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		log.Fatalf("Error reading input file: %v", err)
 	}
-	return actions, nil
+
+	// Process patterns according to rules
+	g.processPatterns()
+
+	// Generate code
+	code, err := g.generateCode()
+	if err != nil {
+		log.Fatalf("Error generating code: %v", err)
+	}
+
+	// Format the generated code
+	formatted, err := format.Source(code)
+	if err != nil {
+		log.Printf("Warning: failed to format code: %v", err)
+		formatted = code // Use unformatted code
+	}
+
+	// Write the output file
+	if err := os.WriteFile(outputSourcePath, formatted, 0644); err != nil {
+		log.Fatalf("Error writing output file: %v", err)
+	}
 }
 
-// getWildcards returns a slice of wildcard names for the given OSC path string.
-func getWildcards(path string) []string {
-	// For each "@", generate a name based on the preceding segment.
-	var wildcards []string
-	parts := strings.Split(path, "/")
-	for i, part := range parts {
-		if part == "@" {
-			// Use the previous segment as the base name, capitalize, add "Idx"
-			base := "Idx"
-			if i > 0 {
-				base = toCamel(parts[i-1]) + "Idx"
+// generateCode generates the Go source code
+func (g *Generator) generateCode() ([]byte, error) {
+	var buf bytes.Buffer
+
+	// Write package header
+	fmt.Fprintf(&buf, "// Code generated by reaperoscgen. DO NOT EDIT.\n\n")
+	fmt.Fprintf(&buf, "package %s\n\n", packageName)
+
+	// Write imports
+	fmt.Fprintf(&buf, "import (\n")
+	fmt.Fprintf(&buf, "\t\"fmt\"\n")
+	fmt.Fprintf(&buf, "\t\"strconv\"\n")
+	fmt.Fprintf(&buf, ")\n\n")
+
+	// Generate path structs for multi-wildcard patterns
+	g.generatePathStructs(&buf)
+
+	// Generate binding methods
+	for _, action := range g.actions {
+		if action.MainPath == nil {
+			continue // Skip actions with no valid patterns
+		}
+
+		// Generate the main binding method
+		g.generateBindingMethod(&buf, action, *action.MainPath, "")
+
+		// Generate methods for extra paths
+		for _, pattern := range action.ExtraPaths {
+			suffix := g.getMethodSuffix(pattern, *action.MainPath)
+			g.generateBindingMethod(&buf, action, pattern, suffix)
+		}
+	}
+
+	return buf.Bytes(), nil
+}
+
+// generatePathStructs generates structs for paths with multiple wildcards
+func (g *Generator) generatePathStructs(buf *bytes.Buffer) {
+	seenPaths := make(map[string]bool)
+
+	for _, action := range g.actions {
+		for _, pattern := range append([]Pattern{*action.MainPath}, action.ExtraPaths...) {
+			if pattern.NumWildcards > 1 {
+				structName := g.getPathStructName(pattern)
+				if !seenPaths[structName] {
+					seenPaths[structName] = true
+
+					fmt.Fprintf(buf, "// %s represents the path parameters for %s\n", structName, pattern.Path)
+					fmt.Fprintf(buf, "type %s struct {\n", structName)
+
+					// Add fields for each wildcard
+					wildcardCount := 0
+					for _, elem := range pattern.Elements {
+						if elem == "@" {
+							wildcardCount++
+							fmt.Fprintf(buf, "\tParam%d int64\n", wildcardCount)
+						}
+					}
+
+					fmt.Fprintf(buf, "}\n\n")
+				}
 			}
-			wildcards = append(wildcards, base)
 		}
 	}
-	return wildcards
 }
 
-// toCamel converts a snake_case or ALL_CAPS string to CamelCase.
-func toCamel(s string) string {
-	if s == "" {
-		return ""
+// generateBindingMethod generates a single binding method
+func (g *Generator) generateBindingMethod(buf *bytes.Buffer, action *Action, pattern Pattern, suffix string) {
+	// Write documentation
+	for _, doc := range action.Doc {
+		fmt.Fprintf(buf, "// %s\n", strings.TrimSpace(doc))
 	}
-	// First, handle ALL_CAPS (e.g. MASTER_VOLUME -> MasterVolume)
-	if strings.ToUpper(s) == s {
-		parts := strings.Split(s, "_")
-		for i := range parts {
-			if len(parts[i]) > 0 {
-				parts[i] = strings.ToUpper(parts[i][:1]) + strings.ToLower(parts[i][1:])
+
+	methodName := g.getMethodName(action.Name, suffix)
+
+	// Generate method signature
+	fmt.Fprintf(buf, "func (r *Reaper) %s(", methodName)
+
+	// Add path parameters
+	if pattern.NumWildcards > 0 {
+		if pattern.NumWildcards == 1 {
+			fmt.Fprintf(buf, "param int64, ")
+		} else {
+			fmt.Fprintf(buf, "path %s, ", g.getPathStructName(pattern))
+		}
+	}
+
+	// Add callback parameter
+	fmt.Fprintf(buf, "callback func(%s) error) error {\n", g.getCallbackType(pattern))
+
+	// Generate method body
+	g.generateMethodBody(buf, pattern)
+
+	fmt.Fprintf(buf, "}\n\n")
+}
+
+// getMethodName generates the method name for a pattern
+func (g *Generator) getMethodName(actionName, suffix string) string {
+	name := "Bind" + strings.ReplaceAll(actionName, "_", "")
+	name = strings.ReplaceAll(name, "+", "Plus")
+	name = strings.ReplaceAll(name, "-", "Minus")
+	return name + suffix
+}
+
+// getMethodSuffix generates a suffix for additional methods
+func (g *Generator) getMethodSuffix(pattern, mainPattern Pattern) string {
+	// Find where the paths diverge
+	minLen := len(mainPattern.Elements)
+	if len(pattern.Elements) < minLen {
+		minLen = len(pattern.Elements)
+	}
+
+	suffix := ""
+	for i := 0; i < len(pattern.Elements); i++ {
+		if i >= len(mainPattern.Elements) || pattern.Elements[i] != mainPattern.Elements[i] {
+			if pattern.Elements[i] != "@" {
+				suffix += strings.Title(pattern.Elements[i])
 			}
 		}
-		return strings.Join(parts, "")
 	}
-	parts := strings.Split(s, "_")
-	for i := range parts {
-		if len(parts[i]) > 0 {
-			parts[i] = strings.ToUpper(parts[i][:1]) + parts[i][1:]
-		}
-	}
-	return strings.Join(parts, "")
+	return suffix
 }
 
-// argTypeToGo maps a pattern arg type to a Go type and the bind method to use.
-func argTypeToGo(argType string) (goType, bindFunc string) {
-	switch argType {
-	case "n", "f", "r":
-		return "float64", "BindFloat"
+// getCallbackType returns the Go type for the callback parameter
+func (g *Generator) getCallbackType(pattern Pattern) string {
+	switch pattern.Type {
+	case "n", "f":
+		return "float64"
 	case "i":
-		return "int64", "BindInt"
-	case "b", "t":
-		return "bool", "BindBool"
+		return "int64"
+	case "b":
+		return "bool"
 	case "s":
-		return "string", "BindString"
+		return "string"
 	default:
-		return "interface{}", "BindUnknown"
+		return "interface{}"
 	}
 }
 
-// getSingleWildcardType returns the Go type for a single wildcard argument (always int64).
-func getSingleWildcardType() string {
-	return "int64"
+// getPathStructName generates a struct name for a path pattern
+func (g *Generator) getPathStructName(pattern Pattern) string {
+	// Create a unique name based on the path structure
+	name := "Path"
+	for _, elem := range pattern.Elements {
+		if elem == "@" {
+			name += "Param"
+		} else if elem != "" {
+			name += strings.Title(elem)
+		}
+	}
+	return name
 }
 
-// groupAndFilterPatterns applies the grouping/filtering/naming rules and returns an ordered list of output methods for this action.
-func groupAndFilterPatterns(act *Action) []struct {
-	MethodName     string
-	Pattern        Pattern
-	PathParam      string
-	PathStructDecl string
-	AddrExpr       string
-	Doc            string
-} {
-	// Step 1: Group all patterns by their base path (strip trailing "/str" for s-type if numeric present)
-	type basePathKey struct {
-		segments []string
-	}
-	groupMap := map[string]*groupedPattern{}
+// generateMethodBody generates the body of a binding method
+func (g *Generator) generateMethodBody(buf *bytes.Buffer, pattern Pattern) {
+	// Build the OSC address pattern
+	fmt.Fprintf(buf, "\taddr := \"%s\"\n", pattern.Path)
 
-	for _, pat := range act.Patterns {
-		// Remove leading slash and split into segments
-		segments := strings.Split(strings.TrimPrefix(pat.Path, "/"), "/")
-		baseSegments := segments
-		// If the last segment is "str", remove it for grouping
-		if len(segments) > 0 && segments[len(segments)-1] == "str" {
-			baseSegments = segments[:len(segments)-1]
-		}
-		baseKey := strings.Join(baseSegments, "/")
-		g, ok := groupMap[baseKey]
-		if !ok {
-			g = &groupedPattern{
-				BaseSegments: baseSegments,
-				OrigSegments: segments,
-			}
-			groupMap[baseKey] = g
-		}
-		g.Patterns = append(g.Patterns, pat)
-	}
-
-	// Step 2: For each group, select preferred pattern (numeric > string)
-	filteredGroups := []*groupedPattern{}
-	for _, g := range groupMap {
-		bestIdx := -1
-		bestRank := 99
-		for i, pat := range g.Patterns {
-			rank := patternTypeRank[pat.ArgType]
-			if rank < bestRank {
-				bestRank = rank
-				bestIdx = i
-			}
-		}
-		if bestIdx < 0 {
-			continue
-		}
-		pat := g.Patterns[bestIdx]
-		g.Best = &pat
-		filteredGroups = append(filteredGroups, g)
-	}
-
-	// Step 3: Sort groups by base path length (main path is shortest)
-	sort.Slice(filteredGroups, func(i, j int) bool {
-		a, b := filteredGroups[i], filteredGroups[j]
-		if len(a.BaseSegments) != len(b.BaseSegments) {
-			return len(a.BaseSegments) < len(b.BaseSegments)
-		}
-		return strings.Join(a.BaseSegments, "/") < strings.Join(b.BaseSegments, "/")
-	})
-
-	// Step 4: Determine method names and parameters
-	mainSegments := filteredGroups[0].BaseSegments
-	result := []struct {
-		MethodName     string
-		Pattern        Pattern
-		PathParam      string
-		PathStructDecl string
-		AddrExpr       string
-		Doc            string
-	}{}
-
-	methodNames := map[string]struct{}{}
-
-	for idx, g := range filteredGroups {
-		pat := *g.Best
-		// Suffix logic
-		var methodName string
-		if idx == 0 {
-			methodName = "Bind" + toCamel(act.Name)
+	if pattern.NumWildcards > 0 {
+		// Replace wildcards with actual values
+		if pattern.NumWildcards == 1 {
+			fmt.Fprintf(buf, "\taddr = strings.Replace(addr, \"@\", strconv.FormatInt(param, 10), 1)\n")
 		} else {
-			// Suffix is the segments after mainSegments
-			suffixSegments := g.BaseSegments[len(mainSegments):]
-			if len(suffixSegments) == 0 {
-				// Should not happen, but fall back to ArgType
-				suffixSegments = []string{pat.ArgType}
-			}
-			// If suffix is "str" and not a string pattern, keep Str per safety rule
-			suffix := ""
-			for _, seg := range suffixSegments {
-				suffix += toCamel(seg)
-			}
-			methodName = "Bind" + toCamel(act.Name) + suffix
-		}
-		// If a method with this name already exists, append ArgType to avoid collision
-		originalMethodName := methodName
-		for i := 2; ; i++ {
-			if _, exists := methodNames[methodName]; !exists {
-				break
-			}
-			methodName = fmt.Sprintf("%s%d", originalMethodName, i)
-		}
-		methodNames[methodName] = struct{}{}
-
-		// Path param handling (single wildcard: int64, multiple: struct, none: none)
-		var pathParam, pathStructDecl, addrExpr string
-		wilds := pat.Wildcards
-		if len(wilds) > 1 {
-			pathStructName := "Path" + toCamel(act.Name)
-			pathParam = "p " + pathStructName
-			// Generate struct decl once
-			if idx == 0 {
-				var fields []string
-				for _, w := range wilds {
-					fields = append(fields, fmt.Sprintf("\t%s int64", w))
-				}
-				doc := ""
-				if len(pat.Doc) > 0 {
-					doc = "// " + strings.Join(pat.Doc, "\n// ") + "\n"
-				}
-				pathStructDecl = fmt.Sprintf("%stype %s struct {\n%s\n}\n", doc, pathStructName, strings.Join(fields, "\n"))
-			}
-			// Address with struct fields
-			segments := strings.Split(strings.TrimPrefix(pat.Path, "/"), "/")
-			var fmtSegments []string
-			var args []string
-			wildIdx := 0
-			for _, seg := range segments {
-				if seg == "@" {
-					fmtSegments = append(fmtSegments, "%d")
-					args = append(args, fmt.Sprintf("p.%s", wilds[wildIdx]))
-					wildIdx++
-				} else {
-					fmtSegments = append(fmtSegments, seg)
+			fmt.Fprintf(buf, "\taddr = addr\n")
+			wildcardCount := 0
+			for _, elem := range pattern.Elements {
+				if elem == "@" {
+					wildcardCount++
+					fmt.Fprintf(buf, "\taddr = strings.Replace(addr, \"@\", strconv.FormatInt(path.Param%d, 10), 1)\n", wildcardCount)
 				}
 			}
-			formatStr := "\"" + "/" + strings.Join(fmtSegments, "/") + "\""
-			addrExpr = fmt.Sprintf("fmt.Sprintf(%s, %s)", formatStr, strings.Join(args, ", "))
-		} else if len(wilds) == 1 {
-			wildName := wilds[0]
-			paramName := strings.ToLower(wildName[:1]) + wildName[1:]
-			pathParam = fmt.Sprintf("%s int64", paramName)
-			segments := strings.Split(strings.TrimPrefix(pat.Path, "/"), "/")
-			var fmtSegments []string
-			for _, seg := range segments {
-				if seg == "@" {
-					fmtSegments = append(fmtSegments, "%d")
-				} else {
-					fmtSegments = append(fmtSegments, seg)
-				}
-			}
-			formatStr := "\"" + "/" + strings.Join(fmtSegments, "/") + "\""
-			addrExpr = fmt.Sprintf("fmt.Sprintf(%s, %s)", formatStr, paramName)
-		} else {
-			addrExpr = fmt.Sprintf("\"%s\"", pat.Path)
-		}
-		doc := ""
-		if len(pat.Doc) > 0 {
-			doc = strings.Join(pat.Doc, "\n// ")
-		}
-		result = append(result, struct {
-			MethodName     string
-			Pattern        Pattern
-			PathParam      string
-			PathStructDecl string
-			AddrExpr       string
-			Doc            string
-		}{
-			MethodName:     methodName,
-			Pattern:        pat,
-			PathParam:      pathParam,
-			PathStructDecl: pathStructDecl,
-			AddrExpr:       addrExpr,
-			Doc:            doc,
-		})
-	}
-	return result
-}
-
-func main() {
-	actions, err := parseConfig(ConfigPath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing config: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Generate code.
-	if err := generateBindings(actions, OutputFile); err != nil {
-		fmt.Fprintf(os.Stderr, "Error generating: %v\n", err)
-		os.Exit(1)
-	}
-	fmt.Println("Generated:", OutputFile)
-}
-
-// generateBindings emits the generated binding methods to a file.
-func generateBindings(actions []*Action, outPath string) error {
-	f, err := os.Create(outPath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	// Header.
-	fmt.Fprintf(f, "// Code generated by reaperoscgen; DO NOT EDIT.\n\n")
-	fmt.Fprintf(f, "package reaper\n\n")
-	fmt.Fprintf(f, "import \"fmt\"\n\n")
-
-	pathStructsWritten := map[string]bool{}
-
-	// Method template.
-	const tpl = `
-{{if .Doc -}}
-// {{.Doc}}
-{{- end}}
-func (r *Reaper) {{.MethodName}}({{.PathParam}}{{if .PathParam}}, {{end}}callback func({{.ArgType}}) error) error {
-	return r.{{.BindFunc}}({{.AddrExpr}}, callback)
-}
-`
-
-	tmpl := template.Must(template.New("bind").Parse(tpl))
-
-	for _, act := range actions {
-		methods := groupAndFilterPatterns(act)
-		for _, m := range methods {
-			// Write struct declaration if needed and not already done
-			if m.PathStructDecl != "" && !pathStructsWritten[m.PathStructDecl] {
-				fmt.Fprintln(f, m.PathStructDecl)
-				pathStructsWritten[m.PathStructDecl] = true
-			}
 		}
 	}
-	// Now write all methods
-	for _, act := range actions {
-		methods := groupAndFilterPatterns(act)
-		for _, m := range methods {
-			goType, bindFunc := argTypeToGo(m.Pattern.ArgType)
-			tmpl.Execute(f, map[string]interface{}{
-				"Doc":        m.Doc,
-				"MethodName": m.MethodName,
-				"PathParam":  m.PathParam,
-				"ArgType":    goType,
-				"BindFunc":   bindFunc,
-				"AddrExpr":   m.AddrExpr,
-			})
-		}
+
+	// Call the appropriate binding method based on type
+	bindMethod := ""
+	switch pattern.Type {
+	case "n", "f":
+		bindMethod = "BindFloat"
+	case "i":
+		bindMethod = "BindInt"
+	case "b":
+		bindMethod = "BindBool"
+	case "s":
+		bindMethod = "BindString"
+	case "t":
+		bindMethod = "BindTrigger"
+	case "r":
+		bindMethod = "BindRotary"
+	default:
+		bindMethod = "BindGeneric"
 	}
-	return nil
-}
-	fmt.Println("Generated:", OutputFile)
-}
 
-// generateBindings emits the generated binding methods to a file.
-func generateBindings(actions []*Action, outPath string) error {
-	f, err := os.Create(outPath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	// Header.
-	fmt.Fprintf(f, "// Code generated by reaperoscgen; DO NOT EDIT.\n\n")
-	fmt.Fprintf(f, "package reaper\n\n")
-	fmt.Fprintf(f, "import \"fmt\"\n\n")
-
-	pathStructsWritten := map[string]bool{}
-
-	// Method template.
-	const tpl = `
-{{if .Doc -}}
-// {{.Doc}}
-{{- end}}
-func (r *Reaper) {{.MethodName}}({{.PathParam}}{{if .PathParam}}, {{end}}callback func({{.ArgType}}) error) error {
-	return r.{{.BindFunc}}({{.AddrExpr}}, callback)
-}
-`
-
-	tmpl := template.Must(template.New("bind").Parse(tpl))
-
-	for _, act := range actions {
-		methods := groupAndFilterPatterns(act)
-		for _, m := range methods {
-			// Write struct declaration if needed and not already done
-			if m.PathStructDecl != "" && !pathStructsWritten[m.PathStructDecl] {
-				fmt.Fprintln(f, m.PathStructDecl)
-				pathStructsWritten[m.PathStructDecl] = true
-			}
-		}
-	}
-	// Now write all methods
-	for _, act := range actions {
-		methods := groupAndFilterPatterns(act)
-		for _, m := range methods {
-			goType, bindFunc := argTypeToGo(m.Pattern.ArgType)
-			tmpl.Execute(f, map[string]interface{}{
-				"Doc":        m.Doc,
-				"MethodName": m.MethodName,
-				"PathParam":  m.PathParam,
-				"ArgType":    goType,
-				"BindFunc":   bindFunc,
-				"AddrExpr":   m.AddrExpr,
-			})
-		}
-	}
-	return nil
+	fmt.Fprintf(buf, "\treturn r.%s(addr, callback)\n", bindMethod)
 }
