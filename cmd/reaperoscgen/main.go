@@ -7,6 +7,7 @@ import (
 	"go/format"
 	"log"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
 	"unicode"
@@ -18,6 +19,41 @@ const (
 	outputSourcePath = "../../devices/reaper/reaper_bindings_gen.go" // Default output Go file
 	packageName      = "reaper"                                      // Package name for generated code
 )
+
+type categoryRule struct {
+	name    string
+	pattern *regexp.Regexp
+}
+
+// Ordered list of category rules - first match wins
+var categoryRules = []categoryRule{
+	{"Device", regexp.MustCompile(`^/device/`)},
+	{"Track", regexp.MustCompile(`^/track/`)},
+	{"FXEq", regexp.MustCompile(`^/fxeq/`)},
+	{"Transport", regexp.MustCompile(`^/transport/`)},
+}
+
+// determineCategory returns the category for an OSC action based on:
+// 1. Explicit category annotation in the config
+// 2. First matching regex pattern
+// 3. Empty string (root category) if no matches
+func determineCategory(path, configLine string) string {
+	// Check for explicit category annotation
+	if idx := strings.Index(configLine, "#category:"); idx != -1 {
+		category := strings.TrimSpace(configLine[idx+10:]) // len("#category:") == 10
+		return category
+	}
+
+	// Try regex patterns
+	for _, rule := range categoryRules {
+		if rule.pattern.MatchString(path) {
+			return rule.name
+		}
+	}
+
+	// No matches, will be placed at root
+	return ""
+}
 
 var validPatternTypes = map[string]bool{
 	"n": true, // normalized float
@@ -45,6 +81,7 @@ type Action struct {
 	Doc        []string
 	MainPath   *Pattern  // The "main" pattern after filtering
 	ExtraPaths []Pattern // Additional patterns that need their own methods
+	Category   string    // The category this action belongs to
 }
 
 // Generator holds the state for generating code
@@ -92,7 +129,6 @@ func (g *Generator) AddDoc(line string) {
 	g.currentDoc = append(g.currentDoc, line)
 }
 
-// parseLine parses a single line from the config file
 func (g *Generator) parseLine(line string) error {
 	line = strings.TrimSpace(line)
 
@@ -112,6 +148,30 @@ func (g *Generator) parseLine(line string) error {
 
 	actionName := fields[0]
 
+	// Get first pattern to determine category
+	firstPattern := fields[1]
+	parts := strings.SplitN(firstPattern, "/", 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid pattern format: %s", firstPattern)
+	}
+	path := "/" + parts[1]
+
+	// Determine category for this action
+	category := determineCategory(path, line)
+
+	// Create or update action with category
+	action, exists := g.actions[actionName]
+	if !exists {
+		action = &Action{
+			Name:     actionName,
+			Doc:      append([]string{}, g.currentDoc...),
+			Patterns: make([]Pattern, 0),
+			Category: category,
+		}
+		g.actions[actionName] = action
+		g.currentDoc = nil
+	}
+
 	// Process each pattern in the line
 	for _, pattern := range fields[1:] {
 		parts := strings.SplitN(pattern, "/", 2)
@@ -125,7 +185,6 @@ func (g *Generator) parseLine(line string) error {
 		}
 
 		path := "/" + parts[1]
-
 		g.AddPattern(actionName, patternType, path)
 	}
 
@@ -296,7 +355,6 @@ func main() {
 	}
 }
 
-// generateCode generates the Go source code
 func (g *Generator) generateCode() ([]byte, error) {
 	var buf bytes.Buffer
 
@@ -306,31 +364,210 @@ func (g *Generator) generateCode() ([]byte, error) {
 
 	// Write imports
 	fmt.Fprintf(&buf, "import (\n")
-	// fmt.Fprintf(&buf, "\t\"fmt\"\n")
 	fmt.Fprintf(&buf, "\t\"strconv\"\n")
 	fmt.Fprintf(&buf, "\t\"strings\"\n")
+	fmt.Fprintf(&buf, "\tdev \"github.com/jdginn/arpad/devices\"\n")
 	fmt.Fprintf(&buf, ")\n\n")
 
 	// Generate path structs for multi-wildcard patterns
 	g.generatePathStructs(&buf)
 
-	// Generate binding methods
+	// Generate category types
+	g.generateCategoryTypes(&buf)
+
+	// Generate Reaper struct with categories
+	g.generateReaperStruct(&buf)
+
+	// Generate binding methods within their categories
+	g.generateCategoryMethods(&buf)
+
+	return buf.Bytes(), nil
+}
+
+// generateCategoryTypes generates the struct types for each category
+func (g *Generator) generateCategoryTypes(buf *bytes.Buffer) {
+	categories := make(map[string]bool)
+
+	// Collect all used categories
+	for _, action := range g.actions {
+		if action.Category != "" {
+			categories[action.Category] = true
+		}
+	}
+
+	// Generate a struct type for each category
+	for category := range categories {
+		fmt.Fprintf(buf, "// %sBindings contains all %s-related binding methods\n", category, category)
+		fmt.Fprintf(buf, "type %sBindings struct {\n", category)
+		fmt.Fprintf(buf, "\tr *Reaper\n")
+		fmt.Fprintf(buf, "}\n\n")
+	}
+}
+
+// generateReaperStruct generates the main Reaper struct with categories
+func (g *Generator) generateReaperStruct(buf *bytes.Buffer) {
+	fmt.Fprintf(buf, "// Reaper represents a connection to REAPER\n")
+	fmt.Fprintf(buf, "type Reaper struct {\n")
+	fmt.Fprintf(buf, "\to dev.Osc\n") // Embed the existing Osc field
+
+	// Add fields for each category
+	categories := make(map[string]bool)
+	for _, action := range g.actions {
+		if action.Category != "" {
+			categories[action.Category] = true
+		}
+	}
+
+	// Sort categories for deterministic output
+	var sortedCategories []string
+	for category := range categories {
+		sortedCategories = append(sortedCategories, category)
+	}
+	sort.Strings(sortedCategories)
+
+	// Add category fields
+	for _, category := range sortedCategories {
+		fmt.Fprintf(buf, "\t%s *%sBindings\n", category, category)
+	}
+	fmt.Fprintf(buf, "}\n\n")
+
+	// Generate NewReaper function that initializes categories
+	fmt.Fprintf(buf, "// NewReaper creates a new REAPER connection with all bindings initialized\n")
+	fmt.Fprintf(buf, "func NewReaper() *Reaper {\n")
+	fmt.Fprintf(buf, "\tr := &Reaper{}\n")
+	for _, category := range sortedCategories {
+		fmt.Fprintf(buf, "\tr.%s = &%sBindings{r: r}\n", category, category)
+	}
+	fmt.Fprintf(buf, "\treturn r\n")
+	fmt.Fprintf(buf, "}\n\n")
+
+	// Add BindTrigger method
+	fmt.Fprintf(buf, "func (r *Reaper) BindTrigger(addr string, callback func() error) error {\n")
+	fmt.Fprintf(buf, "\treturn r.o.BindInt(addr, func(val int64) error {\n")
+	fmt.Fprintf(buf, "\t\tif val == 1 {\n")
+	fmt.Fprintf(buf, "\t\t\treturn callback()\n")
+	fmt.Fprintf(buf, "\t\t}\n")
+	fmt.Fprintf(buf, "\t\treturn nil\n")
+	fmt.Fprintf(buf, "\t})\n")
+	fmt.Fprintf(buf, "}\n\n")
+}
+
+// generateCategoryMethods generates the binding methods organized by category
+func (g *Generator) generateCategoryMethods(buf *bytes.Buffer) {
+	// Group actions by category
+	categoryActions := make(map[string][]*Action)
+	var uncategorized []*Action
+
 	for _, action := range g.actions {
 		if action.MainPath == nil {
 			continue // Skip actions with no valid patterns
 		}
-
-		// Generate the main binding method
-		g.generateBindingMethod(&buf, action, *action.MainPath, "")
-
-		// Generate methods for extra paths
-		for _, pattern := range action.ExtraPaths {
-			suffix := g.getMethodSuffix(pattern, *action.MainPath)
-			g.generateBindingMethod(&buf, action, pattern, suffix)
+		if action.Category != "" {
+			categoryActions[action.Category] = append(categoryActions[action.Category], action)
+		} else {
+			uncategorized = append(uncategorized, action)
 		}
 	}
 
-	return buf.Bytes(), nil
+	// Generate methods for each category
+	categories := make([]string, 0, len(categoryActions))
+	for category := range categoryActions {
+		categories = append(categories, category)
+	}
+	sort.Strings(categories)
+
+	for _, category := range categories {
+		actions := categoryActions[category]
+		for _, action := range actions {
+			// Generate the main binding method
+			g.generateCategoryBindingMethod(buf, category, action, *action.MainPath, "")
+
+			// Generate methods for extra paths
+			for _, pattern := range action.ExtraPaths {
+				suffix := g.getMethodSuffix(pattern, *action.MainPath)
+				g.generateCategoryBindingMethod(buf, category, action, pattern, suffix)
+			}
+		}
+	}
+
+	// Generate uncategorized methods directly on Reaper struct
+	for _, action := range uncategorized {
+		g.generateBindingMethod(buf, action, *action.MainPath, "")
+		for _, pattern := range action.ExtraPaths {
+			suffix := g.getMethodSuffix(pattern, *action.MainPath)
+			g.generateBindingMethod(buf, action, pattern, suffix)
+		}
+	}
+}
+
+// generateCategoryBindingMethod generates a binding method for a specific category
+func (g *Generator) generateCategoryBindingMethod(buf *bytes.Buffer, category string, action *Action, pattern Pattern, suffix string) {
+	// Write documentation
+	for _, doc := range action.Doc {
+		fmt.Fprintf(buf, "// %s\n", strings.TrimSpace(doc))
+	}
+
+	methodName := g.getMethodName(action.Name, suffix)
+
+	// Generate method signature on the category struct
+	fmt.Fprintf(buf, "func (b *%sBindings) %s(", category, methodName)
+
+	// Add path parameters
+	if pattern.NumWildcards > 0 {
+		if pattern.NumWildcards == 1 {
+			fmt.Fprintf(buf, "param int64, ")
+		} else {
+			fmt.Fprintf(buf, "path %s, ", g.getPathStructName(pattern))
+		}
+	}
+
+	// Add callback parameter
+	fmt.Fprintf(buf, "callback %s) error {\n", getCallbackSignature(pattern.Type))
+
+	// Generate method body
+	g.generateCategoryMethodBody(buf, action, pattern)
+
+	fmt.Fprintf(buf, "}\n\n")
+}
+
+// generateCategoryMethodBody generates the body of a category binding method
+func (g *Generator) generateCategoryMethodBody(buf *bytes.Buffer, action *Action, pattern Pattern) {
+	// Generate the address string
+	fmt.Fprintf(buf, "\taddr := %q\n", pattern.Path)
+
+	// Generate parameter substitutions
+	if pattern.NumWildcards > 0 {
+		paramNum := 1
+		for _, elem := range pattern.Elements {
+			if elem == "@" {
+				var paramValue string
+				if pattern.NumWildcards > 1 {
+					paramValue = fmt.Sprintf("path.Param%d", paramNum)
+				} else {
+					paramValue = "param"
+				}
+				fmt.Fprintf(buf, "\taddr = strings.Replace(addr, \"@\", strconv.FormatInt(%s, 10), 1)\n", paramValue)
+				paramNum++
+			}
+		}
+	}
+
+	// Generate the binding call using the Reaper instance from the category
+	var bindMethod string
+	switch pattern.Type {
+	case "t":
+		bindMethod = "BindTrigger"
+	case "i":
+		bindMethod = "BindInt"
+	case "n", "f", "r":
+		bindMethod = "BindFloat"
+	case "s":
+		bindMethod = "BindString"
+	case "b":
+		bindMethod = "BindBool"
+	}
+
+	fmt.Fprintf(buf, "\treturn b.r.o.%s(addr, callback)\n", bindMethod)
 }
 
 // sanitizeIdentifier converts a string into a valid Go identifier by:
@@ -395,11 +632,9 @@ func getCallbackSignature(patternType string) string {
 	switch patternType {
 	case "t":
 		return "func() error"
-	case "i", "n":
+	case "i":
 		return "func(int64) error"
-	case "f":
-		return "func(float64) error"
-	case "r":
+	case "n", "f", "r":
 		return "func(float64) error"
 	case "s":
 		return "func(string) error"
