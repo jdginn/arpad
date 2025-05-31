@@ -408,7 +408,7 @@ func (g *Generator) generateCategoryTypes(buf *bytes.Buffer) {
 func (g *Generator) generateReaperStruct(buf *bytes.Buffer) {
 	fmt.Fprintf(buf, "// Reaper represents a connection to REAPER\n")
 	fmt.Fprintf(buf, "type Reaper struct {\n")
-	fmt.Fprintf(buf, "\to dev.Osc\n") // Embed the existing Osc field
+	fmt.Fprintf(buf, "\to *dev.Osc\n") // Embed the existing Osc field
 
 	// Add fields for each category
 	categories := make(map[string]bool)
@@ -433,22 +433,31 @@ func (g *Generator) generateReaperStruct(buf *bytes.Buffer) {
 
 	// Generate NewReaper function that initializes categories
 	fmt.Fprintf(buf, "// NewReaper creates a new REAPER connection with all bindings initialized\n")
-	fmt.Fprintf(buf, "func NewReaper() *Reaper {\n")
-	fmt.Fprintf(buf, "\tr := &Reaper{}\n")
+	fmt.Fprintf(buf, "func NewReaper(o *dev.Osc) *Reaper {\n")
+	fmt.Fprintf(buf, "\tr := &Reaper{o: o}\n")
 	for _, category := range sortedCategories {
 		fmt.Fprintf(buf, "\tr.%s = &%sBindings{r: r}\n", category, category)
 	}
 	fmt.Fprintf(buf, "\treturn r\n")
 	fmt.Fprintf(buf, "}\n\n")
 
+	// Bubble up run method
+	fmt.Fprintf(buf, "func (r *Reaper) Run() {\n")
+	fmt.Fprintf(buf, "\tr.o.Run()\n")
+	fmt.Fprintf(buf, "}\n")
+
 	// Add BindTrigger method
-	fmt.Fprintf(buf, "func (r *Reaper) BindTrigger(addr string, callback func() error) error {\n")
-	fmt.Fprintf(buf, "\treturn r.o.BindInt(addr, func(val int64) error {\n")
+	fmt.Fprintf(buf, "func (r *Reaper) bindTrigger(addr string, callback func() error) {\n")
+	fmt.Fprintf(buf, "\tr.o.BindInt(addr, func(val int64) error {\n")
 	fmt.Fprintf(buf, "\t\tif val == 1 {\n")
 	fmt.Fprintf(buf, "\t\t\treturn callback()\n")
 	fmt.Fprintf(buf, "\t\t}\n")
 	fmt.Fprintf(buf, "\t\treturn nil\n")
 	fmt.Fprintf(buf, "\t})\n")
+	fmt.Fprintf(buf, "}\n\n")
+	// Add SendTrigger method
+	fmt.Fprintf(buf, "func (r *Reaper) sendTrigger(addr string) error {\n")
+	fmt.Fprintf(buf, "\treturn r.o.SetInt(addr, 1)\n")
 	fmt.Fprintf(buf, "}\n\n")
 }
 
@@ -481,11 +490,13 @@ func (g *Generator) generateCategoryMethods(buf *bytes.Buffer) {
 		for _, action := range actions {
 			// Generate the main binding method
 			g.generateCategoryBindingMethod(buf, category, action, *action.MainPath, "")
+			g.generateCategorySendMethod(buf, category, action, *action.MainPath, "")
 
 			// Generate methods for extra paths
 			for _, pattern := range action.ExtraPaths {
 				suffix := g.getMethodSuffix(pattern, *action.MainPath)
 				g.generateCategoryBindingMethod(buf, category, action, pattern, suffix)
+				g.generateCategorySendMethod(buf, category, action, pattern, suffix)
 			}
 		}
 	}
@@ -522,7 +533,7 @@ func (g *Generator) generateCategoryBindingMethod(buf *bytes.Buffer, category st
 	}
 
 	// Add callback parameter
-	fmt.Fprintf(buf, "callback %s) error {\n", getCallbackSignature(pattern.Type))
+	fmt.Fprintf(buf, "callback %s) {\n", getCallbackSignature(pattern.Type))
 
 	// Generate method body
 	g.generateCategoryMethodBody(buf, action, pattern)
@@ -556,7 +567,7 @@ func (g *Generator) generateCategoryMethodBody(buf *bytes.Buffer, action *Action
 	var bindMethod string
 	switch pattern.Type {
 	case "t":
-		bindMethod = "BindTrigger"
+		bindMethod = "bindTrigger"
 	case "i":
 		bindMethod = "BindInt"
 	case "n", "f", "r":
@@ -567,7 +578,11 @@ func (g *Generator) generateCategoryMethodBody(buf *bytes.Buffer, action *Action
 		bindMethod = "BindBool"
 	}
 
-	fmt.Fprintf(buf, "\treturn b.r.o.%s(addr, callback)\n", bindMethod)
+	if pattern.Type == "t" {
+		fmt.Fprintf(buf, "\tb.r.%s(addr, callback)\n", bindMethod)
+	} else {
+		fmt.Fprintf(buf, "\tb.r.o.%s(addr, callback)\n", bindMethod)
+	}
 }
 
 // sanitizeIdentifier converts a string into a valid Go identifier by:
@@ -668,7 +683,7 @@ func (g *Generator) generateBindingMethod(buf *bytes.Buffer, action *Action, pat
 	}
 
 	// Add callback parameter
-	fmt.Fprintf(buf, "callback func(%s) error) error {\n", g.getCallbackType(pattern))
+	fmt.Fprintf(buf, "callback func(%s) error) {\n", g.getCallbackType(pattern))
 
 	// Generate method body
 	g.generateMethodBody(buf, action, pattern)
@@ -793,7 +808,7 @@ func (g *Generator) generateMethodBody(buf *bytes.Buffer, action *Action, patter
 	var bindMethod string
 	switch pattern.Type {
 	case "t":
-		bindMethod = "BindTrigger"
+		bindMethod = "bindTrigger"
 	case "i":
 		bindMethod = "BindInt"
 	case "n", "f", "r":
@@ -804,5 +819,123 @@ func (g *Generator) generateMethodBody(buf *bytes.Buffer, action *Action, patter
 		bindMethod = "BindBool"
 	}
 
-	fmt.Fprintf(buf, "\treturn r.%s(addr, callback)\n", bindMethod)
+	if pattern.Type == "t" {
+		fmt.Fprintf(buf, "\tr.%s(addr, callback)\n", bindMethod)
+	} else {
+		fmt.Fprintf(buf, "\tr.o.%s(addr, callback)\n", bindMethod)
+	}
+}
+
+func (g *Generator) generateCategorySendMethod(buf *bytes.Buffer, category string, action *Action, pattern Pattern, suffix string) {
+	// Write documentation
+	for _, doc := range action.Doc {
+		fmt.Fprintf(buf, "// %s\n", strings.TrimSpace(doc))
+	}
+
+	methodName := g.getSendMethodName(action.Name, suffix)
+
+	// Generate method signature on the category struct
+	fmt.Fprintf(buf, "func (b *%sBindings) %s(", category, methodName)
+
+	// Add path parameters
+	if pattern.NumWildcards > 0 {
+		if pattern.NumWildcards == 1 {
+			fmt.Fprintf(buf, "param int64, ")
+		} else {
+			fmt.Fprintf(buf, "path %s, ", g.getPathStructName(pattern))
+		}
+	}
+
+	// Add value parameter (except for trigger type)
+	if pattern.Type != "t" {
+		fmt.Fprintf(buf, "val %s", g.getValueType(pattern))
+	}
+	fmt.Fprintf(buf, ") error {\n")
+
+	// Generate method body
+	g.generateCategorySendMethodBody(buf, action, pattern)
+
+	fmt.Fprintf(buf, "}\n\n")
+}
+
+func (g *Generator) getSendMethodName(actionName, suffix string) string {
+	name := "Send"
+
+	// Split by underscore and capitalize each part
+	parts := strings.Split(actionName, "_")
+	for _, part := range parts {
+		// Convert to lowercase first, then capitalize first letter
+		part = strings.ToLower(part)
+
+		// Handle special characters
+		part = strings.ReplaceAll(part, "+", "Plus")
+		part = strings.ReplaceAll(part, "-", "Minus")
+
+		// Capitalize first letter of each part
+		if len(part) > 0 {
+			runes := []rune(part)
+			runes[0] = unicode.ToUpper(runes[0])
+			name += string(runes)
+		}
+	}
+
+	return name + suffix
+}
+
+func (g *Generator) getValueType(pattern Pattern) string {
+	switch pattern.Type {
+	case "n", "f", "r":
+		return "float64"
+	case "i":
+		return "int64"
+	case "b":
+		return "bool"
+	case "s":
+		return "string"
+	default:
+		panic("unknown pattern type: " + pattern.Type)
+	}
+}
+
+func (g *Generator) generateCategorySendMethodBody(buf *bytes.Buffer, action *Action, pattern Pattern) {
+	// Generate the address string
+	fmt.Fprintf(buf, "\taddr := %q\n", pattern.Path)
+
+	// Generate parameter substitutions
+	if pattern.NumWildcards > 0 {
+		paramNum := 1
+		for _, elem := range pattern.Elements {
+			if elem == "@" {
+				var paramValue string
+				if pattern.NumWildcards > 1 {
+					paramValue = fmt.Sprintf("path.Param%d", paramNum)
+				} else {
+					paramValue = "param"
+				}
+				fmt.Fprintf(buf, "\taddr = strings.Replace(addr, \"@\", strconv.FormatInt(%s, 10), 1)\n", paramValue)
+				paramNum++
+			}
+		}
+	}
+
+	// Generate the send call
+	var sendMethod string
+	switch pattern.Type {
+	case "t":
+		sendMethod = "sendTrigger"
+	case "i":
+		sendMethod = "SetInt"
+	case "n", "f", "r":
+		sendMethod = "SetFloat"
+	case "s":
+		sendMethod = "SetString"
+	case "b":
+		sendMethod = "SetBool"
+	}
+
+	if pattern.Type == "t" {
+		fmt.Fprintf(buf, "\treturn b.r.%s(addr)\n", sendMethod)
+	} else {
+		fmt.Fprintf(buf, "\treturn b.r.o.%s(addr, val)\n", sendMethod)
+	}
 }
