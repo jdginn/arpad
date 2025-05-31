@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"time"
 
 	"gitlab.com/gomidi/midi/v2"
 	_ "gitlab.com/gomidi/midi/v2/drivers/midicatdrv"
@@ -60,8 +61,8 @@ type ModeManager struct {
 	*mLib.ModeManager[Mode]
 
 	// Extra metadata we want to keep track of that is not actually part of mode management logic
-	selectedTrackMix    string
-	selectedTrackRecord int
+	selectedTrackRecord string
+	selectedTrackMix    int64
 }
 
 var mm *ModeManager
@@ -75,16 +76,24 @@ func bind[P, A any](mode Mode, binder func(P, func(A) error), path P, callback f
 	mLib.Bind(mm.ModeManager, mode, binder, path, callback)
 }
 
+// const MIDI_IN = "IAC Driver Bus 1"
+
+const MIDI_IN = "X-Touch INT"
+
+// const MIDI_OUT = "IAC Driver Bus 1"
+
+const MIDI_OUT = "X-Touch EXT"
+
 func main() {
 	defer midi.CloseDriver()
 	fmt.Printf("outports:\n" + midi.GetOutPorts().String() + "\n")
 
-	in, err := midi.FindInPort("IAC Driver Bus 1")
+	in, err := midi.FindInPort(MIDI_IN)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println(in)
-	out, err := midi.FindOutPort("IAC Driver Bus 1")
+	out, err := midi.FindOutPort(MIDI_OUT)
 	if err != nil {
 		panic(err)
 	}
@@ -94,9 +103,10 @@ func main() {
 
 	motu := motulib.NewHTTPDatastore("http://localhost:8888")
 
-	reaper := reaperlib.OscServer{}
+	// reaper := reaperlib.NewReaper(dev.NewOscDevice("192.168.1.146", 9001, "0.0.0.0:9002"))
+	reaper := reaperlib.NewReaper(dev.NewOscDevice("0.0.0.0", 9001, "0.0.0.0:9000"))
 
-	for trackNum := 0; trackNum < 8; trackNum++ {
+	for trackNum := int64(1); trackNum < 8; trackNum++ {
 		c := xtouch.Channels[trackNum]
 
 		// Scribble strip
@@ -109,42 +119,49 @@ func main() {
 			return float64(abs) / 4 / float64(math.MaxUint16)
 		}
 		bind(RECORD|RECORD_THIS_TRACK_SENDS, c.Fader.Bind, nil, func(args dev.ArgsPitchBend) error {
+			fmt.Printf("XTOUCHÉ RECORD: track %d: %f\n", args.Absolute)
 			return motu.SetFloat(fmt.Sprintf("mix/main/%d/matrix/fader", trackNum), normalizeFader(args.Absolute))
 		})
 		bind(MIX, c.Fader.Bind, nil, func(args dev.ArgsPitchBend) error {
-			return reaper.SetFloat(fmt.Sprintf("channels/%d/fader", trackNum), normalizeFader(args.Absolute))
+			fmt.Printf("XTOUCH MIX: track %d: %f\n", args.Absolute)
+			return reaper.Track.SendTrackVolume(trackNum, normalizeFader(args.Absolute))
 		})
 
 		bind(RECORD, motu.BindFloat, fmt.Sprintf("mix/main/%d/matrix/fader", trackNum), func(f float64) error {
-			return c.Fader.SetFaderAbsolute(int16(f / 4 * float64(math.MaxUint16)))
+			fmt.Printf("RECORD: track %d: %f\n", trackNum, f)
+			return reaper.Track.SendTrackVolume(trackNum+1, f)
+			// return c.Fader.SetFaderAbsolute(int16(f / 4 * float64(math.MaxUint16)))
 		})
-		bind(MIX, reaper.BindFloat, fmt.Sprintf("channels/%d/fader", trackNum), func(f float64) error {
-			return c.Fader.SetFaderAbsolute(int16(f / 4 * float64(math.MaxUint16)))
+
+		bind(MIX, reaper.Track.BindTrackVolume, trackNum, func(f float64) error {
+			fmt.Printf("MIX: track %d: %f\n", trackNum, f)
+			return reaper.Track.SendTrackVolume(trackNum+1, f)
+			// return c.Fader.SetFaderAbsolute(int16(f / 4 * math.MaxUint16))
 		})
 
 		// Encoders
 		bind(RECORD, c.Encoder.Bind, nil, func(args dev.ArgsCC) error {
 			if c.EncoderButton.IsPressed() {
-				return reaper.SetInt(fmt.Sprintf("ext/ibank/0/chan/%d/trim", trackNum), int64(args.Value))
+				return motu.SetInt(fmt.Sprintf("ext/ibank/0/chan/%d/trim", trackNum), int64(args.Value))
 			}
-			return reaper.SetInt(fmt.Sprintf("mix/chan/%d/pan", trackNum), int64(args.Value)) // TODO:
+			return motu.SetInt(fmt.Sprintf("mix/chan/%d/pan", trackNum), int64(args.Value)) // TODO:
 		})
 		bind(MIX, c.Encoder.Bind, nil, func(args dev.ArgsCC) error {
 			if c.EncoderButton.IsPressed() {
-				return reaper.SetInt(fmt.Sprintf("channels/%d/trim", trackNum), int64(args.Value)) // TODO:
+				// TODO
 			}
-			return reaper.SetInt(fmt.Sprintf("channels/%d/trim", trackNum), int64(args.Value))
+			return reaper.Track.SendTrackPan(trackNum, float64(args.Value)) // TODO: need to normalize this?
 		})
 
 		// Select
-		bind(MIX, c.Select.Bind, nil, func(b bool) error {
-			if mm.selectedTrackMix, err = motu.GetStr("channels/%d/name"); err != nil {
+		bind(RECORD, c.Select.Bind, nil, func(b bool) error {
+			if mm.selectedTrackRecord, err = motu.GetStr("channels/%d/name"); err != nil {
 				return err
 			}
 			return nil
 		})
-		bind(RECORD, c.Select.Bind, nil, func(b bool) error {
-			mm.selectedTrackRecord = trackNum
+		bind(MIX, c.Select.Bind, nil, func(b bool) error {
+			mm.selectedTrackMix = trackNum
 			return c.Select.SetLED(xtouchlib.ON)
 		})
 		// TODO: bind incoming select from DAW
@@ -155,9 +172,9 @@ func main() {
 			return motu.SetBool(fmt.Sprintf("mix/main/%d/matrix/mute", trackNum), b)
 		})
 		// TODO: default mode
-		bind(RECORD, c.Mute.Bind, nil, func(b bool) error {
+		bind(MIX, c.Mute.Bind, nil, func(b bool) error {
 			// TODO: need toggle funcionality
-			return reaper.SetBool(fmt.Sprintf("channels/%d/mute", trackNum), b)
+			return reaper.Track.SendTrackMute(trackNum, b)
 		})
 		bind(RECORD, motu.BindBool, fmt.Sprintf("mix/main/%d/matrix/mute", trackNum), func(b bool) error {
 			if b {
@@ -360,4 +377,20 @@ func main() {
 		//		return nil
 		//	})
 	}
+	mm.SetMode(MIX)
+	reaper.Run()
+	fmt.Println("Reaper is running...")
+	go xtouch.Run()
+	fmt.Println("Xtouch is running...")
+
+	time.Sleep(time.Second * 1000)
+
+	// for {
+	// 	fmt.Println("0")
+	// 	reaper.Track.SendTrackVolumeDb(1, -10)
+	// 	time.Sleep(time.Second * 10)
+	// 	fmt.Println("1")
+	// 	reaper.Track.SendTrackVolumeDb(1, 10)
+	// 	time.Sleep(time.Second * 10)
+	// }
 }

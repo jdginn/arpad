@@ -14,7 +14,7 @@ import (
 // Faders send MIDI PitchBend data on their specified channel.
 // Faders can be remotely moved at will using SetFader*.
 type Fader struct {
-	d dev.MidiDevice
+	d *dev.MidiDevice
 
 	ChannelNo uint8
 }
@@ -23,6 +23,7 @@ type Fader struct {
 //
 // NOTE: the nil first argument is to satisfy the dev.Binding interface
 func (f *Fader) Bind(nil, callback func(dev.ArgsPitchBend) error) {
+	fmt.Println("binding to BindPitchBend...")
 	f.d.BindPitchBend(dev.PathPitchBend{uint8(1 + f.ChannelNo)}, callback)
 }
 
@@ -46,7 +47,7 @@ const (
 //
 // TODO: need toggle vs. momentary functionality
 type Button struct {
-	d dev.MidiDevice
+	d *dev.MidiDevice
 
 	channel uint8
 	key     uint8
@@ -88,7 +89,7 @@ func (f *Button) SetLED(state LEDState) error {
 }
 
 type Encoder struct {
-	d dev.MidiDevice
+	d *dev.MidiDevice
 
 	channel    uint8
 	controller uint8
@@ -128,7 +129,7 @@ type SysExHeader []byte
 var HeaderScribble SysExHeader = []byte{0x00, 0x00, 0x66, 0x58}
 
 type Scribble struct {
-	d dev.MidiDevice
+	d *dev.MidiDevice
 
 	channel uint8
 }
@@ -145,7 +146,7 @@ func (s *Scribble) SendScribble(color ScribbleColor, msgTop, msgBottom []byte) e
 }
 
 type Meter struct {
-	d dev.MidiDevice
+	d *dev.MidiDevice
 
 	channel uint8
 }
@@ -159,7 +160,11 @@ func (m *Meter) SendRelative(val float64) error {
 }
 
 type XTouch struct {
-	base dev.MidiDevice
+	base *dev.MidiDevice
+}
+
+func (x *XTouch) Run() {
+	x.base.Run()
 }
 
 // NewFader returns a new fader on the gien channel.
@@ -454,12 +459,12 @@ type XTouchDefault struct {
 }
 
 // New returns a properly initialized XTouchDefault struct.
-func New(d dev.MidiDevice) XTouchDefault {
+func New(d *dev.MidiDevice) XTouchDefault {
 	x := XTouchDefault{
 		XTouch: XTouch{d},
 	}
 	for i := 0; i < 8; i++ {
-		x.Channels[i] = x.NewChannelStrip(uint8(i))
+		x.Channels = append(x.Channels, x.NewChannelStrip(uint8(i)))
 	}
 	x.EncoderAssign = x.NewEncoderAssign()
 	x.View = x.NewView()
@@ -481,7 +486,7 @@ type XTouchExtender struct {
 	Channels []channelStrip
 }
 
-func NewExtender(d dev.MidiDevice) XTouchExtender {
+func NewExtender(d *dev.MidiDevice) XTouchExtender {
 	x := XTouchExtender{
 		XTouch: XTouch{d},
 	}

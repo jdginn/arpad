@@ -2,6 +2,7 @@ package devices
 
 import (
 	"fmt"
+	"time"
 
 	midi "gitlab.com/gomidi/midi/v2"
 	"gitlab.com/gomidi/midi/v2/drivers"
@@ -69,8 +70,8 @@ type MidiDevice struct {
 	aftertouch []AfterTouch
 }
 
-func NewMidiDevice(inPort drivers.In, outPort drivers.Out) MidiDevice {
-	return MidiDevice{
+func NewMidiDevice(inPort drivers.In, outPort drivers.Out) *MidiDevice {
+	return &MidiDevice{
 		inPort:     inPort,
 		outPort:    outPort,
 		cc:         []CC{},
@@ -95,10 +96,12 @@ func (f *MidiDevice) BindNote(path PathNote, callback func(bool) error) {
 }
 
 func (f *MidiDevice) BindPitchBend(path PathPitchBend, callback func(ArgsPitchBend) error) {
+	fmt.Println("Calling BindPitchBend on %+v\n", path)
 	f.pitchBend = append(f.pitchBend, PitchBend{
 		path:     path,
 		callback: callback,
 	})
+	fmt.Printf("f.pitchBend: %v\n", f.pitchBend)
 }
 
 func (f *MidiDevice) BindAfterTouch(path PathAfterTouch, callback func(ArgsAfterTouch) error) {
@@ -119,12 +122,14 @@ func (f *MidiDevice) Send(msg midi.Message) error {
 func (f *MidiDevice) Run() {
 	defer midi.CloseDriver()
 
-	in, err := midi.FindInPort("VMPK")
+	fmt.Println("Finding port...")
+	in, err := midi.FindInPort("X-Touch INT")
 	if err != nil {
-		fmt.Println("can't find VMPK:", err)
+		fmt.Println("can't find port:", err)
 		return
 	}
 
+	fmt.Println("Running listener...")
 	var stop func()
 	stop, err = midi.ListenTo(in, func(msg midi.Message, timestampms int32) {
 		switch msg.Type() {
@@ -143,6 +148,7 @@ func (f *MidiDevice) Run() {
 				}
 			}
 		case midi.PitchBendMsg:
+			fmt.Println("It's a pitchbend..")
 			var channel uint8
 			var relative int16
 			var absolute uint16
@@ -150,8 +156,12 @@ func (f *MidiDevice) Run() {
 				fmt.Println("failed to parse Pitch Bend message:", err)
 				return
 			}
+			fmt.Println("... and we parsed it")
+			fmt.Printf("f.pitchbend: %v\n", f.pitchBend)
 			for _, pitchbend := range f.pitchBend {
+				fmt.Println("Checking for channel %d against %d\n", channel, pitchbend.path.Channel)
 				if pitchbend.path.Channel == channel {
+					fmt.Printf("Running callback on pitchbend for chanel %d\n", channel)
 					if err := pitchbend.callback(ArgsPitchBend{relative, absolute}); err != nil {
 						fmt.Println("failed to process Pitch Bend:", err)
 					}
@@ -203,6 +213,8 @@ func (f *MidiDevice) Run() {
 		fmt.Printf("ERROR: %s\n", err)
 		return
 	}
+
+	time.Sleep(time.Second * 1000)
 
 	stop()
 }

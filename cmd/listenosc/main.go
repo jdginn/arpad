@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	port := flag.Int("port", 0, "TCP port to listen for OSC messages")
+	port := flag.Int("port", 0, "port to listen for OSC messages")
 	flag.Parse()
 
 	if *port == 0 {
@@ -19,18 +19,20 @@ func main() {
 		os.Exit(1)
 	}
 	addr := "0.0.0.0:" + strconv.Itoa(*port)
+	// addr := "192.168.1.146:" + strconv.Itoa(*port)
 
 	// Create a dispatcher that prints all messages
 	dispatcher := osc.NewStandardDispatcher()
 	dispatcher.AddMsgHandler("*", func(msg *osc.Message) {
-		fmt.Printf("Received OSC message: %s %v\n", msg.Address, msg.Arguments)
+		tt, _ := msg.TypeTags()
+		fmt.Printf("Received OSC message: %s %s %v\n", msg.Address, tt, msg.Arguments)
+		// bytes, _ := msg.MarshalBinary()
+		// fmt.Printf("Received OSC message: %x\n", bytes)
 	})
 
 	server := &osc.Server{
 		Addr:       addr,
 		Dispatcher: dispatcher,
-		// By default, go-osc only accepts UDP. TCP requires additional setup,
-		// but for simple use UDP is standard for OSC.
 	}
 
 	fmt.Printf("Listening for OSC messages on %s (UDP)...\n", addr)

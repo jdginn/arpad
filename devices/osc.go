@@ -8,18 +8,54 @@ import (
 )
 
 type Osc struct {
-	c osc.Client
-	s osc.Server
+	sendAddr   string
+	sendPort   int
+	listenAddr string
 
-	d osc.StandardDispatcher
+	c *osc.Client
+	s *osc.Server
+
+	d *osc.StandardDispatcher
+}
+
+// func NewOscDevice(client osc.Client, server osc.Server) *Osc {
+func NewOscDevice(sendAddr string, sendPort int, listenAddr string) *Osc {
+	o := &Osc{
+		sendAddr:   sendAddr,
+		sendPort:   sendPort,
+		listenAddr: listenAddr,
+		d:          osc.NewStandardDispatcher(),
+	}
+	// o.d.AddMsgHandler("*", func(msg *osc.Message) {
+	// 	fmt.Printf("Received OSC message: %s %v\n", msg.Address, msg.Arguments)
+	// })
+
+	return o
+}
+
+func (o *Osc) Run() {
+	o.c = osc.NewClient(o.sendAddr, o.sendPort)
+	o.s = &osc.Server{
+		Addr:       o.listenAddr,
+		Dispatcher: o.d,
+	}
+	fmt.Println("Dispatching osc listener...")
+	go o.s.ListenAndServe()
+	fmt.Println("Done...")
 }
 
 func (o *Osc) SetInt(key string, val int64) error {
+	m := osc.NewMessage(key, val)
+	tt, _ := m.TypeTags()
+	fmt.Printf("TypeTag: %s\n", tt)
 	return o.c.Send(osc.NewMessage(key, val))
 }
 
 func (o *Osc) SetFloat(key string, val float64) error {
-	return o.c.Send(osc.NewMessage(key, val))
+	m := osc.NewMessage(key, float32(val))
+	tt, _ := m.TypeTags()
+	fmt.Printf("TypeTag: %s\n", tt)
+	return o.c.Send(osc.NewMessage(key, float32(val)))
 }
 
 func (o *Osc) SetString(key string, val string) error {
@@ -35,7 +71,7 @@ func (o *Osc) SetBool(key string, val bool) error {
 // The given address should return a value that can be interpreted as an int.
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as an int.
-func (o *Osc) BindInt(addr string, effect func(int64) error) error {
+func (o *Osc) BindInt(addr string, effect func(int64) error) {
 	o.d.AddMsgHandler(addr, func(msg *osc.Message) {
 		val := msg.Arguments[len(msg.Arguments)-1]
 		switch val := val.(type) {
@@ -53,14 +89,14 @@ func (o *Osc) BindInt(addr string, effect func(int64) error) error {
 			panic("bad")
 		}
 	})
-	return nil
 }
 
 // BindFloat binds a callback to run whenever a message is received for the given OSC address.
 //
 // The given address MUST return a float or be convertable to float.
 // WARNING: Conversions are best-effort and could panic.
-func (o *Osc) BindFloat(key string, effect func(float64) error) error {
+func (o *Osc) BindFloat(key string, effect func(float64) error) {
+	fmt.Printf("Binding %s...\n", key)
 	o.d.AddMsgHandler(key, func(msg *osc.Message) {
 		val := msg.Arguments[len(msg.Arguments)-1]
 		switch val := val.(type) {
@@ -82,7 +118,6 @@ func (o *Osc) BindFloat(key string, effect func(float64) error) error {
 			panic("bad")
 		}
 	})
-	return nil
 }
 
 // BindString binds a callback to run whenever a message is received for the given OSC address.
@@ -90,7 +125,8 @@ func (o *Osc) BindFloat(key string, effect func(float64) error) error {
 // The given address should return a value that can be interpreted as a string.
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as a string.
-func (o *Osc) BindString(key string, effect func(string) error) error {
+func (o *Osc) BindString(key string, effect func(string) error) {
+	fmt.Println("STRING")
 	o.d.AddMsgHandler(key, func(msg *osc.Message) {
 		val := msg.Arguments[len(msg.Arguments)-1]
 		switch val := val.(type) {
@@ -108,7 +144,6 @@ func (o *Osc) BindString(key string, effect func(string) error) error {
 			panic("bad")
 		}
 	})
-	return nil
 }
 
 // BindBool binds a callback to run whenever a message is received for the given OSC address.
@@ -116,7 +151,7 @@ func (o *Osc) BindString(key string, effect func(string) error) error {
 // The given address should return a value that can be interpreted as a boolean.
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as a boolean.
-func (o *Osc) BindBool(key string, effect func(bool) error) error {
+func (o *Osc) BindBool(key string, effect func(bool) error) {
 	o.d.AddMsgHandler(key, func(msg *osc.Message) {
 		val := msg.Arguments[len(msg.Arguments)-1]
 		switch val := val.(type) {
@@ -134,5 +169,4 @@ func (o *Osc) BindBool(key string, effect func(bool) error) error {
 			panic("bad")
 		}
 	})
-	return nil
 }
