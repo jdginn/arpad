@@ -120,18 +120,11 @@ func (f *MidiDevice) Send(msg midi.Message) error {
 //
 // For any message with an effect registered, that effect will be run each time such a message is received.
 func (f *MidiDevice) Run() {
-	defer midi.CloseDriver()
+	// defer midi.CloseDriver()
 
-	fmt.Println("Finding port...")
-	in, err := midi.FindInPort("X-Touch INT")
-	if err != nil {
-		fmt.Println("can't find port:", err)
-		return
-	}
-
-	fmt.Println("Running listener...")
+	var err error
 	var stop func()
-	stop, err = midi.ListenTo(in, func(msg midi.Message, timestampms int32) {
+	stop, err = midi.ListenTo(f.inPort, func(msg midi.Message, timestampms int32) {
 		switch msg.Type() {
 		case midi.ControlChangeMsg:
 			var channel, control, value uint8
