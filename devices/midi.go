@@ -96,7 +96,6 @@ func (f *MidiDevice) BindNote(path PathNote, callback func(bool) error) {
 }
 
 func (f *MidiDevice) BindPitchBend(path PathPitchBend, callback func(ArgsPitchBend) error) {
-	fmt.Println("Calling BindPitchBend on %+v\n", path)
 	f.pitchBend = append(f.pitchBend, PitchBend{
 		path:     path,
 		callback: callback,
@@ -152,7 +151,7 @@ func (f *MidiDevice) Run() {
 			fmt.Println("... and we parsed it")
 			fmt.Printf("f.pitchbend: %v\n", f.pitchBend)
 			for _, pitchbend := range f.pitchBend {
-				fmt.Println("Checking for channel %d against %d\n", channel, pitchbend.path.Channel)
+				fmt.Printf("Checking for channel %d against %d\n", channel, pitchbend.path.Channel)
 				if pitchbend.path.Channel == channel {
 					fmt.Printf("Running callback on pitchbend for chanel %d\n", channel)
 					if err := pitchbend.callback(ArgsPitchBend{relative, absolute}); err != nil {
