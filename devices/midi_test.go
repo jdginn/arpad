@@ -1,11 +1,12 @@
-package devices
+package devices_test
 
 import (
 	"fmt"
 	"testing"
 	"time"
 
-	h "github.com/jdginn/arpad/devices/midi_harness"
+	dev "github.com/jdginn/arpad/devices"
+	devtest "github.com/jdginn/arpad/devices/devicestesting"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/gomidi/midi/v2"
 )
@@ -15,69 +16,62 @@ func TestMidiDevice(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		setupBindings func(*MidiDevice) map[string]any
+		setupBindings func(*devtest.MidiDevice)
 		inputMessage  midi.Message
-		validateState func(map[string]any, *MidiDevice, *h.MockMIDIPort)
+		validateState func(*devtest.MidiDevice, *devtest.MockMIDIPort)
 	}{
 		{
 			name: "control change message triggers callback",
-			setupBindings: func(dev *MidiDevice) map[string]any {
-				callCount := 0
-				dev.BindCC(PathCC{Channel: 1, Controller: 7}, func(args ArgsCC) error {
+			setupBindings: func(d *devtest.MidiDevice) {
+				d.BindCC(dev.PathCC{Channel: 1, Controller: 7}, func(args dev.ArgsCC) error {
 					fmt.Println("Incrementing callCount!")
-					callCount++
 					assert.Equal(uint8(64), args.Value)
 					return nil
 				})
-				return map[string]any{"calls": callCount}
 			},
 			inputMessage: midi.ControlChange(1, 7, 64),
-			validateState: func(locals map[string]any, dev *MidiDevice, port *h.MockMIDIPort) {
-				assert.Equal(1, locals["calls"])
+			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
+				d.Tracker.AssertCalledOnce()
 			},
 		},
 		{
 			name: "pitch bend message triggers callback",
-			setupBindings: func(dev *MidiDevice) map[string]any {
+			setupBindings: func(d *devtest.MidiDevice) {
 				callCount := 0
-				dev.BindPitchBend(PathPitchBend{Channel: 1}, func(args ArgsPitchBend) error {
+				d.BindPitchBend(dev.PathPitchBend{Channel: 1}, func(args dev.ArgsPitchBend) error {
 					callCount++
-					assert.Equal(100, args.Relative)
-					assert.Equal(uint16(8192), args.Absolute)
+					assert.EqualValues(100, args.Relative)
+					assert.EqualValues(uint16(8192), args.Absolute)
 					return nil
 				})
-				return map[string]any{}
 			},
 			inputMessage: midi.Pitchbend(1, 100),
-			validateState: func(locals map[string]any, dev *MidiDevice, port *h.MockMIDIPort) {
-				// Additional state validation if needed
+			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
+				d.Tracker.AssertCalledOnce()
 			},
 		},
 		{
 			name: "note on/off messages trigger callbacks",
-			setupBindings: func(dev *MidiDevice) map[string]any {
+			setupBindings: func(d *devtest.MidiDevice) {
 				// noteState := false
-				dev.BindNote(PathNote{Channel: 1, Key: 60}, func(on bool) error {
+				d.BindNote(dev.PathNote{Channel: 1, Key: 60}, func(on bool) error {
 					// noteState = true
 					return nil
 				})
-				return map[string]any{}
 			},
 			inputMessage: midi.NoteOn(1, 60, 100),
-			validateState: func(locals map[string]any, dev *MidiDevice, port *h.MockMIDIPort) {
-				// Simulate note off and verify state
-				port.SimulateReceive(midi.NoteOff(1, 60))
+			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
+				d.Tracker.AssertCalledOnce()
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockPort := h.NewMockMIDIPort()
-			device := NewMidiDevice(mockPort, mockPort)
+			device, mockPort := devtest.NewTestMidiDevice(t)
 
 			// Setup bindings
-			locals := tt.setupBindings(device)
+			tt.setupBindings(device)
 
 			// Start listening in a goroutine
 			go func() {
@@ -94,7 +88,7 @@ func TestMidiDevice(t *testing.T) {
 			time.Sleep(50 * time.Millisecond)
 
 			// Validate the results
-			tt.validateState(locals, device, mockPort)
+			tt.validateState(device, mockPort)
 		})
 	}
 }

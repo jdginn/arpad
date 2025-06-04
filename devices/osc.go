@@ -7,63 +7,67 @@ import (
 	"github.com/hypebeast/go-osc/osc"
 )
 
-type Osc struct {
-	sendAddr   string
-	sendPort   int
-	listenAddr string
-
-	c *osc.Client
-	s *osc.Server
-
-	d *osc.StandardDispatcher
+type OscDevice struct {
+	client     OscClient
+	server     OscServer
+	dispatcher OscDispatcher
 }
 
-// func NewOscDevice(client osc.Client, server osc.Server) *Osc {
-func NewOscDevice(sendAddr string, sendPort int, listenAddr string) *Osc {
-	o := &Osc{
-		sendAddr:   sendAddr,
-		sendPort:   sendPort,
-		listenAddr: listenAddr,
-		d:          osc.NewStandardDispatcher(),
+// Interfaces for better testability
+type OscClient interface {
+	Send(*osc.Message) error
+}
+
+type OscServer interface {
+	ListenAndServe() error
+}
+
+type OscDispatcher interface {
+	AddMsgHandler(string, func(*osc.Message))
+}
+
+func NewOscDevice(client OscClient, server OscServer, dispatcher OscDispatcher) *OscDevice {
+	return &OscDevice{
+		client:     client,
+		server:     server,
+		dispatcher: dispatcher,
 	}
-	// o.d.AddMsgHandler("*", func(msg *osc.Message) {
-	// 	fmt.Printf("Received OSC message: %s %v\n", msg.Address, msg.Arguments)
-	// })
-
-	return o
 }
 
-func (o *Osc) Run() {
-	o.c = osc.NewClient(o.sendAddr, o.sendPort)
-	o.s = &osc.Server{
-		Addr:       o.listenAddr,
-		Dispatcher: o.d,
-	}
-	fmt.Println("Dispatching osc listener...")
-	go o.s.ListenAndServe()
-	fmt.Println("Done...")
+// // For convenience, create real OSC implementations
+// func NewRealOscDevice(sendAddr, listenAddr string) (*OscDevice, error) {
+// 	client := osc.NewClient(sendAddr)
+// 	server := osc.NewServer(listenAddr)
+// 	dispatcher := server.Dispatcher()
+//
+// 	return NewOscDevice(client, server, dispatcher), nil
+// }
+
+func (o *OscDevice) Run() error {
+	// Now Run() just starts the server
+	return o.server.ListenAndServe()
 }
 
-func (o *Osc) SetInt(key string, val int64) error {
+func (o *OscDevice) SetInt(key string, val int64) error {
 	m := osc.NewMessage(key, val)
 	tt, _ := m.TypeTags()
 	fmt.Printf("TypeTag: %s\n", tt)
-	return o.c.Send(osc.NewMessage(key, val))
+	return o.client.Send(osc.NewMessage(key, val))
 }
 
-func (o *Osc) SetFloat(key string, val float64) error {
+func (o *OscDevice) SetFloat(key string, val float64) error {
 	m := osc.NewMessage(key, float32(val))
 	tt, _ := m.TypeTags()
 	fmt.Printf("TypeTag: %s\n", tt)
-	return o.c.Send(osc.NewMessage(key, float32(val)))
+	return o.client.Send(osc.NewMessage(key, float32(val)))
 }
 
-func (o *Osc) SetString(key string, val string) error {
-	return o.c.Send(osc.NewMessage(key, val))
+func (o *OscDevice) SetString(key string, val string) error {
+	return o.client.Send(osc.NewMessage(key, val))
 }
 
-func (o *Osc) SetBool(key string, val bool) error {
-	return o.c.Send(osc.NewMessage(key, val))
+func (o *OscDevice) SetBool(key string, val bool) error {
+	return o.client.Send(osc.NewMessage(key, val))
 }
 
 // BindInt binds a callback to run whenever a message is received for the given OSC address.
@@ -71,8 +75,8 @@ func (o *Osc) SetBool(key string, val bool) error {
 // The given address should return a value that can be interpreted as an int.
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as an int.
-func (o *Osc) BindInt(addr string, effect func(int64) error) {
-	o.d.AddMsgHandler(addr, func(msg *osc.Message) {
+func (o *OscDevice) BindInt(addr string, effect func(int64) error) {
+	o.dispatcher.AddMsgHandler(addr, func(msg *osc.Message) {
 		val := msg.Arguments[len(msg.Arguments)-1]
 		switch val := val.(type) {
 		case int:
@@ -95,9 +99,9 @@ func (o *Osc) BindInt(addr string, effect func(int64) error) {
 //
 // The given address MUST return a float or be convertable to float.
 // WARNING: Conversions are best-effort and could panic.
-func (o *Osc) BindFloat(key string, effect func(float64) error) {
+func (o *OscDevice) BindFloat(key string, effect func(float64) error) {
 	fmt.Printf("Binding %s...\n", key)
-	o.d.AddMsgHandler(key, func(msg *osc.Message) {
+	o.dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
 		val := msg.Arguments[len(msg.Arguments)-1]
 		switch val := val.(type) {
 		case float64:
@@ -125,9 +129,9 @@ func (o *Osc) BindFloat(key string, effect func(float64) error) {
 // The given address should return a value that can be interpreted as a string.
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as a string.
-func (o *Osc) BindString(key string, effect func(string) error) {
+func (o *OscDevice) BindString(key string, effect func(string) error) {
 	fmt.Println("STRING")
-	o.d.AddMsgHandler(key, func(msg *osc.Message) {
+	o.dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
 		val := msg.Arguments[len(msg.Arguments)-1]
 		switch val := val.(type) {
 		case float64:
@@ -151,8 +155,8 @@ func (o *Osc) BindString(key string, effect func(string) error) {
 // The given address should return a value that can be interpreted as a boolean.
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as a boolean.
-func (o *Osc) BindBool(key string, effect func(bool) error) {
-	o.d.AddMsgHandler(key, func(msg *osc.Message) {
+func (o *OscDevice) BindBool(key string, effect func(bool) error) {
+	o.dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
 		val := msg.Arguments[len(msg.Arguments)-1]
 		switch val := val.(type) {
 		case float64:

@@ -408,7 +408,7 @@ func (g *Generator) generateCategoryTypes(buf *bytes.Buffer) {
 func (g *Generator) generateReaperStruct(buf *bytes.Buffer) {
 	fmt.Fprintf(buf, "// Reaper represents a connection to REAPER\n")
 	fmt.Fprintf(buf, "type Reaper struct {\n")
-	fmt.Fprintf(buf, "\to *dev.Osc\n") // Embed the existing Osc field
+	fmt.Fprintf(buf, "\to *dev.OscDevice\n") // Embed the existing Osc field
 
 	// Add fields for each category
 	categories := make(map[string]bool)
@@ -433,7 +433,7 @@ func (g *Generator) generateReaperStruct(buf *bytes.Buffer) {
 
 	// Generate NewReaper function that initializes categories
 	fmt.Fprintf(buf, "// NewReaper creates a new REAPER connection with all bindings initialized\n")
-	fmt.Fprintf(buf, "func NewReaper(o *dev.Osc) *Reaper {\n")
+	fmt.Fprintf(buf, "func NewReaper(o *dev.OscDevice) *Reaper {\n")
 	fmt.Fprintf(buf, "\tr := &Reaper{o: o}\n")
 	for _, category := range sortedCategories {
 		fmt.Fprintf(buf, "\tr.%s = &%sBindings{r: r}\n", category, category)

@@ -123,7 +123,11 @@ func (f *MidiDevice) Run() {
 
 	var err error
 	var stop func()
+
+	fmt.Println("running...")
+
 	stop, err = midi.ListenTo(f.inPort, func(msg midi.Message, timestampms int32) {
+		fmt.Printf("Received message of type %T\n", msg)
 		switch msg.Type() {
 		case midi.ControlChangeMsg:
 			var channel, control, value uint8

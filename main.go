@@ -76,13 +76,12 @@ func bind[P, A any](mode Mode, binder func(P, func(A) error), path P, callback f
 	mLib.Bind(mm.ModeManager, mode, binder, path, callback)
 }
 
-// const MIDI_IN = "IAC Driver Bus 1"
+const MIDI_IN = "IAC Driver Bus 1"
 
-const MIDI_IN = "X-Touch INT"
+// const MIDI_IN = "X-Touch INT"
+const MIDI_OUT = "IAC Driver Bus 1"
 
-// const MIDI_OUT = "IAC Driver Bus 1"
-
-const MIDI_OUT = "X-Touch EXT"
+// const MIDI_OUT = "X-Touch EXT"
 
 func main() {
 	defer midi.CloseDriver()
