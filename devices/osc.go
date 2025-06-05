@@ -49,16 +49,10 @@ func (o *OscDevice) Run() error {
 }
 
 func (o *OscDevice) SetInt(key string, val int64) error {
-	m := osc.NewMessage(key, val)
-	tt, _ := m.TypeTags()
-	fmt.Printf("TypeTag: %s\n", tt)
 	return o.client.Send(osc.NewMessage(key, val))
 }
 
 func (o *OscDevice) SetFloat(key string, val float64) error {
-	m := osc.NewMessage(key, float32(val))
-	tt, _ := m.TypeTags()
-	fmt.Printf("TypeTag: %s\n", tt)
 	return o.client.Send(osc.NewMessage(key, float32(val)))
 }
 
@@ -100,7 +94,6 @@ func (o *OscDevice) BindInt(addr string, effect func(int64) error) {
 // The given address MUST return a float or be convertable to float.
 // WARNING: Conversions are best-effort and could panic.
 func (o *OscDevice) BindFloat(key string, effect func(float64) error) {
-	fmt.Printf("Binding %s...\n", key)
 	o.dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
 		val := msg.Arguments[len(msg.Arguments)-1]
 		switch val := val.(type) {
@@ -130,7 +123,6 @@ func (o *OscDevice) BindFloat(key string, effect func(float64) error) {
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as a string.
 func (o *OscDevice) BindString(key string, effect func(string) error) {
-	fmt.Println("STRING")
 	o.dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
 		val := msg.Arguments[len(msg.Arguments)-1]
 		switch val := val.(type) {
@@ -159,6 +151,8 @@ func (o *OscDevice) BindBool(key string, effect func(bool) error) {
 	o.dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
 		val := msg.Arguments[len(msg.Arguments)-1]
 		switch val := val.(type) {
+		case bool:
+			effect(val)
 		case float64:
 			effect(val > 0)
 		case float32:

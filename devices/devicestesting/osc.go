@@ -1,6 +1,7 @@
 package devicestesting
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/hypebeast/go-osc/osc"
@@ -26,17 +27,22 @@ func (m *MockOscServer) ListenAndServe() error {
 }
 
 type MockOscDispatcher struct {
-	handlers map[string]func(*osc.Message)
+	handlers map[string][]func(*osc.Message) // Change to slice of handlers
 }
 
 func (m *MockOscDispatcher) AddMsgHandler(addr string, handler func(*osc.Message)) {
-	m.handlers[addr] = handler
+	if m.handlers[addr] == nil {
+		m.handlers[addr] = make([]func(*osc.Message), 0)
+	}
+	m.handlers[addr] = append(m.handlers[addr], handler)
 }
 
 func (m *MockOscDispatcher) SimulateMessage(addr string, args ...interface{}) {
-	if handler, ok := m.handlers[addr]; ok {
+	if handlers, ok := m.handlers[addr]; ok {
 		msg := osc.NewMessage(addr, args...)
-		handler(msg)
+		for _, handler := range handlers { // Call all handlers for this address
+			handler(msg)
+		}
 	}
 }
 
@@ -45,14 +51,14 @@ type TestOscDevice struct {
 	mockClient     *MockOscClient
 	mockServer     *MockOscServer
 	mockDispatcher *MockOscDispatcher
-	tracker        *CallbackTracker
+	Tracker        *CallbackTracker
 }
 
 func NewTestOscDevice(t *testing.T) *TestOscDevice {
 	mockClient := &MockOscClient{}
 	mockServer := &MockOscServer{}
 	mockDispatcher := &MockOscDispatcher{
-		handlers: make(map[string]func(*osc.Message)),
+		handlers: make(map[string][]func(*osc.Message)),
 	}
 
 	device := devices.NewOscDevice(mockClient, mockServer, mockDispatcher)
@@ -62,7 +68,7 @@ func NewTestOscDevice(t *testing.T) *TestOscDevice {
 		mockClient:     mockClient,
 		mockServer:     mockServer,
 		mockDispatcher: mockDispatcher,
-		tracker:        NewCallbackTracker(t),
+		Tracker:        NewCallbackTracker(t),
 	}
 }
 
@@ -75,19 +81,23 @@ func (d *TestOscDevice) GetSentMessages() []*osc.Message {
 	return d.mockClient.sentMessages
 }
 
-// Bindings pre-wrapped with callback tracking
-func (d *TestOscDevice) BindInt(addr string, callback func(int64) error) {
-	d.OscDevice.BindInt(addr, WrapCallback(d.tracker, callback))
+func (d *TestOscDevice) BindInt(addr string, callback func(int64) error) CallbackHandle {
+	handle := d.Tracker.RegisterCallback(fmt.Sprintf("int binding for %s", addr))
+	d.OscDevice.BindInt(addr, WrapCallback(d.Tracker, handle, callback))
+	return handle
 }
 
 func (d *TestOscDevice) BindFloat(addr string, callback func(float64) error) {
-	d.OscDevice.BindFloat(addr, WrapCallback(d.tracker, callback))
+	handle := d.Tracker.RegisterCallback(fmt.Sprintf("float binding for %s", addr))
+	d.OscDevice.BindFloat(addr, WrapCallback(d.Tracker, handle, callback))
 }
 
 func (d *TestOscDevice) BindString(addr string, callback func(string) error) {
-	d.OscDevice.BindString(addr, WrapCallback(d.tracker, callback))
+	handle := d.Tracker.RegisterCallback(fmt.Sprintf("string binding for %s", addr))
+	d.OscDevice.BindString(addr, WrapCallback(d.Tracker, handle, callback))
 }
 
 func (d *TestOscDevice) BindBool(addr string, callback func(bool) error) {
-	d.OscDevice.BindBool(addr, WrapCallback(d.tracker, callback))
+	handle := d.Tracker.RegisterCallback(fmt.Sprintf("bool binding for %s", addr))
+	d.OscDevice.BindBool(addr, WrapCallback(d.Tracker, handle, callback))
 }

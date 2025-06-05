@@ -154,7 +154,7 @@ func TestMidiDevice(t *testing.T) {
 				midi.Pitchbend(1, 100),
 			},
 			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
-				d.Tracker.AssertCalledOnce()
+				d.Tracker.AssertCalled(1)
 			},
 		},
 		{
@@ -170,7 +170,7 @@ func TestMidiDevice(t *testing.T) {
 				midi.Pitchbend(1, 0),
 			},
 			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
-				d.Tracker.AssertCalledOnce()
+				d.Tracker.AssertCalled(1)
 			},
 		},
 		{
@@ -283,7 +283,7 @@ func TestMidiDevice(t *testing.T) {
 				midi.AfterTouch(1, 100),
 			},
 			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
-				d.Tracker.AssertCalledOnce()
+				d.Tracker.AssertCalled(1)
 			},
 		},
 		{
