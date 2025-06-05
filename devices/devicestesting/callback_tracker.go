@@ -40,21 +40,20 @@ func WrapCallback[T any](ct *CallbackTracker, callback func(T) error) func(T) er
 }
 
 // AssertCalled asserts that the callback was called exactly n times
-func (ct *CallbackTracker) AssertCalled(expectedCalls int) {
+func (ct *CallbackTracker) AssertCalled(expectedCalls int, msg ...any) {
 	ct.mu.Lock()
 	defer ct.mu.Unlock()
-	assert.Equal(ct.t, expectedCalls, ct.calls,
-		"callback should have been called %d times, got %d", expectedCalls, ct.calls)
+	assert.Equal(ct.t, expectedCalls, ct.calls, msg...)
 }
 
 // AssertCalledOnce asserts that the callback was called exactly once
-func (ct *CallbackTracker) AssertCalledOnce() {
-	ct.AssertCalled(1)
+func (ct *CallbackTracker) AssertCalledOnce(msg ...any) {
+	ct.AssertCalled(1, msg)
 }
 
 // AssertNotCalled asserts that the callback was never called
-func (ct *CallbackTracker) AssertNotCalled() {
-	ct.AssertCalled(0)
+func (ct *CallbackTracker) AssertNotCalled(msg ...any) {
+	ct.AssertCalled(0, msg)
 }
 
 // GetLastArgs returns the arguments from the last callback invocation
