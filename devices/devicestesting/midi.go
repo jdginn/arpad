@@ -173,7 +173,7 @@ func NewTestMidiDevice(t *testing.T) (*MidiDevice, *MockMIDIPort) {
 }
 
 // BindCC wraps the original BindCC with automatic callback tracking
-func (d *MidiDevice) BindCC(path devices.PathCC, callback func(devices.ArgsCC) error) CallbackHandle {
+func (d *MidiDevice) BindCC(path devices.PathCC, callback func(devices.ArgsCC) error) int {
 	handle := d.Tracker.RegisterCallback(fmt.Sprintf("CC binding for channel %d controller %d",
 		path.Channel, path.Controller))
 	d.MidiDevice.BindCC(path, WrapCallback(d.Tracker, handle, callback))
@@ -181,7 +181,7 @@ func (d *MidiDevice) BindCC(path devices.PathCC, callback func(devices.ArgsCC) e
 }
 
 // BindPitchBend wraps the original BindPitchBend with automatic callback tracking
-func (d *MidiDevice) BindPitchBend(path devices.PathPitchBend, callback func(devices.ArgsPitchBend) error) CallbackHandle {
+func (d *MidiDevice) BindPitchBend(path devices.PathPitchBend, callback func(devices.ArgsPitchBend) error) int {
 	handle := d.Tracker.RegisterCallback(fmt.Sprintf("PitchBend binding for channel %d",
 		path.Channel))
 	d.MidiDevice.BindPitchBend(path, WrapCallback(d.Tracker, handle, callback))
@@ -189,7 +189,7 @@ func (d *MidiDevice) BindPitchBend(path devices.PathPitchBend, callback func(dev
 }
 
 // BindNote wraps the original BindNote with automatic callback tracking
-func (d *MidiDevice) BindNote(path devices.PathNote, callback func(bool) error) CallbackHandle {
+func (d *MidiDevice) BindNote(path devices.PathNote, callback func(bool) error) int {
 	handle := d.Tracker.RegisterCallback(fmt.Sprintf("Note binding for channel %d key %d",
 		path.Channel, path.Key))
 	d.MidiDevice.BindNote(path, WrapCallback(d.Tracker, handle, callback))
@@ -197,7 +197,7 @@ func (d *MidiDevice) BindNote(path devices.PathNote, callback func(bool) error) 
 }
 
 // BindAfterTouch wraps the original BindAfterTouch with automatic callback tracking
-func (d *MidiDevice) BindAfterTouch(path devices.PathAfterTouch, callback func(devices.ArgsAfterTouch) error) CallbackHandle {
+func (d *MidiDevice) BindAfterTouch(path devices.PathAfterTouch, callback func(devices.ArgsAfterTouch) error) int {
 	handle := d.Tracker.RegisterCallback(fmt.Sprintf("AfterTouch binding for channel %d",
 		path.Channel))
 	d.MidiDevice.BindAfterTouch(path, WrapCallback(d.Tracker, handle, callback))

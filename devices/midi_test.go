@@ -32,7 +32,7 @@ func TestMidiDevice(t *testing.T) {
 				midi.ControlChange(2, 7, 64), // Wrong channel
 			},
 			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
-				d.Tracker.AssertNotCalled("callback should not be called for wrong channel")
+				d.Tracker.AssertNotCalled(0, "callback should not be called for wrong channel")
 			},
 		},
 		{
@@ -47,7 +47,7 @@ func TestMidiDevice(t *testing.T) {
 				midi.ControlChange(1, 8, 64), // Wrong controller number
 			},
 			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
-				d.Tracker.AssertNotCalled("callback should not be called for wrong controller")
+				d.Tracker.AssertCalled(0, "callback should not be called for wrong controller")
 			},
 		},
 		{
@@ -118,6 +118,7 @@ func TestMidiDevice(t *testing.T) {
 				midi.ControlChange(2, 8, 100), // Should trigger second CC binding
 			},
 			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
+				d.Tracker.AssertCallOrder([]int{0, 1, 2})
 				d.Tracker.AssertCalled(3, "all three callbacks should be called once each")
 			},
 		},
@@ -203,7 +204,7 @@ func TestMidiDevice(t *testing.T) {
 				midi.NoteOn(2, 60, 100), // Right key, wrong channel
 			},
 			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
-				d.Tracker.AssertNotCalled("callback should not be called for wrong channel")
+				d.Tracker.AssertCalled(0, "callback should not be called for wrong channel")
 			},
 		},
 		{
@@ -298,7 +299,7 @@ func TestMidiDevice(t *testing.T) {
 				midi.AfterTouch(2, 100), // Wrong channel
 			},
 			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
-				d.Tracker.AssertNotCalled("callback should not be called for wrong channel")
+				d.Tracker.AssertCalled(0, "callback should not be called for wrong channel")
 			},
 		},
 		{

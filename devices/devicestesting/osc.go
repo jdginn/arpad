@@ -81,7 +81,7 @@ func (d *TestOscDevice) GetSentMessages() []*osc.Message {
 	return d.mockClient.sentMessages
 }
 
-func (d *TestOscDevice) BindInt(addr string, callback func(int64) error) CallbackHandle {
+func (d *TestOscDevice) BindInt(addr string, callback func(int64) error) int {
 	handle := d.Tracker.RegisterCallback(fmt.Sprintf("int binding for %s", addr))
 	d.OscDevice.BindInt(addr, WrapCallback(d.Tracker, handle, callback))
 	return handle
