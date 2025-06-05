@@ -100,7 +100,6 @@ func (f *MidiDevice) BindPitchBend(path PathPitchBend, callback func(ArgsPitchBe
 		path:     path,
 		callback: callback,
 	})
-	fmt.Printf("f.pitchBend: %v\n", f.pitchBend)
 }
 
 func (f *MidiDevice) BindAfterTouch(path PathAfterTouch, callback func(ArgsAfterTouch) error) {
@@ -124,10 +123,7 @@ func (f *MidiDevice) Run() {
 	var err error
 	var stop func()
 
-	fmt.Println("running...")
-
 	stop, err = midi.ListenTo(f.inPort, func(msg midi.Message, timestampms int32) {
-		fmt.Printf("Received message of type %T\n", msg)
 		switch msg.Type() {
 		case midi.ControlChangeMsg:
 			var channel, control, value uint8
@@ -140,11 +136,9 @@ func (f *MidiDevice) Run() {
 					if err := cc.callback(ArgsCC{value}); err != nil {
 						fmt.Println("failed to process Control Change:", err)
 					}
-					break
 				}
 			}
 		case midi.PitchBendMsg:
-			fmt.Println("It's a pitchbend..")
 			var channel uint8
 			var relative int16
 			var absolute uint16
@@ -152,16 +146,11 @@ func (f *MidiDevice) Run() {
 				fmt.Println("failed to parse Pitch Bend message:", err)
 				return
 			}
-			fmt.Println("... and we parsed it")
-			fmt.Printf("f.pitchbend: %v\n", f.pitchBend)
 			for _, pitchbend := range f.pitchBend {
-				fmt.Printf("Checking for channel %d against %d\n", channel, pitchbend.path.Channel)
 				if pitchbend.path.Channel == channel {
-					fmt.Printf("Running callback on pitchbend for chanel %d\n", channel)
 					if err := pitchbend.callback(ArgsPitchBend{relative, absolute}); err != nil {
 						fmt.Println("failed to process Pitch Bend:", err)
 					}
-					break
 				}
 			}
 		case midi.NoteOnMsg:
@@ -171,7 +160,7 @@ func (f *MidiDevice) Run() {
 				return
 			}
 			for _, note := range f.note {
-				if note.path.Key == key {
+				if note.path.Key == key && note.path.Channel == channel {
 					if err := note.callback(true); err != nil {
 						fmt.Println("failed to process Note On:", err)
 					}
@@ -184,7 +173,7 @@ func (f *MidiDevice) Run() {
 				return
 			}
 			for _, note := range f.note {
-				if note.path.Key == key {
+				if note.path.Key == key && note.path.Channel == channel {
 					if err := note.callback(false); err != nil {
 						fmt.Println("failed to process Note Off:", err)
 					}
