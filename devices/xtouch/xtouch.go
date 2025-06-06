@@ -3,10 +3,23 @@ package xtouch
 import (
 	"fmt"
 	"math"
+	"sync"
+	"time"
 
 	dev "github.com/jdginn/arpad/devices"
 
 	midi "gitlab.com/gomidi/midi/v2"
+)
+
+const (
+	// Handshake message sent by X-Touch every 2 seconds
+	handshakePingMessage = "\xF0\x00\x20\x32\x58\x54\x00\xF7"
+	// Expected response message (should be received every 6-8 seconds)
+	handshakeResponseMessage = "\xF0\x00\x00\x66\x14\x00\xF7"
+
+	// Timing constants
+	pingInterval    = 2 * time.Second
+	responseTimeout = 8 * time.Second
 )
 
 // Fader represents a motorized fader on an xtouch controller.
@@ -161,9 +174,80 @@ func (m *Meter) SendRelative(val float64) error {
 
 type XTouch struct {
 	base *dev.MidiDevice
+
+	// Handshake management
+	handshakeActive   bool
+	lastResponse      time.Time
+	handshakeMutex    sync.RWMutex
+	handshakeStopChan chan struct{}
+}
+
+// startHandshake begins the handshake protocol
+func (x *XTouch) startHandshake() error {
+	x.handshakeMutex.Lock()
+	defer x.handshakeMutex.Unlock()
+
+	if x.handshakeActive {
+		return nil
+	}
+
+	x.handshakeStopChan = make(chan struct{})
+	x.handshakeActive = true
+	x.lastResponse = time.Now()
+
+	// Start sending ping messages
+	go func() {
+		ticker := time.NewTicker(pingInterval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				if err := x.base.Send(midi.SysEx([]byte(handshakePingMessage))); err != nil {
+					fmt.Printf("Error sending handshake ping: %v\n", err)
+				}
+
+				// Check for response timeout
+				x.handshakeMutex.RLock()
+				if time.Since(x.lastResponse) > responseTimeout {
+					fmt.Println("Warning: No handshake response received within timeout period")
+				}
+				x.handshakeMutex.RUnlock()
+
+			case <-x.handshakeStopChan:
+				return
+			}
+		}
+	}()
+
+	// Set up handler for response messages
+	x.base.BindSysEx([]byte(handshakeResponseMessage), func(msg []byte) error {
+		x.handshakeMutex.Lock()
+		x.lastResponse = time.Now()
+		x.handshakeMutex.Unlock()
+		return nil
+	})
+
+	return nil
+}
+
+// stopHandshake stops the handshake protocol
+func (x *XTouch) stopHandshake() {
+	x.handshakeMutex.Lock()
+	defer x.handshakeMutex.Unlock()
+
+	if !x.handshakeActive {
+		return
+	}
+
+	close(x.handshakeStopChan)
+	x.handshakeActive = false
 }
 
 func (x *XTouch) Run() {
+	if err := x.startHandshake(); err != nil {
+		fmt.Printf("Failed to start handshake: %v\n", err)
+	}
 	x.base.Run()
 }
 
@@ -461,7 +545,11 @@ type XTouchDefault struct {
 // New returns a properly initialized XTouchDefault struct.
 func New(d *dev.MidiDevice) XTouchDefault {
 	x := XTouchDefault{
-		XTouch: XTouch{d},
+		XTouch: XTouch{
+			base:            d,
+			handshakeActive: false,
+			lastResponse:    time.Time{},
+		},
 	}
 	for i := 0; i < 8; i++ {
 		x.Channels = append(x.Channels, x.NewChannelStrip(uint8(i)))
@@ -488,7 +576,11 @@ type XTouchExtender struct {
 
 func NewExtender(d *dev.MidiDevice) XTouchExtender {
 	x := XTouchExtender{
-		XTouch: XTouch{d},
+		XTouch: XTouch{
+			base:            d,
+			handshakeActive: false,
+			lastResponse:    time.Time{},
+		},
 	}
 	for i := 0; i < 8; i++ {
 		x.Channels[i] = x.NewChannelStrip(uint8(i))
