@@ -71,11 +71,25 @@ func (o *OscDevice) SetBool(key string, val bool) error {
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as an int.
 func (o *OscDevice) BindInt(addr string, effect func(int64) error) {
 	o.dispatcher.AddMsgHandler(addr, func(msg *osc.Message) {
-		val := msg.Arguments[len(msg.Arguments)-1]
+		var val any
+		if len(msg.Arguments) == 0 {
+			val = 0
+		} else {
+			val = msg.Arguments[0]
+			if val == nil {
+				val = 0
+			}
+		}
 		switch val := val.(type) {
 		case int:
 			effect(int64(val))
+		case int32:
+			effect(int64(val))
+		case int64:
+			effect(int64(val))
 		case float64:
+			effect(int64(val))
+		case float32:
 			effect(int64(val))
 		case string:
 			asint, err := strconv.Atoi(val)
@@ -84,7 +98,7 @@ func (o *OscDevice) BindInt(addr string, effect func(int64) error) {
 			}
 			effect(int64(asint))
 		default:
-			panic("bad")
+			panic(fmt.Sprintf("Unsupported message type %T", val))
 		}
 	})
 }
@@ -95,13 +109,23 @@ func (o *OscDevice) BindInt(addr string, effect func(int64) error) {
 // WARNING: Conversions are best-effort and could panic.
 func (o *OscDevice) BindFloat(key string, effect func(float64) error) {
 	o.dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
-		val := msg.Arguments[len(msg.Arguments)-1]
+		var val any
+		if len(msg.Arguments) == 0 {
+			val = 0.0
+		} else {
+			val = msg.Arguments[0]
+			if val == nil {
+				val = 0.0
+			}
+		}
 		switch val := val.(type) {
 		case float64:
 			effect(val)
 		case float32:
 			effect(float64(val))
 		case int:
+			effect(float64(val))
+		case int32:
 			effect(float64(val))
 		case int64:
 			effect(float64(val))
@@ -112,7 +136,7 @@ func (o *OscDevice) BindFloat(key string, effect func(float64) error) {
 			}
 			effect(float64(asNum))
 		default:
-			panic("bad")
+			panic(fmt.Sprintf("Unsupported message type %T", val))
 		}
 	})
 }
@@ -124,7 +148,15 @@ func (o *OscDevice) BindFloat(key string, effect func(float64) error) {
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as a string.
 func (o *OscDevice) BindString(key string, effect func(string) error) {
 	o.dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
-		val := msg.Arguments[len(msg.Arguments)-1]
+		var val any
+		if len(msg.Arguments) == 0 {
+			val = ""
+		} else {
+			val = msg.Arguments[0]
+			if val == nil {
+				val = ""
+			}
+		}
 		switch val := val.(type) {
 		case float64:
 			effect(fmt.Sprintf("%f", val))
@@ -132,12 +164,14 @@ func (o *OscDevice) BindString(key string, effect func(string) error) {
 			effect(fmt.Sprintf("%f", val))
 		case int:
 			effect(fmt.Sprintf("%d", val))
+		case int32:
+			effect(fmt.Sprintf("%d", val))
 		case int64:
 			effect(fmt.Sprintf("%d", val))
 		case string:
 			effect(val)
 		default:
-			panic("bad")
+			panic(fmt.Sprintf("Unsupported message type %T", val))
 		}
 	})
 }
@@ -149,7 +183,15 @@ func (o *OscDevice) BindString(key string, effect func(string) error) {
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as a boolean.
 func (o *OscDevice) BindBool(key string, effect func(bool) error) {
 	o.dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
-		val := msg.Arguments[len(msg.Arguments)-1]
+		var val any
+		if len(msg.Arguments) == 0 {
+			val = false
+		} else {
+			val = msg.Arguments[0]
+			if val == nil {
+				val = false
+			}
+		}
 		switch val := val.(type) {
 		case bool:
 			effect(val)
@@ -159,12 +201,14 @@ func (o *OscDevice) BindBool(key string, effect func(bool) error) {
 			effect(val > 0)
 		case int:
 			effect(val > 0)
+		case int32:
+			effect(val > 0)
 		case int64:
 			effect(val > 0)
 		case string:
 			effect(val == "true")
 		default:
-			panic("bad")
+			panic(fmt.Sprintf("Unsupported message type %T", val))
 		}
 	})
 }
