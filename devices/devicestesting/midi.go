@@ -203,3 +203,11 @@ func (d *MidiDevice) BindAfterTouch(path devices.PathAfterTouch, callback func(d
 	d.MidiDevice.BindAfterTouch(path, WrapCallback(d.Tracker, handle, callback))
 	return handle
 }
+
+// BindSysEx wraps the existing BindSysEx with automatic callback tracking
+func (d *MidiDevice) BindSysEx(path devices.PathSysEx, callback func([]byte) error) int {
+	handle := d.Tracker.RegisterCallback(fmt.Sprintf("SysEx binding for pattern %x",
+		path))
+	d.MidiDevice.BindSysEx(path, WrapCallback(d.Tracker, handle, callback))
+	return handle
+}

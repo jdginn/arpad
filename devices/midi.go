@@ -59,6 +59,13 @@ type AfterTouch struct {
 	callback func(ArgsAfterTouch) error
 }
 
+type PathSysEx = []byte
+
+type SysEx struct {
+	path     PathSysEx
+	callback func([]byte) error
+}
+
 // MidiDevice represents a generic MIDI device and allows registering effects for various messages the device may receive.
 type MidiDevice struct {
 	inPort  drivers.In
@@ -68,6 +75,7 @@ type MidiDevice struct {
 	pitchBend  []PitchBend
 	note       []Note
 	aftertouch []AfterTouch
+	sysex      []SysEx
 }
 
 func NewMidiDevice(inPort drivers.In, outPort drivers.Out) *MidiDevice {
@@ -78,6 +86,7 @@ func NewMidiDevice(inPort drivers.In, outPort drivers.Out) *MidiDevice {
 		pitchBend:  []PitchBend{},
 		note:       []Note{},
 		aftertouch: []AfterTouch{},
+		sysex:      []SysEx{},
 	}
 }
 
@@ -104,6 +113,13 @@ func (f *MidiDevice) BindPitchBend(path PathPitchBend, callback func(ArgsPitchBe
 
 func (f *MidiDevice) BindAfterTouch(path PathAfterTouch, callback func(ArgsAfterTouch) error) {
 	f.aftertouch = append(f.aftertouch, AfterTouch{
+		path:     path,
+		callback: callback,
+	})
+}
+
+func (f *MidiDevice) BindSysEx(path PathSysEx, callback func([]byte) error) {
+	f.sysex = append(f.sysex, SysEx{
 		path:     path,
 		callback: callback,
 	})
@@ -189,6 +205,29 @@ func (f *MidiDevice) Run() {
 				if aftertouch.path.Channel == channel {
 					if err := aftertouch.callback(ArgsAfterTouch{pressure}); err != nil {
 						fmt.Println("failed to process After Touch:", err)
+					}
+				}
+			}
+		case midi.SysExMsg:
+			var data []byte
+			if ok := msg.GetSysEx(&data); !ok {
+				fmt.Println("failed to parse SysEx message:", err)
+				return
+			}
+			for _, sysex := range f.sysex {
+				// Check if the message matches the pattern
+				if len(data) >= len(sysex.path) {
+					matches := true
+					for i, b := range sysex.path {
+						if data[i] != b {
+							matches = false
+							break
+						}
+					}
+					if matches {
+						if err := sysex.callback(data); err != nil {
+							fmt.Println("failed to process SysEx:", err)
+						}
 					}
 				}
 			}

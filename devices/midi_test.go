@@ -393,6 +393,117 @@ func TestMidiDevice(t *testing.T) {
 				d.Tracker.AssertCalled(3, "all zero-value messages should trigger callbacks")
 			},
 		},
+		{
+			name: "sysex message with exact pattern match triggers callback",
+			setupBindings: func(d *devtest.MidiDevice) {
+				pattern := []byte{0xF0, 0x00, 0x20, 0x32, 0x58}
+				d.BindSysEx(pattern, func(data []byte) error {
+					assert.Equal([]byte{0xF0, 0x00, 0x20, 0x32, 0x58, 0x54, 0x00, 0xF7}, data,
+						"received data should match expected pattern")
+					return nil
+				})
+			},
+			inputMessages: []midi.Message{
+				midi.SysEx([]byte{0xF0, 0x00, 0x20, 0x32, 0x58, 0x54, 0x00, 0xF7}),
+			},
+			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
+				d.Tracker.AssertCalled(1, "callback should be called once")
+			},
+		},
+		{
+			name: "sysex message with non-matching pattern does not trigger callback",
+			setupBindings: func(d *devtest.MidiDevice) {
+				pattern := []byte{0xF0, 0x00, 0x20, 0x32, 0x58}
+				d.BindSysEx(pattern, func(data []byte) error {
+					assert.Fail("callback should not be called for non-matching pattern")
+					return nil
+				})
+			},
+			inputMessages: []midi.Message{
+				midi.SysEx([]byte{0xF0, 0x00, 0x20, 0x32, 0x59, 0x54, 0x00, 0xF7}), // Different byte in pattern
+			},
+			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
+				d.Tracker.AssertCalled(0, "callback should not be called")
+			},
+		},
+		{
+			name: "multiple sysex bindings work independently",
+			setupBindings: func(d *devtest.MidiDevice) {
+				pattern1 := []byte{0xF0, 0x00, 0x20}
+				pattern2 := []byte{0xF0, 0x00, 0x66}
+
+				d.BindSysEx(pattern1, func(data []byte) error {
+					assert.Equal([]byte{0xF0, 0x00, 0x20, 0x32, 0x58, 0x54, 0x00, 0xF7}, data,
+						"first pattern data should match")
+					return nil
+				})
+
+				d.BindSysEx(pattern2, func(data []byte) error {
+					assert.Equal([]byte{0xF0, 0x00, 0x66, 0x14, 0x00, 0xF7}, data,
+						"second pattern data should match")
+					return nil
+				})
+			},
+			inputMessages: []midi.Message{
+				midi.SysEx([]byte{0xF0, 0x00, 0x20, 0x32, 0x58, 0x54, 0x00, 0xF7}), // Should match first pattern
+				midi.SysEx([]byte{0xF0, 0x00, 0x66, 0x14, 0x00, 0xF7}),             // Should match second pattern
+			},
+			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
+				d.Tracker.AssertCalled(2, "both callbacks should be called once each")
+			},
+		},
+		{
+			name: "mixed message types including sysex are handled correctly",
+			setupBindings: func(d *devtest.MidiDevice) {
+				var sequence []string
+
+				d.BindSysEx([]byte{0xF0, 0x00, 0x20}, func(data []byte) error {
+					sequence = append(sequence, "SysEx1")
+					return nil
+				})
+
+				d.BindCC(dev.PathCC{Channel: 1, Controller: 7}, func(args dev.ArgsCC) error {
+					sequence = append(sequence, fmt.Sprintf("CC:%d", args.Value))
+					return nil
+				})
+
+				d.BindSysEx([]byte{0xF0, 0x00, 0x66}, func(data []byte) error {
+					sequence = append(sequence, "SysEx2")
+					return nil
+				})
+			},
+			inputMessages: []midi.Message{
+				midi.SysEx([]byte{0xF0, 0x00, 0x20, 0x32, 0x58, 0x54, 0x00, 0xF7}),
+				midi.ControlChange(1, 7, 64),
+				midi.SysEx([]byte{0xF0, 0x00, 0x66, 0x14, 0x00, 0xF7}),
+			},
+			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
+				d.Tracker.AssertCalled(3, "all callbacks should be executed in order")
+				d.Tracker.AssertCallOrder([]int{0, 1, 2})
+			},
+		},
+		{
+			name: "sysex error handling works correctly",
+			setupBindings: func(d *devtest.MidiDevice) {
+				pattern := []byte{0xF0, 0x00, 0x20}
+
+				// First binding returns error
+				d.BindSysEx(pattern, func(data []byte) error {
+					return fmt.Errorf("intentional sysex error")
+				})
+
+				// Second binding should still be called
+				d.BindSysEx(pattern, func(data []byte) error {
+					return nil
+				})
+			},
+			inputMessages: []midi.Message{
+				midi.SysEx([]byte{0xF0, 0x00, 0x20, 0x32, 0x58, 0x54, 0x00, 0xF7}),
+			},
+			validateState: func(d *devtest.MidiDevice, port *devtest.MockMIDIPort) {
+				d.Tracker.AssertCalled(2, "both callbacks should be called despite error")
+			},
+		},
 	}
 
 	for _, tt := range tests {
