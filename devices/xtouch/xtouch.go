@@ -101,22 +101,6 @@ func (f *Button) SetLED(state LEDState) error {
 	}
 }
 
-type Encoder struct {
-	d *dev.MidiDevice
-
-	channel    uint8
-	controller uint8
-}
-
-func (e *Encoder) Bind(nil, callback func(dev.ArgsCC) error) {
-	e.d.BindCC(dev.PathCC{e.channel, e.controller}, callback)
-}
-
-// TODO: does this need any special wrapping?
-func (e *Encoder) SetLEDRing(value uint8) error {
-	return e.d.Send(midi.ControlChange(e.channel, e.controller, value))
-}
-
 type ScribbleColor int
 
 const (
@@ -264,14 +248,19 @@ func (x *XTouch) NewFader(channelNo uint8, callbacks ...func(dev.ArgsPitchBend) 
 	}
 }
 
-func (x *XTouch) NewEncoder(channelNo uint8, control uint8, callbacks ...func(dev.ArgsCC) error) Encoder {
+func (x *XTouch) NewEncoder(channelNo uint8, id uint8, callbacks ...func(dev.ArgsCC) error) Encoder {
+	// id should be 0-7
+	encoderCC := 16 + (id % 8) // Maps to CC 16-23
+	ledLowCC := 48 + (id % 8)  // Maps to CC 48-55
+	ledHighCC := 56 + (id % 8) // Maps to CC 56-63
 	for _, e := range callbacks {
-		x.base.BindCC(dev.PathCC{channelNo, control}, e)
+		x.base.BindCC(dev.PathCC{channelNo, encoderCC}, e)
 	}
 	return Encoder{
-		d:          x.base,
-		channel:    channelNo,
-		controller: control,
+		d:           x.base,
+		channel:     channelNo,
+		ledRingLow:  ledLowCC,
+		ledRingHigh: ledHighCC,
 	}
 }
 
