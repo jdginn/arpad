@@ -45,62 +45,6 @@ func (f *Fader) SetFaderAbsolute(val int16) error {
 	return f.d.Send(midi.Pitchbend(uint8(1+f.ChannelNo), val))
 }
 
-type LEDState uint8
-
-const (
-	OFF LEDState = iota
-	ON
-	FLASHING
-)
-
-// Button represents a button on an xtouch controller.
-//
-// Buttons send MIDI notes on a specified channel and key.
-// Buttons incorporate LEDs, which can either be off, on, or flashing.
-//
-// TODO: need toggle vs. momentary functionality
-type Button struct {
-	d *dev.MidiDevice
-
-	channel uint8
-	key     uint8
-
-	isToggled bool
-	isPressed bool
-}
-
-// Bind specifies the callback to run when this button is pressed.
-func (b *Button) Bind(nil, callback func(bool) error) {
-	b.d.BindNote(dev.PathNote{b.channel, b.key}, func(v bool) error {
-		b.isPressed = v
-		if v {
-			b.isToggled = !b.isToggled
-		}
-		return callback(v)
-	})
-}
-
-func (b *Button) IsToggled() bool {
-	return b.isToggled
-}
-
-func (b *Button) IsPressed() bool {
-	return b.isPressed
-}
-
-func (f *Button) SetLED(state LEDState) error {
-	switch state {
-	case OFF:
-		return f.d.Send(midi.NoteOn(f.channel, f.key, 0))
-	case ON:
-		return f.d.Send(midi.NoteOn(f.channel, f.key, 1))
-	case FLASHING:
-		return f.d.Send(midi.NoteOn(f.channel, f.key, 127))
-	default:
-		return fmt.Errorf("Unrecognized LED state")
-	}
-}
-
 type ScribbleColor int
 
 const (
@@ -261,20 +205,6 @@ func (x *XTouch) NewEncoder(channelNo uint8, id uint8, callbacks ...func(dev.Arg
 		channel:     channelNo,
 		ledRingLow:  ledLowCC,
 		ledRingHigh: ledHighCC,
-	}
-}
-
-// NewButton returns a new button corresponding to the given channel and MIDI key.
-//
-// NewButton accepts an optional, variadic list of callbacks to run when the button is pressed.
-func (x *XTouch) NewButton(channel, key uint8, callbacks ...func(bool) error) Button {
-	for _, e := range callbacks {
-		x.base.BindNote(dev.PathNote{channel, key}, e)
-	}
-	return Button{
-		d:       x.base,
-		channel: channel,
-		key:     key,
 	}
 }
 
