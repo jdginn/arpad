@@ -60,9 +60,9 @@ func NewModeManager[M constraints.Integer](startingMode M) *ModeManager[M] {
 // SetMode sets the currently active mode.
 //
 // If the new mode is not the same as the current mode, run each effect of each element with its cached value.
-func (c *ModeManager[M]) SetMode(mode M) {
+func (c *ModeManager[M]) SetMode(mode M) error {
 	if c.currMode == mode {
-		return
+		return nil
 	}
 	c.currMode = mode
 	// Run any actions associated with this mode to update devices to match
@@ -70,6 +70,7 @@ func (c *ModeManager[M]) SetMode(mode M) {
 	if _, ok := c.modes[mode]; !ok {
 		c.modes[mode] = newLayer()
 	}
+	return nil
 }
 
 // getMode gets the requested mode, initializing it if it does not exist.
