@@ -13,13 +13,7 @@ const (
 	ledFlashing
 )
 
-// Button represents a button on an xtouch controller.
-//
-// Buttons send MIDI notes on a specified channel and key.
-// Buttons incorporate LEDs, which can either be off, on, or flashing.
-//
-// TODO: need toggle vs. momentary functionality
-type Button struct {
+type baseButton struct {
 	// TODO: this needs a mutex...
 	d *dev.MidiDevice
 
@@ -27,6 +21,29 @@ type Button struct {
 	key     uint8
 
 	isPressed bool
+}
+
+func (b *baseButton) IsPressed() bool {
+	return b.isPressed
+}
+
+func (b *baseButton) SetLEDOff() error {
+	return b.d.Send(midi.NoteOn(b.channel, b.key, 0))
+}
+
+func (b *baseButton) SetLEDFlashing() error {
+	return b.d.Send(midi.NoteOn(b.channel, b.key, 1))
+}
+
+func (b *baseButton) SetLEDOn() error {
+	return b.d.Send(midi.NoteOn(b.channel, b.key, 127))
+}
+
+// Button that executes a function when the button is pressed
+//
+// Ignores the NoteOff signal
+type Button struct {
+	baseButton
 	callbacks []func(bool) error
 }
 
@@ -35,39 +52,60 @@ func (b *Button) Bind(nil, callback func(bool) error) {
 	b.callbacks = append(b.callbacks, callback)
 }
 
-func (b *Button) IsPressed() bool {
-	return b.isPressed
-}
-
-func (b *Button) SetLEDOff() error {
-	return b.d.Send(midi.NoteOn(b.channel, b.key, 0))
-}
-
-func (b *Button) SetLEDFlashing() error {
-	return b.d.Send(midi.NoteOn(b.channel, b.key, 1))
-}
-
-func (b *Button) SetLEDOn() error {
-	return b.d.Send(midi.NoteOn(b.channel, b.key, 127))
-}
-
 // NewButton returns a new button corresponding to the given channel and MIDI key.
 //
 // NewButton accepts an optional, variadic list of callbacks to run when the button is pressed.
 func (x *XTouch) NewButton(channel, key uint8, callbacks ...func(bool) error) *Button {
 	b := &Button{
-		d:         x.base,
-		channel:   channel,
-		key:       key,
+		baseButton: baseButton{
+			d:       x.base,
+			channel: channel,
+			key:     key,
+		},
 		callbacks: callbacks,
 	}
 	x.base.BindNote(dev.PathNote{channel, key}, func(v bool) error {
-		if v {
+		b.isPressed = v
+		if b.isPressed {
+			b.SetLEDOn()
+			for _, e := range b.callbacks {
+				e(b.isPressed)
+			}
+			return nil
+		} else {
+			b.SetLEDOff()
+		}
+		return nil
+	})
+	return b
+}
+
+// MomentaryButton is a button that responds both to the NoteOn and NoteOff signals
+type MomentaryButton struct {
+	baseButton
+
+	callbacks []func(bool) error
+}
+
+// NewMomentaryButton returns a new button corresponding to the given channel and MIDI key.
+//
+// NewMomentaryButton accepts an optional, variadic list of callbacks to run when the button is pressed.
+func (x *XTouch) NewMomentaryButton(channel, key uint8, callbacks ...func(bool) error) *MomentaryButton {
+	b := &MomentaryButton{
+		baseButton: baseButton{
+			d:       x.base,
+			channel: channel,
+			key:     key,
+		},
+		callbacks: callbacks,
+	}
+	x.base.BindNote(dev.PathNote{channel, key}, func(v bool) error {
+		b.isPressed = v
+		if b.isPressed {
 			b.SetLEDOn()
 		} else {
 			b.SetLEDOff()
 		}
-		b.isPressed = v
 		for _, e := range b.callbacks {
 			e(b.isPressed)
 		}
@@ -76,8 +114,13 @@ func (x *XTouch) NewButton(channel, key uint8, callbacks ...func(bool) error) *B
 	return b
 }
 
+// Bind specifies the callback to run when this button is pressed.
+func (b *MomentaryButton) Bind(nil, callback func(bool) error) {
+	b.callbacks = append(b.callbacks, callback)
+}
+
 type ToggleButton struct {
-	*Button
+	baseButton
 
 	isToggled bool
 	callbacks []func(bool) error
@@ -101,12 +144,12 @@ func (b *ToggleButton) Bind(nil, callback func(bool) error) {
 // NewButton accepts an optional, variadic list of callbacks to run when the button is pressed.
 func (x *XTouch) NewToggleButton(channel, key uint8, callbacks ...func(bool) error) *ToggleButton {
 	b := &ToggleButton{
-		Button: &Button{
-			d:         x.base,
-			channel:   channel,
-			key:       key,
-			callbacks: callbacks,
+		baseButton: baseButton{
+			d:       x.base,
+			channel: channel,
+			key:     key,
 		},
+		callbacks: callbacks,
 	}
 	x.base.BindNote(dev.PathNote{channel, key}, func(v bool) error {
 		b.isPressed = v
