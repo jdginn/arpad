@@ -8,8 +8,7 @@ import (
 //
 // The value is cached.
 type event struct {
-	value   any
-	actions []func(any) error
+	value any
 }
 
 // layerObserver is a bundle of all the elements registered for a particular mode
@@ -27,9 +26,7 @@ func newLayer() *layerObserver {
 
 func (l *layerObserver) get(key any) *event {
 	if _, ok := l.internal[key]; !ok {
-		l.internal[key] = &event{
-			actions: make([]func(any) error, 0),
-		}
+		l.internal[key] = &event{}
 	}
 	return l.internal[key]
 }
@@ -73,16 +70,6 @@ func (c *ModeManager[M]) SetMode(mode M) {
 	if _, ok := c.modes[mode]; !ok {
 		c.modes[mode] = newLayer()
 	}
-
-	for m, l := range c.modes {
-		if m|c.currMode != 0 {
-			for _, e := range l.internal {
-				for _, a := range e.actions {
-					a(e.value)
-				}
-			}
-		}
-	}
 }
 
 // getMode gets the requested mode, initializing it if it does not exist.
@@ -103,21 +90,6 @@ func (c *ModeManager[M]) getMode(mode M) *layerObserver {
 // There are some functional shenanigans to support proper binding to the device and proper automatic callbacks on mode change within the mode manager.
 // Note that this function doesn't care about the types of the bind path or args to the callback as long as the bind function accepts that pair.
 func Bind[P, A any, M constraints.Integer](mm *ModeManager[M], mode M, binder func(P, func(A) error), path P, callback func(A) error) {
-	// // First, we need to tell the mode manager to call the callback with the cached value any time we toggle to this mode
-	// fmt.Printf("path: %v\n", path)
-	// elem := mm.getMode(mode).get(path)
-	// fmt.Printf("elem: %v\n", elem)
-	// if elem.actions == nil {
-	// 	elem.actions = make([]func(any) error, 0)
-	// }
-	// // We need to type-delete V because it allows us to store all of these actions in one slice (nifty!)
-	// elem.actions = append(elem.actions, func(v any) error {
-	// 	// Undo the type deletion here in this closure
-	// 	// Now everything is type-safe again
-	// 	castV := v.(A)
-	// 	return callback(castV)
-	// })
-
 	// Now bind the callback to the device, but first wrap it in another closure with guards to only run this for the specified mode.
 	binder(
 		path,

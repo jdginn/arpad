@@ -71,9 +71,13 @@ func init() {
 	mm = &ModeManager{mLib.NewModeManager[Mode](MIX), "", 0}
 }
 
+type bindable[P, A any] interface {
+	Bind(P, func(A) error)
+}
+
 // This is just eliding the first argument because it never changes and visual clarity is at a premium
-func bind[P, A any](mode Mode, binder func(P, func(A) error), path P, callback func(A) error) {
-	mLib.Bind(mm.ModeManager, mode, binder, path, callback)
+func bind[P, A any](mode Mode, binder bindable[P, A], path P, callback func(A) error) {
+	mLib.Bind(mm.ModeManager, mode, binder.Bind, path, callback)
 }
 
 const MIDI_IN = "IAC Driver Bus 1"
@@ -82,6 +86,12 @@ const MIDI_IN = "IAC Driver Bus 1"
 const MIDI_OUT = "IAC Driver Bus 1"
 
 // const MIDI_OUT = "X-Touch EXT"
+
+const TOTAL_TRACKS = 8
+
+func normalizeFader(abs uint16) float64 {
+	return float64(abs) / 4 / float64(math.MaxUint16)
+}
 
 func main() {
 	defer midi.CloseDriver()
@@ -102,11 +112,33 @@ func main() {
 
 	motu := motulib.NewHTTPDatastore("http://localhost:8888")
 
-	// reaper := reaperlib.NewReaper(dev.NewOscDevice("192.168.1.146", 9001, "0.0.0.0:9002"))
-	reaper := reaperlib.NewReaper(dev.NewOscDevice("0.0.0.0", 9001, "0.0.0.0:9000"))
+	var reaper reaperlib.Reaper
 
-	for trackNum := int64(1); trackNum < 8; trackNum++ {
+	//
+
+	// Per-channel strip controls are defined here
+	for trackNum := int64(1); trackNum <= TOTAL_TRACKS; trackNum++ {
 		c := xtouch.Channels[trackNum]
+
+		// XTouch bindings
+		//
+		// MIX Mode
+		bind(MIX, c.Fader, nil, func(args dev.ArgsPitchBend) error {
+			reaper.Track.SendTrackVolume(trackNum, normalizeFader(args.Absolute))
+			return nil
+		})
+		bind(MIX, c.Mute, nil, func(b bool) error {
+			return reaper.Track.SendTrackMute(trackNum, b)
+		})
+		bind(MIX, c.Solo, nil, func(b bool) error {
+			return reaper.Track.SendTrackSolo(trackNum, b)
+		})
+		bind(MIX, c.Rec, nil, func(b bool) error {
+			return reaper.Track.SendTrackRecArm(trackNum, b)
+		})
+		bind(MIX, c.Select, nil, func(b bool) error {
+			return reaper.Track.SendTrackSelect(trackNum, b)
+		})
 
 		// Scribble strip
 		bind(RECORD, motu.BindString, fmt.Sprintf("ext/ibank/%d/name", trackNum), func(s string) error {
@@ -117,11 +149,11 @@ func main() {
 		normalizeFader := func(abs uint16) float64 {
 			return float64(abs) / 4 / float64(math.MaxUint16)
 		}
-		bind(RECORD|RECORD_THIS_TRACK_SENDS, c.Fader.Bind, nil, func(args dev.ArgsPitchBend) error {
+		bind(RECORD|RECORD_THIS_TRACK_SENDS, c.Fader.BindMove, nil, func(args dev.ArgsPitchBend) error {
 			fmt.Printf("XTOUCHÉ RECORD: track %d: %f\n", args.Absolute)
 			return motu.SetFloat(fmt.Sprintf("mix/main/%d/matrix/fader", trackNum), normalizeFader(args.Absolute))
 		})
-		bind(MIX, c.Fader.Bind, nil, func(args dev.ArgsPitchBend) error {
+		bind(MIX, c.Fader.BindMove, nil, func(args dev.ArgsPitchBend) error {
 			fmt.Printf("XTOUCH MIX: track %d: %f\n", args.Absolute)
 			return reaper.Track.SendTrackVolume(trackNum, normalizeFader(args.Absolute))
 		})
@@ -159,11 +191,11 @@ func main() {
 			}
 			return nil
 		})
-		bind(MIX, c.Select.Bind, nil, func(b bool) error {
-			mm.selectedTrackMix = trackNum
-			return c.Select.SetLED(xtouchlib.ON)
-		})
-		// TODO: bind incoming select from DAW
+		// bind(MIX, c.Select.Bind, nil, func(b bool) error {
+		// 	mm.selectedTrackMix = trackNum
+		// 	return c.Select.SetLEDOn(xtouchlib.ON)
+		// })
+		// // TODO: bind incoming select from DAW
 
 		// Mute
 		bind(RECORD, c.Mute.Bind, nil, func(b bool) error {
@@ -175,22 +207,22 @@ func main() {
 			// TODO: need toggle funcionality
 			return reaper.Track.SendTrackMute(trackNum, b)
 		})
-		bind(RECORD, motu.BindBool, fmt.Sprintf("mix/main/%d/matrix/mute", trackNum), func(b bool) error {
-			if b {
-				xtouch.Channels[trackNum].Mute.SetLED(xtouchlib.ON)
-			} else {
-				xtouch.Channels[trackNum].Mute.SetLED(xtouchlib.OFF)
-			}
-			return nil
-		})
-		bind(RECORD, motu.BindBool, fmt.Sprintf("channels/%d/mute", trackNum), func(b bool) error {
-			if b {
-				xtouch.Channels[trackNum].Mute.SetLED(xtouchlib.ON)
-			} else {
-				xtouch.Channels[trackNum].Mute.SetLED(xtouchlib.OFF)
-			}
-			return nil
-		})
+		// bind(RECORD, motu.BindBool, fmt.Sprintf("mix/main/%d/matrix/mute", trackNum), func(b bool) error {
+		// 	if b {
+		// 		xtouch.Channels[trackNum].Mute.SetLEDOn(xtouchlib.ON)
+		// 	} else {
+		// 		xtouch.Channels[trackNum].Mute.SetLEDOn(xtouchlib.OFF)
+		// 	}
+		// 	return nil
+		// })
+		// bind(RECORD, motu.BindBool, fmt.Sprintf("channels/%d/mute", trackNum), func(b bool) error {
+		// 	if b {
+		// 		xtouch.Channels[trackNum].Mute.SetLEDOn(xtouchlib.ON)
+		// 	} else {
+		// 		xtouch.Channels[trackNum].Mute.SetLEDOn(xtouchlib.OFF)
+		// 	}
+		// 	return nil
+		// })
 
 		//		// Solo
 		//		xtouch.Channels[trackNum].Solo.Bind(func(b bool) error {

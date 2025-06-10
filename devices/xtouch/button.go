@@ -5,12 +5,12 @@ import (
 	midi "gitlab.com/gomidi/midi/v2"
 )
 
-type LEDState uint8
+type ledState uint8
 
 const (
-	OFF LEDState = iota
-	ON
-	FLASHING
+	ledOff ledState = iota
+	ledOn
+	ledFlashing
 )
 
 // Button represents a button on an xtouch controller.
@@ -27,29 +27,28 @@ type Button struct {
 	key     uint8
 
 	isPressed bool
+	callbacks []func(bool) error
 }
 
 // Bind specifies the callback to run when this button is pressed.
 func (b *Button) Bind(nil, callback func(bool) error) {
-	b.d.BindNote(dev.PathNote{b.channel, b.key}, func(v bool) error {
-		return callback(v)
-	})
+	b.callbacks = append(b.callbacks, callback)
 }
 
 func (b *Button) IsPressed() bool {
 	return b.isPressed
 }
 
-func (f *Button) SetLEDOff() error {
-	return f.d.Send(midi.NoteOn(f.channel, f.key, 0))
+func (b *Button) SetLEDOff() error {
+	return b.d.Send(midi.NoteOn(b.channel, b.key, 0))
 }
 
-func (f *Button) SetLEDFlashing() error {
-	return f.d.Send(midi.NoteOn(f.channel, f.key, 1))
+func (b *Button) SetLEDFlashing() error {
+	return b.d.Send(midi.NoteOn(b.channel, b.key, 1))
 }
 
-func (f *Button) SetLEDOn(state LEDState) error {
-	return f.d.Send(midi.NoteOn(f.channel, f.key, 127))
+func (b *Button) SetLEDOn() error {
+	return b.d.Send(midi.NoteOn(b.channel, b.key, 127))
 }
 
 // NewButton returns a new button corresponding to the given channel and MIDI key.
@@ -57,24 +56,31 @@ func (f *Button) SetLEDOn(state LEDState) error {
 // NewButton accepts an optional, variadic list of callbacks to run when the button is pressed.
 func (x *XTouch) NewButton(channel, key uint8, callbacks ...func(bool) error) *Button {
 	b := &Button{
-		d:       x.base,
-		channel: channel,
-		key:     key,
+		d:         x.base,
+		channel:   channel,
+		key:       key,
+		callbacks: callbacks,
 	}
 	x.base.BindNote(dev.PathNote{channel, key}, func(v bool) error {
+		if v {
+			b.SetLEDOn()
+		} else {
+			b.SetLEDOff()
+		}
 		b.isPressed = v
+		for _, e := range b.callbacks {
+			e(b.isPressed)
+		}
 		return nil
 	})
-	for _, e := range callbacks {
-		x.base.BindNote(dev.PathNote{channel, key}, e)
-	}
 	return b
 }
 
 type ToggleButton struct {
-	b *Button
+	*Button
 
 	isToggled bool
+	callbacks []func(bool) error
 }
 
 func (b *ToggleButton) SetToggle(val bool) error {
@@ -86,22 +92,32 @@ func (b *ToggleButton) IsToggled() bool {
 	return b.isToggled
 }
 
+func (b *ToggleButton) Bind(nil, callback func(bool) error) {
+	b.callbacks = append(b.callbacks, callback)
+}
+
 // NewButton returns a new button corresponding to the given channel and MIDI key.
 //
 // NewButton accepts an optional, variadic list of callbacks to run when the button is pressed.
-func (x *XTouch) NewToggleButton(channel, key uint8, callbacks ...func(bool) error) ToggleButton {
-	b := ToggleButton{
-		b: &Button{
-			d:       x.base,
-			channel: channel,
-			key:     key,
+func (x *XTouch) NewToggleButton(channel, key uint8, callbacks ...func(bool) error) *ToggleButton {
+	b := &ToggleButton{
+		Button: &Button{
+			d:         x.base,
+			channel:   channel,
+			key:       key,
+			callbacks: callbacks,
 		},
 	}
 	x.base.BindNote(dev.PathNote{channel, key}, func(v bool) error {
-		b.b.isPressed = v
+		b.isPressed = v
 		if v {
 			b.isToggled = !b.isToggled
-			for _, e := range callbacks {
+			if b.isToggled {
+				b.SetLEDOn()
+			} else {
+				b.SetLEDOff()
+			}
+			for _, e := range b.callbacks {
 				e(b.isToggled)
 			}
 		}

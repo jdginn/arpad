@@ -37,12 +37,12 @@ type Fader struct {
 // NOTE: the nil first argument is to satisfy the dev.Binding interface
 func (f *Fader) Bind(nil, callback func(dev.ArgsPitchBend) error) {
 	fmt.Println("binding to BindPitchBend...")
-	f.d.BindPitchBend(dev.PathPitchBend{uint8(1 + f.ChannelNo)}, callback)
+	f.d.BindPitchBend(dev.PathPitchBend{uint8(f.ChannelNo)}, callback)
 }
 
 // SetFaderAbsolute moves this fader to a value between 0 and max(int16).
 func (f *Fader) SetFaderAbsolute(val int16) error {
-	return f.d.Send(midi.Pitchbend(uint8(1+f.ChannelNo), val))
+	return f.d.Send(midi.Pitchbend(uint8(f.ChannelNo), val))
 }
 
 type ScribbleColor int
@@ -182,11 +182,11 @@ func (x *XTouch) Run() {
 // NewFader returns a new fader on the gien channel.
 //
 // NewFader accepts an optional, variadic list of callbacks to run when the fader is moved.
-func (x *XTouch) NewFader(channelNo uint8, callbacks ...func(dev.ArgsPitchBend) error) Fader {
+func (x *XTouch) NewFader(channelNo uint8, callbacks ...func(dev.ArgsPitchBend) error) *Fader {
 	for _, e := range callbacks {
 		x.base.BindPitchBend(dev.PathPitchBend{uint8(1 + channelNo)}, e)
 	}
-	return Fader{
+	return &Fader{
 		d:         x.base,
 		ChannelNo: channelNo,
 	}
@@ -227,14 +227,14 @@ func (x *XTouch) NewMeter(channel uint8) Meter {
 type channelStrip struct {
 	// TODO: Encoder
 	Encoder       Encoder
-	EncoderButton Button
+	EncoderButton *Button
 	Scribble      Scribble
-	Rec           Button
-	Solo          Button
-	Mute          Button
-	Select        Button
+	Rec           *ToggleButton
+	Solo          *ToggleButton
+	Mute          *ToggleButton
+	Select        *Button
 	Meter         Meter
-	Fader         Fader
+	Fader         *Fader
 	// TODO: 7Seg
 	// TODO: JogWheel
 }
@@ -246,22 +246,22 @@ func (x *XTouch) NewChannelStrip(id uint8) channelStrip {
 		Encoder:       x.NewEncoder(0, id+32),
 		EncoderButton: x.NewButton(0, id+16),
 		Scribble:      x.NewScribble(id + 20),
-		Rec:           x.NewButton(0, id),
-		Solo:          x.NewButton(0, id+8),
-		Mute:          x.NewButton(0, id+16),
+		Rec:           x.NewToggleButton(0, id),
+		Solo:          x.NewToggleButton(0, id+8),
+		Mute:          x.NewToggleButton(0, id+16),
 		Select:        x.NewButton(0, id+24),
 		Meter:         x.NewMeter(id),
-		Fader:         x.NewFader(id + 1),
+		Fader:         x.NewFader(id),
 	}
 }
 
 type EncoderAssign struct {
-	TRACK        Button
-	PAN_SURROUND Button
-	EQ           Button
-	SEND         Button
-	PLUGIN       Button
-	INST         Button
+	TRACK        *Button
+	PAN_SURROUND *Button
+	EQ           *Button
+	SEND         *Button
+	PLUGIN       *Button
+	INST         *Button
 }
 
 func (x *XTouch) NewEncoderAssign() EncoderAssign {
@@ -276,15 +276,15 @@ func (x *XTouch) NewEncoderAssign() EncoderAssign {
 }
 
 type View struct {
-	GLOBAL       Button
-	MIDI         Button
-	INPUTS       Button
-	AUDIO_TRACKS Button
-	AUDIO_INST   Button
-	AUX          Button
-	BUSES        Button
-	OUTPUTS      Button
-	USER         Button
+	GLOBAL       *Button
+	MIDI         *Button
+	INPUTS       *Button
+	AUDIO_TRACKS *Button
+	AUDIO_INST   *Button
+	AUX          *Button
+	BUSES        *Button
+	OUTPUTS      *Button
+	USER         *Button
 }
 
 func (x XTouch) NewView() View {
@@ -302,14 +302,14 @@ func (x XTouch) NewView() View {
 }
 
 type Function struct {
-	F1 Button
-	F2 Button
-	F3 Button
-	F4 Button
-	F5 Button
-	F6 Button
-	F7 Button
-	F8 Button
+	F1 *Button
+	F2 *Button
+	F3 *Button
+	F4 *Button
+	F5 *Button
+	F6 *Button
+	F7 *Button
+	F8 *Button
 }
 
 func (x XTouch) NewFunction() Function {
@@ -326,10 +326,10 @@ func (x XTouch) NewFunction() Function {
 }
 
 type Modify struct {
-	SHIFT   Button
-	OPTION  Button
-	CONTROL Button
-	ALT     Button
+	SHIFT   *Button
+	OPTION  *Button
+	CONTROL *Button
+	ALT     *Button
 }
 
 func (x XTouch) NewModify() Modify {
@@ -342,12 +342,12 @@ func (x XTouch) NewModify() Modify {
 }
 
 type Automation struct {
-	READ_OFF Button
-	WRITE    Button
-	TRIM     Button
-	TOUCH    Button
-	LATCH    Button
-	GROUP    Button
+	READ_OFF *Button
+	WRITE    *Button
+	TRIM     *Button
+	TOUCH    *Button
+	LATCH    *Button
+	GROUP    *Button
 }
 
 func (x XTouch) NewAutomation() Automation {
@@ -362,10 +362,10 @@ func (x XTouch) NewAutomation() Automation {
 }
 
 type Utility struct {
-	SAVE   Button
-	UNDO   Button
-	CANCEL Button
-	ENTER  Button
+	SAVE   *Button
+	UNDO   *Button
+	CANCEL *Button
+	ENTER  *Button
 }
 
 func (x XTouch) NewUtility() Utility {
@@ -378,18 +378,18 @@ func (x XTouch) NewUtility() Utility {
 }
 
 type Transport struct {
-	Marker  Button
-	Nudge   Button
-	Cycle   Button
-	Drop    Button
-	Replace Button
-	Click   Button
-	Solo    Button
-	REW     Button
-	FF      Button
-	STOP    Button
-	PLAY    Button
-	RECORD  Button
+	Marker  *Button
+	Nudge   *Button
+	Cycle   *Button
+	Drop    *Button
+	Replace *Button
+	Click   *Button
+	Solo    *Button
+	REW     *Button
+	FF      *Button
+	STOP    *Button
+	PLAY    *Button
+	RECORD  *Button
 }
 
 func (x *XTouch) NewTransport() Transport {
@@ -410,10 +410,10 @@ func (x *XTouch) NewTransport() Transport {
 }
 
 type Page struct {
-	BANK_L    Button
-	BANK_R    Button
-	CHANNEL_L Button
-	CHANNEL_R Button
+	BANK_L    *Button
+	BANK_R    *Button
+	CHANNEL_L *Button
+	CHANNEL_R *Button
 }
 
 func (x *XTouch) NewPage() Page {
@@ -426,12 +426,12 @@ func (x *XTouch) NewPage() Page {
 }
 
 type Navigation struct {
-	UP    Button
-	DOWN  Button
-	LEFT  Button
-	RIGHT Button
-	ZOOM  Button
-	SCRUB Button
+	UP    *Button
+	DOWN  *Button
+	LEFT  *Button
+	RIGHT *Button
+	ZOOM  *Button
+	SCRUB *Button
 }
 
 func (x *XTouch) NewNavigation() Navigation {
