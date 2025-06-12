@@ -195,6 +195,8 @@ type PathChannelGroupSend struct {
 
 type ChannelMatrixEnableEndpoint struct {
 	m *MOTU
+
+	val bool
 }
 
 func (e *ChannelMatrixEnableEndpoint) Bind(channelIndex int64, callback func(bool) error) {
@@ -203,6 +205,9 @@ func (e *ChannelMatrixEnableEndpoint) Bind(channelIndex int64, callback func(boo
 }
 
 func (e *ChannelMatrixEnableEndpoint) Set(channelIndex int64, val bool) error {
+	if val == e.val {
+		return nil
+	}
 	path := fmt.Sprintf("mix/chan/%d/matrix/enable", channelIndex)
 	return e.m.d.SetBool(path, val)
 }

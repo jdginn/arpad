@@ -1,6 +1,9 @@
 package mode
 
 import (
+	"reflect"
+	"runtime"
+
 	"golang.org/x/exp/constraints"
 )
 
@@ -8,7 +11,8 @@ import (
 //
 // The value is cached.
 type event struct {
-	value any
+	value  any
+	sender func(any) error
 }
 
 // layerObserver is a bundle of all the elements registered for a particular mode
@@ -70,6 +74,14 @@ func (c *ModeManager[M]) SetMode(mode M) error {
 	if _, ok := c.modes[mode]; !ok {
 		c.modes[mode] = newLayer()
 	}
+
+	for _, event := range c.modes[mode].internal {
+		if err := event.sender(event.value); err != nil {
+			// TODO: collect and return all errors rather than bailing after the first error
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -101,4 +113,20 @@ func Bind[P, A any, M constraints.Integer](mm *ModeManager[M], mode M, binder fu
 			return nil
 		},
 	)
+}
+
+func Set[T any, M constraints.Integer](mm *ModeManager[M], mode M, sender func(T) error) func(T) error {
+	key := runtime.FuncForPC(reflect.ValueOf(sender).Pointer()).Name()
+	event := mm.getMode(mode).get(key)
+	event.sender = func(v any) error {
+		return sender(v.(T))
+	}
+
+	return func(val T) error {
+		event.value = val
+		if mm.currMode == mode {
+			sender(val)
+		}
+		return nil
+	}
 }
