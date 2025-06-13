@@ -29,7 +29,8 @@ var requiredImports = map[string]importInfo{"fmt": {path: "fmt", name: "fmt"}, "
 // sendPattern represents a discovered Send function call
 type sendPattern struct {
 	name     string        // Original function name (e.g., "SendTrackVolume")
-	recv     string        // Receiver type name (e.g., "Track")
+	recvType string        // Receiver type name (e.g., "Track")
+	recvInst string        // Receiver instance
 	pkg      string        // Package name (e.g., "reaper")
 	modeExpr ast.Expr      // Mode expression used in call
 	args     []ast.Expr    // Other arguments to the send
@@ -118,31 +119,17 @@ func extractSendPattern(call *ast.CallExpr, info *types.Info) (*sendPattern, boo
 		return nil, false
 	}
 
-	// // Get package information
-	// pkgPath := ""
-	// pkgName := ""
-	// if named, ok := recvType.(*types.Named); ok {
-	// 	pkg := named.Obj().Pkg()
-	// 	pkgPath = pkg.Path()
-	// 	pkgName = pkg.Name()
-	//
-	// 	// Record that we need this import
-	// 	requiredImports[pkgName] = importInfo{
-	// 		path: pkgPath,
-	// 		name: pkgName,
-	// 	}
-	// }
-
 	// Extract mode expression (first argument)
 	if len(call.Args) < 1 {
 		return nil, false
 	}
 
+	fmt.Printf("receiver: %v\n", recvType)
 	recvTypeParts := strings.Split(recvType.String(), `/`)
 
 	return &sendPattern{
 		name:     sel.Sel.Name,
-		recv:     recvTypeParts[len(recvTypeParts)-1],
+		recvType: recvTypeParts[len(recvTypeParts)-1],
 		pkg:      getPkgName(recvType),
 		modeExpr: call.Args[0],
 		args:     call.Args[1:],
@@ -321,7 +308,7 @@ func generateSendFunction(buf *bytes.Buffer, pattern *sendPattern) error {
 		Key:       keyName,
 		Params:    params,
 		ArgNames:  argNames,
-		RecvType:  pattern.recv,
+		RecvType:  pattern.recvType,
 		PkgName:   pattern.pkg,
 	}
 
@@ -360,7 +347,6 @@ func {{ .ModeAware }}(modes Mode, {{ .Params }}) error {
             if mm.states[mode][{{ .Key }}] == nil {
                 mm.states[mode][{{ .Key }}] = &controlState{
                     sender: func(v any) error {
-                        params := v.(struct { {{ .Params }} })
                         return {{ .RecvType }}.{{ .OrigName }}({{ .ArgNames }})
                     },
                 }
