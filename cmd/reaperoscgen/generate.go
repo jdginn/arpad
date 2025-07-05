@@ -48,6 +48,9 @@ func fieldNameForNode(n *Node) string {
 func generateNodeStructs(n *Node, w io.Writer) {
 	typeName := typeNameForNode(n)
 	fmt.Fprintf(w, "type %s struct {\n", typeName)
+	if n.Parent == nil {
+		fmt.Fprintf(w, "    *devices.OscDevice\n")
+	}
 	for _, child := range n.Children {
 		childType := typeNameForNode(child)
 		fieldName := fieldNameForNode(child)
@@ -67,21 +70,52 @@ func generateNodeStructs(n *Node, w io.Writer) {
 		}
 	}
 
+	// If and only if this node represents an API endpoint, it needs a pointer to the device
 	if n.Endpoint != nil {
+		parentType := "Reaper" // You may want to find the actual root device type.
+		fmt.Fprintf(w, "    device *%s\n", parentType)
+		// If and only if this node has qualifiers, it needs a state struct
 		allQualifiers := collectQualifierFields(n)
 		needState := len(allQualifiers) > 0
 		stateType := typeNameForNode(n) + "State"
-		parentType := "Reaper" // You may want to find the actual root device type.
 		if needState {
 			fmt.Fprintf(w, "    state %s\n", stateType)
-		}
-		fmt.Fprintf(w, "    device *%s\n", parentType)
-		if needState {
 			fmt.Fprintf(w, "}\n\n")
 			fmt.Fprintf(w, "type %s struct {\n", stateType)
 			for _, field := range collectQualifierFields(n) {
 				fmt.Fprintf(w, "    %s %s\n", field.Name, field.Type)
 			}
+		}
+		// TODO: implement Bind/Set methods as needed
+		fmt.Fprintf(w, "}\n\n")
+		fmt.Fprintf(w, "func (ep *%s) Bind(callback func(%s) error) {\n", typeName, n.Endpoint.ValueType)
+		fmt.Fprintf(w, "    addr := \"foo\"\n")
+		switch n.Endpoint.ValueType {
+		case "int64":
+			fmt.Fprintf(w, "    ep.device.BindInt(addr, callback)\n")
+		case "float64":
+			fmt.Fprintf(w, "    ep.device.BindFloat(addr, callback)\n")
+		case "string":
+			fmt.Fprintf(w, "    ep.device.BindString(addr, callback)\n")
+		case "bool":
+			fmt.Fprintf(w, "    ep.device.BindBool(addr, callback)\n")
+		default:
+			panic("bug")
+		}
+		fmt.Fprintf(w, "}\n\n")
+		fmt.Fprintf(w, "func (ep *%s) Set(val %s ) {\n", typeName, n.Endpoint.ValueType)
+		fmt.Fprintf(w, "    addr := \"foo\"\n")
+		switch n.Endpoint.ValueType {
+		case "int64":
+			fmt.Fprintf(w, "    ep.device.SetInt(addr, val)\n")
+		case "float64":
+			fmt.Fprintf(w, "    ep.device.SetFloat(addr, val)\n")
+		case "string":
+			fmt.Fprintf(w, "    ep.device.SetString(addr, val)\n")
+		case "bool":
+			fmt.Fprintf(w, "    ep.device.SetBool(addr, val)\n")
+		default:
+			panic("bug")
 		}
 	}
 

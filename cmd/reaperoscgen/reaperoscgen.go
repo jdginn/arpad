@@ -23,6 +23,9 @@ func NewGenerator(pkg string) *Generator {
 
 func (g *Generator) generatePreamble(buf *bytes.Buffer) {
 	fmt.Fprintf(buf, "package %s\n\n", g.pkg)
+	fmt.Fprintf(buf, "import (\n")
+	fmt.Fprintf(buf, "    \"github.com/jdginn/arpad/devices\"\n")
+	fmt.Fprintf(buf, ")\n\n")
 }
 
 func main() {
