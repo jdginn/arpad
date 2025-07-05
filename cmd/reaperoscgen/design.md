@@ -31,7 +31,9 @@ OSC patterns are mapped to the Device API hierarchy following these rules:
    - `f/` -> `float64` (raw float)
    - `i/` -> `int64`
    - `s/` -> `string`
-   - `t/` -> `bool`
+   - `b/` -> `bool` (either 0 or 1)
+   - `t/` -> `trigger` (either 0 or 1)
+   - `r/` -> `rotary` (-1 to 1)
 
 Example mapping:
 
