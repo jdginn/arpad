@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"strings"
 	"testing"
 
@@ -569,19 +568,18 @@ ACTION9 n/foo/bar
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			gen := NewGenerator("testpkg")
 			r := strings.NewReader(tc.input)
 			// We patch Parse to read from io.Reader for testability
-			err := parseFromReader(gen, r)
+			actions, err := Parse(r)
 			assert.NoError(t, err)
 
 			if len(tc.wantActions) == 0 {
-				assert.Empty(t, gen.actions)
+				assert.Empty(t, actions)
 				return
 			}
-			assert.Equal(t, len(tc.wantActions), len(gen.actions), "action count mismatch")
+			assert.Equal(t, len(tc.wantActions), len(actions), "action count mismatch")
 			for wantName, want := range tc.wantActions {
-				action, ok := gen.actions[wantName]
+				action, ok := actions[wantName]
 				assert.True(t, ok, "expected action %s", wantName)
 				assert.Equal(t, want.NumPatterns, len(action.Patterns), "pattern count mismatch for %s", wantName)
 				assert.Equal(t, want.Doc, action.Documentation, "documentation mismatch for %s", wantName)
@@ -600,65 +598,4 @@ ACTION9 n/foo/bar
 			}
 		})
 	}
-}
-
-// parseFromReader is a test-only helper to patch Parse to read from io.Reader
-func parseFromReader(g *Generator, r *strings.Reader) error {
-	var currentDoc strings.Builder
-	scanner := NewScanner(r)
-
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-
-		if line == "" {
-			continue
-		}
-
-		if strings.HasPrefix(line, "#") || strings.HasPrefix(line, "//") {
-			currentDoc.WriteString(strings.TrimPrefix(strings.TrimPrefix(line, "#"), "//"))
-			currentDoc.WriteString("\n")
-			continue
-		}
-
-		fields := strings.Fields(line)
-		if len(fields) < 2 {
-			continue
-		}
-
-		actionName := fields[0]
-		patterns := fields[1:]
-
-		newActions := map[string]*Action{}
-
-		action, exists := g.actions[actionName]
-		if !exists {
-			action = &Action{
-				Name:          actionName,
-				Patterns:      make([]*OSCPattern, 0),
-				Documentation: currentDoc.String(),
-			}
-			newActions[actionName] = action
-		}
-
-		for _, pattern := range patterns {
-			osc, err := parsePattern(pattern)
-			if err != nil {
-				// skip invalid pattern
-				continue
-			}
-			action.Patterns = append(action.Patterns, osc)
-			for name, action := range newActions {
-				g.actions[name] = action
-			}
-		}
-
-		currentDoc.Reset()
-	}
-
-	return scanner.Err()
-}
-
-// NewScanner wraps bufio.NewScanner for test isolation
-func NewScanner(r *strings.Reader) *bufio.Scanner {
-	return bufio.NewScanner(r)
 }
