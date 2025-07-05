@@ -29,7 +29,7 @@ type Endpoint struct {
 // BuildTree constructs the OSC API hierarchy from a flat list of Actions.
 func BuildTree(actions []*Action) *Node {
 	root := &Node{
-		Name:     "reaper", // Convention: top-level node
+		Name:     "Reaper", // Convention: top-level node
 		Children: make(map[string]*Node),
 		// Parent: nil
 	}

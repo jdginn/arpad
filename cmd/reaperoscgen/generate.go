@@ -1,179 +1,100 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
+	"io"
 	"strings"
-	"text/template"
 )
 
-func (g *Generator) generateEndpoint(buf *bytes.Buffer, pattern *OSCPattern) error {
-	return nil // TODO
-}
-
-func (g *Generator) generateActionCode(buf *bytes.Buffer, action *Action) error {
-	for _, pattern := range action.Patterns {
-		// Build endpoint hierarchy
-		hierarchy := buildHierarchy(pattern)
-
-		// Generate types and state structs
-		for _, level := range hierarchy {
-			if err := g.generateLevel(buf, level); err != nil {
-				return err
-			}
-		}
-
-		// Generate endpoint implementation
-		if err := g.generateEndpoint(buf, pattern); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-type HierarchyLevel struct {
-	Name        string
-	ParentName  string
-	IsEndpoint  bool
-	HasWildcard bool
-	StateFields []StateField
-	Pattern     *OSCPattern
-}
-
-func buildHierarchy(pattern *OSCPattern) []HierarchyLevel {
-	var levels []HierarchyLevel
-	var parentName string
-	var stateFields []StateField
-
-	for i, elem := range pattern.Path {
-		isEndpoint := i == len(pattern.Path)-1
-
-		level := HierarchyLevel{
-			Name:        makeTypeName(elem),
-			ParentName:  parentName,
-			IsEndpoint:  isEndpoint,
-			HasWildcard: elem == "@",
-		}
-
-		if level.HasWildcard {
-			field := StateField{
-				Name: fmt.Sprintf("%sNum", strings.ToLower(level.Name)),
-				Type: "int64",
-			}
-			stateFields = append(stateFields, field)
-		}
-
-		level.StateFields = make([]StateField, len(stateFields))
-		copy(level.StateFields, stateFields)
-
-		levels = append(levels, level)
-		parentName = level.Name
-	}
-
-	return levels
-}
-
-func makeTypeName(elem string) string {
-	// Convert element name to a valid Go identifier
-	name := strings.Title(strings.ToLower(elem))
-	name = strings.ReplaceAll(name, "+", "Plus")
-	name = strings.ReplaceAll(name, "-", "Minus")
-	return name
-}
-
-func (g *Generator) generateLevel(buf *bytes.Buffer, level HierarchyLevel) error {
-	if level.IsEndpoint {
-		// Generate endpoint type
-		data := EndpointTemplateData{
-			Name:           level.Name + "Endpoint",
-			Description:    "OSC endpoint for " + level.Name,
-			StateName:      level.Name + "State",
-			StateFields:    level.StateFields,
-			Pattern:        buildPattern(level),
-			StateParams:    buildStateParams(level),
-			ValueType:      level.Pattern.GoType,
-			HasValidation:  shouldValidate(level.Pattern),
-			ValidationCode: generateValidation(level.Pattern),
-		}
-
-		return executeTemplate(buf, endpointTemplate, data)
-	} else {
-		// Generate intermediate type
-		return g.generateIntermediateType(buf, level)
-	}
-}
-
-func buildPattern(level HierarchyLevel) string {
-	var parts []string
-	for range level.StateFields {
-		parts = append(parts, "%d")
-	}
-	return strings.Join(parts, "/")
-}
-
-func buildStateParams(level HierarchyLevel) string {
-	var params []string
-	for _, field := range level.StateFields {
-		params = append(params, "e.state."+field.Name)
-	}
-	return strings.Join(params, ", ")
-}
-
-func shouldValidate(pattern *OSCPattern) bool {
-	return pattern.TypePrefix == TypeNormalized || pattern.TypePrefix == TypeFloat
-}
-
-func generateValidation(pattern *OSCPattern) string {
-	switch pattern.TypePrefix {
-	case TypeNormalized:
-		return `if value < 0 || value > 1 {
-			return ErrOutOfRange
-		}`
-	case TypeFloat:
-		// Add any float-specific validation if needed
-		return ""
-	default:
+// capitalize returns the string with its first letter uppercased.
+func capitalize(s string) string {
+	if s == "" {
 		return ""
 	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }
 
-func (g *Generator) generateIntermediateType(buf *bytes.Buffer, level HierarchyLevel) error {
-	tmpl := `
-type {{.Name}} struct {
-    device *Reaper
-    state {{.StateName}}
-    {{if .HasWildcard}}
-    {{.ChildName}} func({{.ParamType}}) *{{.ChildType}}
-    {{else}}
-    {{.ChildName}} *{{.ChildType}}
-    {{end}}
+// typeNameForNode produces a unique Go type name for a node by joining ancestor names.
+func typeNameForNode(n *Node) string {
+	var names []string
+	curr := n
+	if curr.Parent == nil {
+		return "Reaper"
+	}
+	for curr != nil && curr.Parent != nil { // skip root ("reaper") parent
+		names = append([]string{capitalize(curr.Name)}, names...)
+		curr = curr.Parent
+	}
+	return strings.Join(names, "")
 }
-`
 
-	data := struct {
-		Name        string
-		StateName   string
-		HasWildcard bool
-		ChildName   string
-		ChildType   string
-		ParamType   string
-	}{
-		Name:        level.Name,
-		StateName:   level.Name + "State",
-		HasWildcard: level.HasWildcard,
-		ChildName:   level.Name,
-		ChildType:   level.Name + "Child",
-		ParamType:   "int64",
+// fieldNameForNode produces a field name for a child node.
+func fieldNameForNode(n *Node) string {
+	return capitalize(n.Name)
+}
+
+// generateNodeStructs recursively emits Go structs for all nodes in the hierarchy.
+func generateNodeStructs(n *Node, w io.Writer) {
+	// Skip endpoint nodes (those with only Endpoint and no children)
+	if n.Endpoint != nil && len(n.Children) == 0 {
+		return
 	}
 
-	return executeTemplate(buf, tmpl, data)
+	typeName := typeNameForNode(n)
+	fmt.Fprintf(w, "type %s struct {\n", typeName)
+	for _, child := range n.Children {
+		childType := typeNameForNode(child)
+		fieldName := fieldNameForNode(child)
+		if child.Qualifier != nil {
+			// e.g. Fx func(fxNum int64) *TrackFx
+			fmt.Fprintf(
+				w,
+				"    %s func(%s %s) *%s\n",
+				fieldName,
+				child.Qualifier.ParamName,
+				child.Qualifier.ParamType,
+				childType,
+			)
+		} else {
+			// e.g. Value *TrackFxParamValueEndpoint
+			fmt.Fprintf(w, "    %s *%s\n", fieldName, childType)
+		}
+	}
+	fmt.Fprintf(w, "}\n\n")
+
+	// Recurse for all children
+	for _, child := range n.Children {
+		generateNodeStructs(child, w)
+	}
 }
 
-func executeTemplate(buf *bytes.Buffer, tmpl string, data interface{}) error {
-	t, err := template.New("").Parse(tmpl)
-	if err != nil {
-		return err
+// generateEndpointStruct emits the endpoint struct for a leaf node.
+func generateEndpointStruct(n *Node, w io.Writer) {
+	if n.Endpoint == nil {
+		return
 	}
-	return t.Execute(buf, data)
+	typeName := typeNameForNode(n) + "Endpoint"
+	stateType := typeNameForNode(n) + "State"
+	parentType := "Reaper" // You may want to find the actual root device type.
+
+	fmt.Fprintf(w, "type %s struct {\n", typeName)
+	fmt.Fprintf(w, "    state %s\n", stateType)
+	fmt.Fprintf(w, "    device *%s\n", parentType)
+	fmt.Fprintf(w, "}\n\n")
+}
+
+// generateAllEndpointStructs walks the tree and emits endpoint structs for leaf nodes.
+func generateAllEndpointStructs(n *Node, w io.Writer) {
+	if n.Endpoint != nil {
+		generateEndpointStruct(n, w)
+	}
+	for _, child := range n.Children {
+		generateAllEndpointStructs(child, w)
+	}
+}
+
+// GenerateAllStructs is a convenience function to drive the codegen process.
+func GenerateAllStructs(root *Node, w io.Writer) {
+	generateNodeStructs(root, w)
+	generateAllEndpointStructs(root, w)
 }

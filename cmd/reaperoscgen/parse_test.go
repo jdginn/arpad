@@ -564,6 +564,34 @@ ACTION9 n/foo/bar
 				},
 			},
 		},
+		{
+			name:  "Action Name Sanitization With Plus and Minus",
+			input: `SCROLL_X+ b/scroll/x/+ r/scroll/x`,
+			wantActions: map[string]struct {
+				NumPatterns int
+				Doc         string
+				Patterns    []struct {
+					TypePrefix  string
+					Path        []string
+					GoType      string
+					HasWildcard bool
+				}
+			}{
+				"SCROLL_X_PLUS": {
+					NumPatterns: 2,
+					Doc:         "",
+					Patterns: []struct {
+						TypePrefix  string
+						Path        []string
+						GoType      string
+						HasWildcard bool
+					}{
+						{"b/", []string{"scroll", "x", "plus"}, "bool", false},
+						{"r/", []string{"scroll", "x"}, "float64", false},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -589,6 +617,9 @@ ACTION9 n/foo/bar
 					}
 				}
 				assert.True(t, ok, "expected action %s", wantName)
+				if !ok {
+					continue
+				}
 				assert.Equal(t, want.NumPatterns, len(action.Patterns), "pattern count mismatch for %s", wantName)
 				assert.Equal(t, want.Doc, action.Documentation, "documentation mismatch for %s", wantName)
 

@@ -34,6 +34,21 @@ type OSCPattern struct {
 	HasWildcard bool
 }
 
+// sanitizeActionName replaces special characters in action names
+// according to project rules: "+" → "Plus", "-" → "Minus".
+// Additional rules can be added as needed.
+func sanitizeActionName(s string) string {
+	s = strings.ReplaceAll(s, "+", "_PLUS")
+	s = strings.ReplaceAll(s, "-", "_MINUS")
+	return s
+}
+
+func sanitizeElement(s string) string {
+	s = strings.ReplaceAll(s, "+", "plus")
+	s = strings.ReplaceAll(s, "-", "minus")
+	return s
+}
+
 // parsePattern parses an OSC pattern into its components
 func parsePattern(pattern string) (*OSCPattern, error) {
 	if len(pattern) == 0 {
@@ -59,6 +74,7 @@ func parsePattern(pattern string) (*OSCPattern, error) {
 	// Remove empty elements
 	var path []string
 	for _, elem := range elements {
+		elem = sanitizeElement(elem)
 		if elem != "" {
 			path = append(path, elem)
 		}
@@ -129,7 +145,7 @@ func Parse(r io.Reader) ([]*Action, error) {
 			continue
 		}
 
-		actionName := fields[0]
+		actionName := sanitizeActionName(fields[0])
 		patterns := fields[1:]
 
 		action, exists := actions[actionName]
