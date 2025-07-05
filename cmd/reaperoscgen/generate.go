@@ -14,6 +14,14 @@ func capitalize(s string) string {
 	return strings.ToUpper(s[:1]) + s[1:]
 }
 
+// lowercase returns the string with its first letter lowercased.
+func lowercase(s string) string {
+	if s == "" {
+		return ""
+	}
+	return strings.ToLower(s[:1]) + s[1:]
+}
+
 // typeNameForNode produces a unique Go type name for a node by joining ancestor names.
 func typeNameForNode(n *Node) string {
 	var names []string
@@ -25,7 +33,7 @@ func typeNameForNode(n *Node) string {
 		names = append(names, "Endpoint")
 	}
 	for curr != nil && curr.Parent != nil { // skip root ("reaper") parent
-		names = append([]string{capitalize(curr.Name)}, names...)
+		names = append([]string{lowercase(curr.Name)}, names...)
 		curr = curr.Parent
 	}
 	return strings.Join(names, "")
@@ -38,11 +46,6 @@ func fieldNameForNode(n *Node) string {
 
 // generateNodeStructs recursively emits Go structs for all nodes in the hierarchy.
 func generateNodeStructs(n *Node, w io.Writer) {
-	// // Skip endpoint nodes (those with only Endpoint and no children)
-	// if n.Endpoint != nil && len(n.Children) == 0 {
-	// 	return
-	// }
-
 	typeName := typeNameForNode(n)
 	fmt.Fprintf(w, "type %s struct {\n", typeName)
 	for _, child := range n.Children {
@@ -63,12 +66,25 @@ func generateNodeStructs(n *Node, w io.Writer) {
 			fmt.Fprintf(w, "    %s *%s\n", fieldName, childType)
 		}
 	}
+
 	if n.Endpoint != nil {
+		allQualifiers := collectQualifierFields(n)
+		needState := len(allQualifiers) > 0
 		stateType := typeNameForNode(n) + "State"
 		parentType := "Reaper" // You may want to find the actual root device type.
-		fmt.Fprintf(w, "    state %s\n", stateType)
+		if needState {
+			fmt.Fprintf(w, "    state %s\n", stateType)
+		}
 		fmt.Fprintf(w, "    device *%s\n", parentType)
+		if needState {
+			fmt.Fprintf(w, "}\n\n")
+			fmt.Fprintf(w, "type %s struct {\n", stateType)
+			for _, field := range collectQualifierFields(n) {
+				fmt.Fprintf(w, "    %s %s\n", field.Name, field.Type)
+			}
+		}
 	}
+
 	fmt.Fprintf(w, "}\n\n")
 
 	// Recurse for all children
@@ -77,34 +93,31 @@ func generateNodeStructs(n *Node, w io.Writer) {
 	}
 }
 
-// generateEndpointStruct emits the endpoint struct for a leaf node.
-func generateEndpointStruct(n *Node, w io.Writer) {
-	if n.Endpoint == nil {
-		return
-	}
-	// typeName := typeNameForNode(n) + "Endpoint"
-	typeName := typeNameForNode(n)
-	stateType := typeNameForNode(n) + "State"
-	parentType := "Reaper" // You may want to find the actual root device type.
-
-	fmt.Fprintf(w, "type %s struct {\n", typeName)
-	fmt.Fprintf(w, "    state %s\n", stateType)
-	fmt.Fprintf(w, "    device *%s\n", parentType)
-	fmt.Fprintf(w, "}\n\n")
+type qualifierField struct {
+	Name string
+	Type string
 }
 
-// generateAllEndpointStructs walks the tree and emits endpoint structs for leaf nodes.
-func generateAllEndpointStructs(n *Node, w io.Writer) {
-	if n.Endpoint != nil {
-		generateEndpointStruct(n, w)
+func collectQualifierFields(n *Node) []qualifierField {
+	var fields []qualifierField
+	curr := n.Parent // start at parent; leaf node itself never has a qualifier
+	for curr != nil && curr.Parent != nil {
+		if curr.Qualifier != nil {
+			fields = append(fields, qualifierField{
+				Name: lowercase(curr.Qualifier.ParamName),
+				Type: curr.Qualifier.ParamType,
+			})
+		}
+		curr = curr.Parent
 	}
-	for _, child := range n.Children {
-		generateAllEndpointStructs(child, w)
+	// reverse to get root-to-leaf order
+	for i, j := 0, len(fields)-1; i < j; i, j = i+1, j-1 {
+		fields[i], fields[j] = fields[j], fields[i]
 	}
+	return fields
 }
 
 // GenerateAllStructs is a convenience function to drive the codegen process.
 func GenerateAllStructs(root *Node, w io.Writer) {
 	generateNodeStructs(root, w)
-	// generateAllEndpointStructs(root, w)
 }
