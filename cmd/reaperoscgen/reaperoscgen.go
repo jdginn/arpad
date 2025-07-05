@@ -3,26 +3,11 @@ package main
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"strings"
 )
-
-// OSCPattern represents a single OSC pattern with its type prefix and path elements
-type OSCPattern struct {
-	TypePrefix  string
-	Path        []string
-	FullPath    string
-	GoType      string
-	HasWildcard bool
-}
-
-// Action represents a REAPER action with its associated OSC patterns
-type Action struct {
-	Name          string
-	Patterns      []*OSCPattern
-	Documentation string
-}
 
 // Generator holds the state for code generation
 type Generator struct {
@@ -128,16 +113,21 @@ func main() {
 
 	file, err := os.Open(configPath)
 	if err != nil {
-		log.Fatalf("failed to open config file: %w", err)
+		log.Fatalf("failed to open config file: %v", err)
 	}
 	defer file.Close()
-	if _, err := Parse(file); err != nil {
+
+	parsedActions, err := Parse(file)
+	if err != nil {
 		log.Fatalf("Failed to parse config: %v", err)
 	}
 
-	var code []byte
+	tree := BuildTree(parsedActions)
+	fmt.Print(printHierarchy(tree))
 
-	if err := os.WriteFile(outputPath, code, 0644); err != nil {
-		log.Fatalf("Failed to write output file: %v", err)
-	}
+	// var code []byte
+	//
+	// if err := os.WriteFile(outputPath, code, 0644); err != nil {
+	// 	log.Fatalf("Failed to write output file: %v", err)
+	// }
 }

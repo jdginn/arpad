@@ -579,7 +579,15 @@ ACTION9 n/foo/bar
 			}
 			assert.Equal(t, len(tc.wantActions), len(actions), "action count mismatch")
 			for wantName, want := range tc.wantActions {
-				action, ok := actions[wantName]
+				var action *Action
+				ok := false
+				for _, a := range actions {
+					if a.Name == wantName {
+						ok = true
+						action = a
+						break
+					}
+				}
 				assert.True(t, ok, "expected action %s", wantName)
 				assert.Equal(t, want.NumPatterns, len(action.Patterns), "pattern count mismatch for %s", wantName)
 				assert.Equal(t, want.Doc, action.Documentation, "documentation mismatch for %s", wantName)

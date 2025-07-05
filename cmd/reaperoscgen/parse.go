@@ -18,6 +18,22 @@ const (
 	TypeRotary     = "r/"
 )
 
+// Action represents a REAPER action with its associated OSC patterns
+type Action struct {
+	Name          string
+	Patterns      []*OSCPattern
+	Documentation string
+}
+
+// OSCPattern represents a single OSC pattern with its type prefix and path elements
+type OSCPattern struct {
+	TypePrefix  string
+	Path        []string
+	FullPath    string
+	GoType      string
+	HasWildcard bool
+}
+
 // parsePattern parses an OSC pattern into its components
 func parsePattern(pattern string) (*OSCPattern, error) {
 	if len(pattern) == 0 {
@@ -88,8 +104,9 @@ func parsePattern(pattern string) (*OSCPattern, error) {
 }
 
 // parseFromReader is a test-only helper to patch Parse to read from io.Reader
-func Parse(r io.Reader) (map[string]*Action, error) {
+func Parse(r io.Reader) ([]*Action, error) {
 	actions := make(map[string]*Action)
+	actionOrder := []string{}
 
 	var currentDoc strings.Builder
 	scanner := bufio.NewScanner(r)
@@ -115,8 +132,6 @@ func Parse(r io.Reader) (map[string]*Action, error) {
 		actionName := fields[0]
 		patterns := fields[1:]
 
-		newActions := map[string]*Action{}
-
 		action, exists := actions[actionName]
 		if !exists {
 			action = &Action{
@@ -124,23 +139,33 @@ func Parse(r io.Reader) (map[string]*Action, error) {
 				Patterns:      make([]*OSCPattern, 0),
 				Documentation: currentDoc.String(),
 			}
-			newActions[actionName] = action
 		}
 
+		valid := false
 		for _, pattern := range patterns {
 			osc, err := parsePattern(pattern)
 			if err != nil {
 				// skip invalid pattern
 				continue
 			}
+			valid = true
 			action.Patterns = append(action.Patterns, osc)
-			for name, action := range newActions {
-				actions[name] = action
+		}
+		// Only add action if at least one pattern was were valid
+		if valid {
+			actions[actionName] = action
+			if !exists {
+				actionOrder = append(actionOrder, actionName)
 			}
 		}
 
 		currentDoc.Reset()
 	}
 
-	return actions, scanner.Err()
+	ret := make([]*Action, 0, len(actions))
+	for _, name := range actionOrder {
+		ret = append(ret, actions[name])
+	}
+
+	return ret, scanner.Err()
 }
