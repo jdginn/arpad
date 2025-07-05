@@ -21,6 +21,9 @@ func typeNameForNode(n *Node) string {
 	if curr.Parent == nil {
 		return "Reaper"
 	}
+	if curr.Endpoint != nil {
+		names = append(names, "Endpoint")
+	}
 	for curr != nil && curr.Parent != nil { // skip root ("reaper") parent
 		names = append([]string{capitalize(curr.Name)}, names...)
 		curr = curr.Parent
@@ -35,10 +38,10 @@ func fieldNameForNode(n *Node) string {
 
 // generateNodeStructs recursively emits Go structs for all nodes in the hierarchy.
 func generateNodeStructs(n *Node, w io.Writer) {
-	// Skip endpoint nodes (those with only Endpoint and no children)
-	if n.Endpoint != nil && len(n.Children) == 0 {
-		return
-	}
+	// // Skip endpoint nodes (those with only Endpoint and no children)
+	// if n.Endpoint != nil && len(n.Children) == 0 {
+	// 	return
+	// }
 
 	typeName := typeNameForNode(n)
 	fmt.Fprintf(w, "type %s struct {\n", typeName)
@@ -60,6 +63,12 @@ func generateNodeStructs(n *Node, w io.Writer) {
 			fmt.Fprintf(w, "    %s *%s\n", fieldName, childType)
 		}
 	}
+	if n.Endpoint != nil {
+		stateType := typeNameForNode(n) + "State"
+		parentType := "Reaper" // You may want to find the actual root device type.
+		fmt.Fprintf(w, "    state %s\n", stateType)
+		fmt.Fprintf(w, "    device *%s\n", parentType)
+	}
 	fmt.Fprintf(w, "}\n\n")
 
 	// Recurse for all children
@@ -73,7 +82,8 @@ func generateEndpointStruct(n *Node, w io.Writer) {
 	if n.Endpoint == nil {
 		return
 	}
-	typeName := typeNameForNode(n) + "Endpoint"
+	// typeName := typeNameForNode(n) + "Endpoint"
+	typeName := typeNameForNode(n)
 	stateType := typeNameForNode(n) + "State"
 	parentType := "Reaper" // You may want to find the actual root device type.
 
@@ -96,5 +106,5 @@ func generateAllEndpointStructs(n *Node, w io.Writer) {
 // GenerateAllStructs is a convenience function to drive the codegen process.
 func GenerateAllStructs(root *Node, w io.Writer) {
 	generateNodeStructs(root, w)
-	generateAllEndpointStructs(root, w)
+	// generateAllEndpointStructs(root, w)
 }

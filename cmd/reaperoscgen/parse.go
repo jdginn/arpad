@@ -44,6 +44,9 @@ func sanitizeActionName(s string) string {
 }
 
 func sanitizeElement(s string) string {
+	if s == "reaper" {
+		return "reaperconfig"
+	}
 	s = strings.ReplaceAll(s, "+", "plus")
 	s = strings.ReplaceAll(s, "-", "minus")
 	return s
