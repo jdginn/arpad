@@ -44,38 +44,6 @@ func fieldNameForNode(n *Node) string {
 	return capitalize(n.Name)
 }
 
-func collectChildQualifierFields(n *Node) []qualifierField {
-	var fields []qualifierField
-	for _, child := range n.Children {
-		if child.Qualifier != nil {
-			fields = append(fields, qualifierField{
-				Name: lowercase(child.Qualifier.ParamName),
-				Type: child.Qualifier.ParamType,
-			})
-		}
-	}
-	return fields
-}
-
-func collectParentQualifierFields(n *Node) []qualifierField {
-	var fields []qualifierField
-	curr := n.Parent // start at parent; leaf node itself never has a qualifier
-	for curr != nil && curr.Parent != nil {
-		if curr.Qualifier != nil {
-			fields = append(fields, qualifierField{
-				Name: lowercase(curr.Qualifier.ParamName),
-				Type: curr.Qualifier.ParamType,
-			})
-		}
-		curr = curr.Parent
-	}
-	// reverse to get root-to-leaf order
-	for i, j := 0, len(fields)-1; i < j; i, j = i+1, j-1 {
-		fields[i], fields[j] = fields[j], fields[i]
-	}
-	return fields
-}
-
 // generateNodeStructs recursively emits Go structs for all nodes in the hierarchy.
 func generateNodeStructs(n *Node, w io.Writer) {
 	typeName := typeNameForNode(n)
@@ -91,8 +59,7 @@ func generateNodeStructs(n *Node, w io.Writer) {
 		// NOTE: if a qualifier is required, we define a qualified getter method
 	}
 
-	allQualifiers := append(collectChildQualifierFields(n), collectParentQualifierFields(n)...)
-	needState := len(allQualifiers) > 0
+	needState := len(n.StateFields) > 0
 	if needState {
 		fmt.Fprintf(w, "    state %s\n", typeNameForNode(n)+"State")
 	}
@@ -141,30 +108,6 @@ func stateTypeNameForNode(n *Node) string {
 	return typeNameForNode(n) + "State"
 }
 
-// Returns a slice of the state field names for a node, in order (root to leaf).
-func stateFieldsForNode(n *Node) []qualifierField {
-	// qualifierField: { Name string, Type string }
-	return collectParentQualifierFields(n)
-}
-
-// Returns map of field name to type, for convenience.
-func stateFieldMapForNode(n *Node) map[string]string {
-	fields := stateFieldsForNode(n)
-	out := make(map[string]string, len(fields))
-	for _, f := range fields {
-		out[f.Name] = f.Type
-	}
-	return out
-}
-
-// Lowercases the first letter ("TrackFx" -> "trackFx")
-func lcFirst(s string) string {
-	if s == "" {
-		return ""
-	}
-	return strings.ToLower(s[:1]) + s[1:]
-}
-
 // Generates the qualified child getter method.
 // n: parent node, child: qualified child node, w: output writer.
 func generateQualifiedGetter(n *Node, child *Node, w io.Writer) {
@@ -177,11 +120,7 @@ func generateQualifiedGetter(n *Node, child *Node, w io.Writer) {
 	paramType := child.Qualifier.ParamType
 
 	// Use receiver name as first letter of parent type, lowercased and unique if needed
-	recvName := lcFirst(parentType)
-
-	// Get the state fields for parent and child
-	parentFields := stateFieldsForNode(n)
-	childFields := stateFieldsForNode(child)
+	recvName := lowercase(parentType)
 
 	// Build the child state struct literal
 	fmt.Fprintf(w, "func (%s *%s) %s(%s %s) *%s {\n",
@@ -190,13 +129,12 @@ func generateQualifiedGetter(n *Node, child *Node, w io.Writer) {
 	fmt.Fprintf(w, "	return &%s{\n", childType)
 	fmt.Fprintf(w, "		state: %s{\n", childStateType)
 	// Copy all parent state fields that exist in the child, from parent.state
-	for _, pf := range parentFields {
-		fmt.Fprintf(w, "			%s: %s.state.%s,\n", pf.Name, recvName, pf.Name)
+	for _, pf := range collectParentQualifierFields(child) {
+		fmt.Fprintf(w, "			%s: %s.state.%s,\n", pf.ParamName, recvName, pf.ParamName)
 	}
 	// Set the child's new qualifier field from the argument (it's always the last in childFields)
-	if len(childFields) > 0 {
-		last := childFields[len(childFields)-1]
-		fmt.Fprintf(w, "			%s: %s,\n", last.Name, paramName)
+	if child.Qualifier != nil {
+		fmt.Fprintf(w, "			%s: %s,\n", child.Qualifier.ParamName, paramName)
 	}
 	fmt.Fprintf(w, "		},\n")
 	// Copy device pointer if your struct has it
@@ -208,11 +146,8 @@ func generateQualifiedGetter(n *Node, child *Node, w io.Writer) {
 func generateStateStruct(n *Node, w io.Writer) {
 	typeName := typeNameForNode(n) + "State"
 	fmt.Fprintf(w, "type %s struct {\n", typeName)
-	for _, field := range collectParentQualifierFields(n) {
-		fmt.Fprintf(w, "    %s %s\n", field.Name, field.Type)
-	}
-	for _, field := range collectChildQualifierFields(n) {
-		fmt.Fprintf(w, "    %s %s\n", field.Name, field.Type)
+	for _, field := range n.StateFields {
+		fmt.Fprintf(w, "    %s %s\n", field.ParamName, field.ParamType)
 	}
 	fmt.Fprintf(w, "}\n\n")
 }
@@ -253,11 +188,6 @@ func generateSetMethod(n *Node, w io.Writer) {
 		panic("bug")
 	}
 	fmt.Fprintf(w, "}\n\n")
-}
-
-type qualifierField struct {
-	Name string
-	Type string
 }
 
 // GenerateAllStructs is a convenience function to drive the codegen process.

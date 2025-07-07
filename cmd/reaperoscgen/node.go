@@ -6,11 +6,12 @@ import (
 )
 
 type Node struct {
-	Name      string           // path segment name
-	Qualifier *Qualifier       // nil if not a wildcard, else describes param
-	Children  map[string]*Node // next path segments
-	Endpoint  *Endpoint        // non-nil if this node is a leaf
-	Parent    *Node            // for upward traversal (optional)
+	Name        string           // path segment name
+	Qualifier   *Qualifier       // nil if not a wildcard, else describes param
+	Children    map[string]*Node // next path segments
+	Endpoint    *Endpoint        // non-nil if this node is a leaf
+	Parent      *Node            // for upward traversal (optional)
+	StateFields []Qualifier      // for codegen
 }
 
 type Qualifier struct {
@@ -38,6 +39,7 @@ func BuildTree(actions []*Action) *Node {
 			insertPattern(root, act, pat)
 		}
 	}
+	populateStateFields(root)
 	return root
 }
 
@@ -86,6 +88,44 @@ func guessParamName(parent string) string {
 		return "idx"
 	}
 	return parent + "Num"
+}
+
+func collectChildQualifierFields(n *Node) []Qualifier {
+	var fields []Qualifier
+	if n.Qualifier != nil {
+		fields = append(fields, *n.Qualifier)
+	}
+	// for _, child := range n.Children {
+	// 	if child.Qualifier != nil {
+	// 		fields = append(fields, *child.Qualifier)
+	// 	}
+	// }
+	return fields
+}
+
+func collectParentQualifierFields(n *Node) []Qualifier {
+	var fields []Qualifier
+	curr := n.Parent // start at parent; leaf node itself never has a qualifier
+	for curr != nil && curr.Parent != nil {
+		if curr.Qualifier != nil {
+			fields = append(fields, *curr.Qualifier)
+		}
+		curr = curr.Parent
+	}
+	// reverse to get root-to-leaf order
+	for i, j := 0, len(fields)-1; i < j; i, j = i+1, j-1 {
+		fields[i], fields[j] = fields[j], fields[i]
+	}
+	return fields
+}
+
+func populateStateFields(n *Node) {
+	parentQualifierFields := collectParentQualifierFields(n)
+	childQualifierFields := collectChildQualifierFields(n)
+	n.StateFields = append(parentQualifierFields, childQualifierFields...)
+	for _, child := range n.Children {
+		populateStateFields(child)
+	}
 }
 
 // printHierarchy returns a human-readable, indented string representation of the node tree.
