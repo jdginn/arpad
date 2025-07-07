@@ -8,126 +8,150 @@ import (
 	"gitlab.com/gomidi/midi/v2/drivers"
 )
 
-type PathCC struct {
-	Channel    uint8
-	Controller uint8
-}
-
-type ArgsCC struct {
-	Value uint8
-}
-
-type CC struct {
-	path     PathCC
-	callback func(ArgsCC) error
-}
-
-type PathPitchBend struct {
-	Channel uint8
-}
-
-type ArgsPitchBend struct {
-	Relative int16
-	Absolute uint16
-}
-
-type PitchBend struct {
-	path     PathPitchBend
-	callback func(ArgsPitchBend) error
-}
-
-type PathNote struct {
-	Channel uint8
-	Key     uint8
-}
-
-type Note struct {
-	path     PathNote
-	callback func(bool) error
-}
-
-type PathAfterTouch struct {
-	Channel uint8
-}
-
-type ArgsAfterTouch struct {
-	Pressure uint8
-}
-
-type AfterTouch struct {
-	path     PathAfterTouch
-	callback func(ArgsAfterTouch) error
-}
-
-type PathSysEx = []byte
-
-type SysEx struct {
-	path     PathSysEx
-	callback func([]byte) error
-}
-
 // MidiDevice represents a generic MIDI device and allows registering effects for various messages the device may receive.
 type MidiDevice struct {
 	inPort  drivers.In
 	outPort drivers.Out
 
-	cc         []CC
-	pitchBend  []PitchBend
-	note       []Note
-	aftertouch []AfterTouch
-	sysex      []SysEx
+	cc         []*cC
+	pitchBend  []*pitchBend
+	note       []*note
+	aftertouch []*afterTouch
+	sysex      []*sysEx
+}
+
+func (f *MidiDevice) CC(channel, controller uint8) *cC {
+	return &cC{
+		device:     f,
+		channel:    channel,
+		controller: controller,
+	}
+}
+
+func (f *MidiDevice) PitchBend(channel uint8) *pitchBend {
+	return &pitchBend{
+		device:  f,
+		channel: channel,
+	}
+}
+
+func (f *MidiDevice) Note(channel, key uint8) *note {
+	return &note{
+		device:  f,
+		channel: channel,
+		key:     key,
+	}
+}
+
+func (f *MidiDevice) Aftertouch(channel uint8) *afterTouch {
+	return &afterTouch{
+		device:  f,
+		channel: channel,
+	}
+}
+
+func (f *MidiDevice) SysEx(pattern []byte) *sysEx {
+	return &sysEx{
+		device:  f,
+		pattern: pattern,
+	}
+}
+
+type cC struct {
+	device     *MidiDevice
+	channel    uint8
+	controller uint8
+	callback   func(value uint8) error
+	nCalls     int64
+}
+
+func (ep *cC) Bind(callback func(value uint8) error) {
+	ep.callback = callback
+	ep.device.cc = append(ep.device.cc, ep)
+}
+
+func (ep *cC) Send(value uint8) error {
+	return ep.device.outPort.Send(midi.ControlChange(ep.channel, ep.controller, value))
+}
+
+type pitchBend struct {
+	device   *MidiDevice
+	channel  uint8
+	callback func(int16) error
+	nCalls   int64
+}
+
+func (ep *pitchBend) Bind(callback func(int16) error) {
+	ep.callback = callback
+	ep.device.pitchBend = append(ep.device.pitchBend, ep)
+}
+
+func (ep *pitchBend) Send(value int16) error {
+	return ep.device.outPort.Send(midi.Pitchbend(ep.channel, value))
+}
+
+type note struct {
+	device   *MidiDevice
+	channel  uint8
+	key      uint8
+	callback func(bool) error
+	nCalls   int64
+}
+
+func (ep *note) Bind(callback func(bool) error) {
+	ep.callback = callback
+	ep.device.note = append(ep.device.note, ep)
+}
+
+func (ep *note) Set(value bool) error {
+	if value {
+		return ep.device.outPort.Send(midi.NoteOn(ep.channel, ep.key, 0)) // TODO
+	}
+	return ep.device.outPort.Send(midi.NoteOff(ep.channel, ep.key))
+}
+
+type afterTouch struct {
+	device   *MidiDevice
+	channel  uint8
+	callback func(uint8) error
+	nCalls   int64
+}
+
+func (ep *afterTouch) Bind(callback func(uint8) error) {
+	ep.callback = callback
+	ep.device.aftertouch = append(ep.device.aftertouch, ep)
+}
+
+func (ep *afterTouch) Send(value uint8) error {
+	return ep.device.outPort.Send(midi.AfterTouch(ep.channel, value))
+}
+
+type sysEx struct {
+	pattern  []byte
+	device   *MidiDevice
+	callback func([]byte) error
+	nCalls   int64
+}
+
+func (ep *sysEx) Bind(callback func([]byte) error) {
+	ep.callback = callback
+	ep.device.sysex = append(ep.device.sysex, ep)
+}
+
+func (ep *sysEx) Send(value []byte) error {
+	return ep.device.outPort.Send(midi.SysEx(value))
 }
 
 func NewMidiDevice(inPort drivers.In, outPort drivers.Out) *MidiDevice {
 	return &MidiDevice{
 		inPort:     inPort,
 		outPort:    outPort,
-		cc:         []CC{},
-		pitchBend:  []PitchBend{},
-		note:       []Note{},
-		aftertouch: []AfterTouch{},
-		sysex:      []SysEx{},
+		cc:         []*cC{},
+		pitchBend:  []*pitchBend{},
+		note:       []*note{},
+		aftertouch: []*afterTouch{},
+		sysex:      []*sysEx{},
 	}
-}
-
-func (f *MidiDevice) BindCC(path PathCC, callback func(ArgsCC) error) {
-	f.cc = append(f.cc, CC{
-		path:     path,
-		callback: callback,
-	})
-}
-
-func (f *MidiDevice) BindNote(path PathNote, callback func(bool) error) {
-	f.note = append(f.note, Note{
-		path:     path,
-		callback: callback,
-	})
-}
-
-func (f *MidiDevice) BindPitchBend(path PathPitchBend, callback func(ArgsPitchBend) error) {
-	f.pitchBend = append(f.pitchBend, PitchBend{
-		path:     path,
-		callback: callback,
-	})
-}
-
-func (f *MidiDevice) BindAfterTouch(path PathAfterTouch, callback func(ArgsAfterTouch) error) {
-	f.aftertouch = append(f.aftertouch, AfterTouch{
-		path:     path,
-		callback: callback,
-	})
-}
-
-func (f *MidiDevice) BindSysEx(path PathSysEx, callback func([]byte) error) {
-	f.sysex = append(f.sysex, SysEx{
-		path:     path,
-		callback: callback,
-	})
-}
-
-// Send sends a message to this device's outPort.
-func (f *MidiDevice) Send(msg midi.Message) error {
-	return f.outPort.Send(msg)
 }
 
 // Run starts this device and causes it to listen and respond to incoming MIDI messages.
@@ -148,23 +172,23 @@ func (f *MidiDevice) Run() {
 				return
 			}
 			for _, cc := range f.cc {
-				if cc.path.Channel == channel && cc.path.Controller == control {
-					if err := cc.callback(ArgsCC{value}); err != nil {
+				if cc.channel == channel && cc.controller == control {
+					if err := cc.callback(value); err != nil {
 						fmt.Println("failed to process Control Change:", err)
 					}
 				}
 			}
 		case midi.PitchBendMsg:
 			var channel uint8
-			var relative int16
+			var relative int16 // unused
 			var absolute uint16
 			if ok := msg.GetPitchBend(&channel, &relative, &absolute); !ok {
 				fmt.Println("failed to parse Pitch Bend message:", err)
 				return
 			}
 			for _, pitchbend := range f.pitchBend {
-				if pitchbend.path.Channel == channel {
-					if err := pitchbend.callback(ArgsPitchBend{relative, absolute}); err != nil {
+				if pitchbend.channel == channel {
+					if err := pitchbend.callback(relative); err != nil {
 						fmt.Println("failed to process Pitch Bend:", err)
 					}
 				}
@@ -176,7 +200,7 @@ func (f *MidiDevice) Run() {
 				return
 			}
 			for _, note := range f.note {
-				if note.path.Key == key && note.path.Channel == channel {
+				if note.key == key && note.channel == channel {
 					if err := note.callback(true); err != nil {
 						fmt.Println("failed to process Note On:", err)
 					}
@@ -189,7 +213,7 @@ func (f *MidiDevice) Run() {
 				return
 			}
 			for _, note := range f.note {
-				if note.path.Key == key && note.path.Channel == channel {
+				if note.key == key && note.channel == channel {
 					if err := note.callback(false); err != nil {
 						fmt.Println("failed to process Note Off:", err)
 					}
@@ -202,8 +226,8 @@ func (f *MidiDevice) Run() {
 				return
 			}
 			for _, aftertouch := range f.aftertouch {
-				if aftertouch.path.Channel == channel {
-					if err := aftertouch.callback(ArgsAfterTouch{pressure}); err != nil {
+				if aftertouch.channel == channel {
+					if err := aftertouch.callback(pressure); err != nil {
 						fmt.Println("failed to process After Touch:", err)
 					}
 				}
@@ -216,9 +240,11 @@ func (f *MidiDevice) Run() {
 			}
 			for _, sysex := range f.sysex {
 				// Check if the message matches the pattern
-				if len(data) >= len(sysex.path) {
+				//
+				// NOTE: currently, we check for directly matching patterns; this won't work with variable arguments embedded into the data
+				if len(data) >= len(sysex.pattern) {
 					matches := true
-					for i, b := range sysex.path {
+					for i, b := range sysex.pattern {
 						if data[i] != b {
 							matches = false
 							break

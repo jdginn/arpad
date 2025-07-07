@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	dev "github.com/jdginn/arpad/devices"
 	devtest "github.com/jdginn/arpad/devices/devicestesting"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/gomidi/midi/v2"
@@ -23,7 +22,7 @@ func TestMidiDevice(t *testing.T) {
 		{
 			name: "cc message on wrong channel does not trigger callback",
 			setupBindings: func(d *devtest.MidiDevice) {
-				d.BindCC(dev.PathCC{Channel: 1, Controller: 7}, func(args dev.ArgsCC) error {
+				d.CC(1, 7).Bind(func(value uint8) error {
 					assert.Fail("callback should not be called for wrong channel")
 					return nil
 				})
@@ -38,7 +37,7 @@ func TestMidiDevice(t *testing.T) {
 		{
 			name: "cc message on wrong controller number does not trigger callback",
 			setupBindings: func(d *devtest.MidiDevice) {
-				d.BindCC(dev.PathCC{Channel: 1, Controller: 7}, func(args dev.ArgsCC) error {
+				d.CC(1, 8).Bind(func(value uint8) error {
 					assert.Fail("callback should not be called for wrong controller")
 					return nil
 				})
@@ -54,9 +53,9 @@ func TestMidiDevice(t *testing.T) {
 			name: "multiple matching messages trigger callback multiple times",
 			setupBindings: func(d *devtest.MidiDevice) {
 				callCount := 0
-				d.BindCC(dev.PathCC{Channel: 1, Controller: 7}, func(args dev.ArgsCC) error {
+				d.CC(1, 7).Bind(func(value uint8) error {
 					callCount++
-					assert.Equal(uint8(64), args.Value, fmt.Sprintf("incorrect value on call %d", callCount))
+					assert.Equal(uint8(64), value, fmt.Sprintf("incorrect value on call %d", callCount))
 					return nil
 				})
 			},
@@ -73,9 +72,9 @@ func TestMidiDevice(t *testing.T) {
 			name: "mixed matching and non-matching messages only trigger callback for matches",
 			setupBindings: func(d *devtest.MidiDevice) {
 				callCount := 0
-				d.BindCC(dev.PathCC{Channel: 1, Controller: 7}, func(args dev.ArgsCC) error {
+				d.CC(1, 7).Bind(func(value uint8) error {
 					callCount++
-					assert.Equal(uint8(64), args.Value, fmt.Sprintf("incorrect value on call %d", callCount))
+					assert.Equal(uint8(64), value, fmt.Sprintf("incorrect value on call %d", callCount))
 					return nil
 				})
 			},
@@ -95,20 +94,20 @@ func TestMidiDevice(t *testing.T) {
 			name: "multiple bindings work independently",
 			setupBindings: func(d *devtest.MidiDevice) {
 				// First binding - CC messages
-				d.BindCC(dev.PathCC{Channel: 1, Controller: 7}, func(args dev.ArgsCC) error {
-					assert.Equal(uint8(64), args.Value, "incorrect CC value")
+				d.CC(1, 7).Bind(func(value uint8) error {
+					assert.Equal(uint8(64), value, "incorrect CC value")
 					return nil
 				})
 
 				// Second binding - Note messages
-				d.BindNote(dev.PathNote{Channel: 1, Key: 60}, func(on bool) error {
+				d.Note(1, 60).Bind(func(on bool) error {
 					assert.True(on, "note should be on")
 					return nil
 				})
 
 				// Third binding - Different CC messages
-				d.BindCC(dev.PathCC{Channel: 2, Controller: 8}, func(args dev.ArgsCC) error {
-					assert.Equal(uint8(100), args.Value, "incorrect CC value on second binding")
+				d.CC(2, 8).Bind(func(value uint8) error {
+					assert.Equal(uint8(100), value, "incorrect CC value on second binding")
 					return nil
 				})
 			},
@@ -125,7 +124,7 @@ func TestMidiDevice(t *testing.T) {
 		{
 			name: "note on and off messages are handled correctly",
 			setupBindings: func(d *devtest.MidiDevice) {
-				d.BindNote(dev.PathNote{Channel: 1, Key: 60}, func(on bool) error {
+				d.Note(1, 60).Bind(func(on bool) error {
 					if on {
 						assert.True(on, "note should be on")
 					} else {
@@ -145,9 +144,8 @@ func TestMidiDevice(t *testing.T) {
 		{
 			name: "pitch bend messages are handled with correct values",
 			setupBindings: func(d *devtest.MidiDevice) {
-				d.BindPitchBend(dev.PathPitchBend{Channel: 1}, func(args dev.ArgsPitchBend) error {
-					assert.Equal(int16(100), args.Relative, "incorrect relative value")
-					assert.Equal(uint16(8192+100), args.Absolute, "incorrect absolute value")
+				d.PitchBend(1).Bind(func(value int16) error {
+					assert.Equal(int16(100), value, "incorrect relative value")
 					return nil
 				})
 			},
@@ -161,9 +159,8 @@ func TestMidiDevice(t *testing.T) {
 		{
 			name: "pitch bend messages are handled with correct values",
 			setupBindings: func(d *devtest.MidiDevice) {
-				d.BindPitchBend(dev.PathPitchBend{Channel: 1}, func(args dev.ArgsPitchBend) error {
-					assert.Equal(int16(0), args.Relative, "incorrect relative value")
-					assert.Equal(uint16(8192), args.Absolute, "incorrect absolute value")
+				d.PitchBend(1).Bind(func(value int16) error {
+					assert.Equal(int16(100), value, "incorrect relative value")
 					return nil
 				})
 			},
@@ -178,8 +175,8 @@ func TestMidiDevice(t *testing.T) {
 			name: "running status messages are handled correctly",
 			setupBindings: func(d *devtest.MidiDevice) {
 				var values []uint8
-				d.BindCC(dev.PathCC{Channel: 1, Controller: 7}, func(args dev.ArgsCC) error {
-					values = append(values, args.Value)
+				d.CC(1, 7).Bind(func(value uint8) error {
+					values = append(values, value)
 					return nil
 				})
 			},
@@ -195,7 +192,7 @@ func TestMidiDevice(t *testing.T) {
 		{
 			name: "note messages check both channel and key",
 			setupBindings: func(d *devtest.MidiDevice) {
-				d.BindNote(dev.PathNote{Channel: 1, Key: 60}, func(on bool) error {
+				d.Note(1, 60).Bind(func(on bool) error {
 					assert.Fail("callback should not be called for wrong channel")
 					return nil
 				})
@@ -212,7 +209,7 @@ func TestMidiDevice(t *testing.T) {
 			setupBindings: func(d *devtest.MidiDevice) {
 				var noteOnCount int
 				var noteOffCount int
-				d.BindNote(dev.PathNote{Channel: 1, Key: 60}, func(on bool) error {
+				d.Note(1, 60).Bind(func(on bool) error {
 					if on {
 						noteOnCount++
 					} else {
@@ -234,11 +231,11 @@ func TestMidiDevice(t *testing.T) {
 			name: "message callbacks are executed in order",
 			setupBindings: func(d *devtest.MidiDevice) {
 				var sequence []string
-				d.BindCC(dev.PathCC{Channel: 1, Controller: 7}, func(args dev.ArgsCC) error {
-					sequence = append(sequence, fmt.Sprintf("CC:%d", args.Value))
+				d.CC(1, 7).Bind(func(value uint8) error {
+					sequence = append(sequence, fmt.Sprintf("CC:%d", value))
 					return nil
 				})
-				d.BindNote(dev.PathNote{Channel: 1, Key: 60}, func(on bool) error {
+				d.Note(1, 60).Bind(func(on bool) error {
 					sequence = append(sequence, fmt.Sprintf("Note:%v", on))
 					return nil
 				})
@@ -256,10 +253,10 @@ func TestMidiDevice(t *testing.T) {
 		{
 			name: "multiple bindings on same channel and controller",
 			setupBindings: func(d *devtest.MidiDevice) {
-				d.BindCC(dev.PathCC{Channel: 1, Controller: 7}, func(args dev.ArgsCC) error {
+				d.CC(1, 7).Bind(func(value uint8) error {
 					return nil
 				})
-				d.BindCC(dev.PathCC{Channel: 1, Controller: 7}, func(args dev.ArgsCC) error {
+				d.CC(1, 7).Bind(func(value uint8) error {
 					return nil
 				})
 			},
@@ -275,8 +272,8 @@ func TestMidiDevice(t *testing.T) {
 		{
 			name: "aftertouch messages are handled correctly",
 			setupBindings: func(d *devtest.MidiDevice) {
-				d.BindAfterTouch(dev.PathAfterTouch{Channel: 1}, func(args dev.ArgsAfterTouch) error {
-					assert.Equal(uint8(100), args.Pressure, "incorrect pressure value")
+				d.Aftertouch(1).Bind(func(value uint8) error {
+					assert.Equal(uint8(100), value, "incorrect pressure value")
 					return nil
 				})
 			},
@@ -290,7 +287,7 @@ func TestMidiDevice(t *testing.T) {
 		{
 			name: "aftertouch messages on wrong channel do not trigger callback",
 			setupBindings: func(d *devtest.MidiDevice) {
-				d.BindAfterTouch(dev.PathAfterTouch{Channel: 1}, func(args dev.ArgsAfterTouch) error {
+				d.Aftertouch(1).Bind(func(value uint8) error {
 					assert.Fail("callback should not be called for wrong channel")
 					return nil
 				})
@@ -305,12 +302,12 @@ func TestMidiDevice(t *testing.T) {
 		{
 			name: "multiple aftertouch bindings on same channel are all called",
 			setupBindings: func(d *devtest.MidiDevice) {
-				d.BindAfterTouch(dev.PathAfterTouch{Channel: 1}, func(args dev.ArgsAfterTouch) error {
-					assert.Equal(uint8(100), args.Pressure, "incorrect pressure value in first binding")
+				d.Aftertouch(1).Bind(func(value uint8) error {
+					assert.Equal(uint8(100), value, "incorrect pressure value in first binding")
 					return nil
 				})
-				d.BindAfterTouch(dev.PathAfterTouch{Channel: 1}, func(args dev.ArgsAfterTouch) error {
-					assert.Equal(uint8(100), args.Pressure, "incorrect pressure value in second binding")
+				d.Aftertouch(1).Bind(func(value uint8) error {
+					assert.Equal(uint8(100), value, "incorrect pressure value in second binding")
 					return nil
 				})
 			},
@@ -327,15 +324,15 @@ func TestMidiDevice(t *testing.T) {
 				// Track message order
 				var sequence []string
 
-				d.BindAfterTouch(dev.PathAfterTouch{Channel: 1}, func(args dev.ArgsAfterTouch) error {
-					sequence = append(sequence, fmt.Sprintf("AT:%d", args.Pressure))
+				d.Aftertouch(1).Bind(func(value uint8) error {
+					sequence = append(sequence, fmt.Sprintf("AT:%d", value))
 					return nil
 				})
-				d.BindCC(dev.PathCC{Channel: 1, Controller: 7}, func(args dev.ArgsCC) error {
-					sequence = append(sequence, fmt.Sprintf("CC:%d", args.Value))
+				d.CC(1, 7).Bind(func(value uint8) error {
+					sequence = append(sequence, fmt.Sprintf("CC:%d", value))
 					return nil
 				})
-				d.BindNote(dev.PathNote{Channel: 1, Key: 60}, func(on bool) error {
+				d.Note(1, 60).Bind(func(on bool) error {
 					sequence = append(sequence, fmt.Sprintf("Note:%v", on))
 					return nil
 				})
@@ -354,11 +351,11 @@ func TestMidiDevice(t *testing.T) {
 			name: "callback errors are handled gracefully",
 			setupBindings: func(d *devtest.MidiDevice) {
 				// First binding returns error
-				d.BindCC(dev.PathCC{Channel: 1, Controller: 7}, func(args dev.ArgsCC) error {
+				d.CC(1, 7).Bind(func(value uint8) error {
 					return fmt.Errorf("intentional error")
 				})
 				// Second binding should still be called
-				d.BindCC(dev.PathCC{Channel: 1, Controller: 7}, func(args dev.ArgsCC) error {
+				d.CC(1, 7).Bind(func(value uint8) error {
 					return nil
 				})
 			},
@@ -372,15 +369,15 @@ func TestMidiDevice(t *testing.T) {
 		{
 			name: "zero-value messages are handled correctly",
 			setupBindings: func(d *devtest.MidiDevice) {
-				d.BindCC(dev.PathCC{Channel: 0, Controller: 0}, func(args dev.ArgsCC) error {
-					assert.Equal(uint8(0), args.Value, "incorrect value")
+				d.CC(0, 0).Bind(func(value uint8) error {
+					assert.Equal(uint8(0), value, "incorrect value")
 					return nil
 				})
-				d.BindNote(dev.PathNote{Channel: 0, Key: 0}, func(on bool) error {
+				d.Note(1, 60).Bind(func(on bool) error {
 					return nil
 				})
-				d.BindAfterTouch(dev.PathAfterTouch{Channel: 0}, func(args dev.ArgsAfterTouch) error {
-					assert.Equal(uint8(0), args.Pressure, "incorrect pressure")
+				d.Aftertouch(0).Bind(func(value uint8) error {
+					assert.Equal(uint8(0), value, "incorrect pressure")
 					return nil
 				})
 			},
@@ -396,8 +393,7 @@ func TestMidiDevice(t *testing.T) {
 		{
 			name: "sysex message with exact pattern match triggers callback",
 			setupBindings: func(d *devtest.MidiDevice) {
-				pattern := []byte{0xF0, 0x00, 0x20, 0x32, 0x58}
-				d.BindSysEx(pattern, func(data []byte) error {
+				d.SysEx([]byte{0xF0, 0x00, 0x20, 0x32, 0x58, 0x54, 0x00, 0xF7}).Bind(func(data []byte) error {
 					assert.Equal([]byte{0xF0, 0x00, 0x20, 0x32, 0x58, 0x54, 0x00, 0xF7}, data,
 						"received data should match expected pattern")
 					return nil
@@ -413,8 +409,7 @@ func TestMidiDevice(t *testing.T) {
 		{
 			name: "sysex message with non-matching pattern does not trigger callback",
 			setupBindings: func(d *devtest.MidiDevice) {
-				pattern := []byte{0xF0, 0x00, 0x20, 0x32, 0x58}
-				d.BindSysEx(pattern, func(data []byte) error {
+				d.SysEx([]byte{0xF0, 0x00, 0x20, 0x32, 0x58, 0x54, 0x00, 0xF7}).Bind(func(data []byte) error {
 					assert.Fail("callback should not be called for non-matching pattern")
 					return nil
 				})
@@ -431,16 +426,14 @@ func TestMidiDevice(t *testing.T) {
 			setupBindings: func(d *devtest.MidiDevice) {
 				pattern1 := []byte{0xF0, 0x00, 0x20}
 				pattern2 := []byte{0xF0, 0x00, 0x66}
-
-				d.BindSysEx(pattern1, func(data []byte) error {
+				d.SysEx(pattern1).Bind(func(data []byte) error {
 					assert.Equal([]byte{0xF0, 0x00, 0x20, 0x32, 0x58, 0x54, 0x00, 0xF7}, data,
 						"first pattern data should match")
 					return nil
 				})
-
-				d.BindSysEx(pattern2, func(data []byte) error {
-					assert.Equal([]byte{0xF0, 0x00, 0x66, 0x14, 0x00, 0xF7}, data,
-						"second pattern data should match")
+				d.SysEx(pattern2).Bind(func(data []byte) error {
+					assert.Equal([]byte{0xF0, 0x00, 0x66, 0x32, 0x58, 0x54, 0x00, 0xF7}, data,
+						"first pattern data should match")
 					return nil
 				})
 			},
@@ -457,21 +450,21 @@ func TestMidiDevice(t *testing.T) {
 			setupBindings: func(d *devtest.MidiDevice) {
 				var sequence []string
 
-				d.BindSysEx([]byte{0xF0, 0x00, 0x20}, func(data []byte) error {
+				d.SysEx([]byte{0xF0, 0x00, 0x20}).Bind(func(data []byte) error {
 					sequence = append(sequence, "SysEx1")
 					return nil
 				})
-
-				d.BindCC(dev.PathCC{Channel: 1, Controller: 7}, func(args dev.ArgsCC) error {
-					sequence = append(sequence, fmt.Sprintf("CC:%d", args.Value))
+				d.CC(1, 7).Bind(func(value uint8) error {
+					sequence = append(sequence, fmt.Sprintf("CC:%d", value))
 					return nil
 				})
 
-				d.BindSysEx([]byte{0xF0, 0x00, 0x66}, func(data []byte) error {
+				d.SysEx([]byte{0xF0, 0x00, 0x66}).Bind(func(data []byte) error {
 					sequence = append(sequence, "SysEx2")
 					return nil
 				})
 			},
+
 			inputMessages: []midi.Message{
 				midi.SysEx([]byte{0xF0, 0x00, 0x20, 0x32, 0x58, 0x54, 0x00, 0xF7}),
 				midi.ControlChange(1, 7, 64),
@@ -488,12 +481,12 @@ func TestMidiDevice(t *testing.T) {
 				pattern := []byte{0xF0, 0x00, 0x20}
 
 				// First binding returns error
-				d.BindSysEx(pattern, func(data []byte) error {
+				d.SysEx(pattern).Bind(func(data []byte) error {
 					return fmt.Errorf("intentional sysex error")
 				})
 
 				// Second binding should still be called
-				d.BindSysEx(pattern, func(data []byte) error {
+				d.SysEx(pattern).Bind(func(data []byte) error {
 					return nil
 				})
 			},
