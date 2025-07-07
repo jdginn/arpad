@@ -12,6 +12,7 @@ type Node struct {
 	Endpoint    *Endpoint        // non-nil if this node is a leaf
 	Parent      *Node            // for upward traversal (optional)
 	StateFields []Qualifier      // for codegen
+	PathElement string
 }
 
 type Qualifier struct {
@@ -64,9 +65,10 @@ func insertPattern(root *Node, act *Action, pat *OSCPattern) {
 		child, exists := curr.Children[seg]
 		if !exists {
 			child = &Node{
-				Name:     seg,
-				Children: make(map[string]*Node),
-				Parent:   curr,
+				Name:        seg,
+				Children:    make(map[string]*Node),
+				Parent:      curr,
+				PathElement: seg,
 			}
 			curr.Children[seg] = child
 		}

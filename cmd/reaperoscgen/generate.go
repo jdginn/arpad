@@ -152,10 +152,56 @@ func generateStateStruct(n *Node, w io.Writer) {
 	fmt.Fprintf(w, "}\n\n")
 }
 
+// getOscPathForNode builds the OSC path for a node by walking up its parents.
+// For each node in the path (from leaf to root):
+//   - If node.Qualifier != nil, prepend "/%s" (OSC wildcard segment)
+//   - Always prepend "/" + node.PathElement
+func getOscPathRegex(n *Node) string {
+	var sb strings.Builder
+	curr := n
+	segments := []string{}
+
+	// Accumulate segments up to the root
+	for curr != nil {
+		if curr.Qualifier != nil {
+			// Prepend wildcard segment
+			segments = append([]string{"/%d"}, segments...)
+		}
+		if curr.PathElement != "" {
+			segments = append([]string{"/" + curr.PathElement}, segments...)
+		}
+		curr = curr.Parent
+	}
+
+	// Join all segments into the builder
+	for _, seg := range segments {
+		sb.WriteString(seg)
+	}
+	return sb.String()
+}
+
+func getOscPathForNode(n *Node) string {
+	var sb strings.Builder
+	if len(n.StateFields) == 0 {
+		sb.WriteString("\"")
+		sb.WriteString(getOscPathRegex(n))
+		sb.WriteString("\"\n")
+		return sb.String()
+	}
+	sb.WriteString("fmt.Sprintf(\n        \"")
+	sb.WriteString(getOscPathRegex(n))
+	sb.WriteString("\",\n")
+	for _, field := range n.StateFields {
+		sb.WriteString(fmt.Sprintf("        ep.state.%s,\n", field.ParamName))
+	}
+	sb.WriteString("    )\n")
+	return sb.String()
+}
+
 func generateBindMethod(n *Node, w io.Writer) {
 	typeName := typeNameForNode(n)
 	fmt.Fprintf(w, "func (ep *%s) Bind(callback func(%s) error) {\n", typeName, n.Endpoint.ValueType)
-	fmt.Fprintf(w, "    addr := \"foo\"\n") // TODO
+	fmt.Fprintf(w, "    addr := %s\n", getOscPathForNode(n)) // TODO
 	switch n.Endpoint.ValueType {
 	case "int64":
 		fmt.Fprintf(w, "    ep.device.BindInt(addr, callback)\n")
@@ -174,7 +220,7 @@ func generateBindMethod(n *Node, w io.Writer) {
 func generateSetMethod(n *Node, w io.Writer) {
 	typeName := typeNameForNode(n)
 	fmt.Fprintf(w, "func (ep *%s) Set(val %s ) {\n", typeName, n.Endpoint.ValueType)
-	fmt.Fprintf(w, "    addr := \"foo\"\n") // TODO
+	fmt.Fprintf(w, "    addr := %s\n", getOscPathForNode(n)) // TODO
 	switch n.Endpoint.ValueType {
 	case "int64":
 		fmt.Fprintf(w, "    ep.device.SetInt(addr, val)\n")
