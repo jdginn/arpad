@@ -44,6 +44,44 @@ func fieldNameForNode(n *Node) string {
 	return capitalize(n.Name)
 }
 
+func generateRootStruct(n *Node, w io.Writer) {
+	if n.Parent != nil {
+		panic("Code bug: should not call generateRootStruct on non-root node (i.e. on a node other than `Reaper`")
+	}
+	fmt.Fprintf(w, "type Reaper struct {\n")
+	fmt.Fprintf(w, "    device *devices.OscDevice\n")
+	for _, child := range n.Children {
+		childType := typeNameForNode(child)
+		fieldName := fieldNameForNode(child)
+		if child.Qualifier == nil {
+			// e.g. Value *TrackFxParamValueEndpoint
+			fmt.Fprintf(w, "    %s *%s\n", fieldName, childType)
+		}
+	}
+	fmt.Fprintf(w, "}\n\n")
+
+	fmt.Fprintf(w, "func NewReaper(device *devices.OscDevice) *Reaper {\n")
+	fmt.Fprintf(w, "    return &Reaper{\n")
+	fmt.Fprintf(w, "        device: device,\n")
+	fmt.Fprintf(w, "    }\n")
+	fmt.Fprintf(w, "}\n\n")
+
+	fmt.Fprintf(w, "func (ep *Reaper) Run() {\n")
+	fmt.Fprintf(w, "    ep.device.Run()\n")
+	fmt.Fprintf(w, "}\n\n")
+
+	for _, child := range n.Children {
+		if child.Qualifier != nil {
+			generateQualifiedGetter(n, child, w)
+		}
+	}
+
+	// Recurse for all children
+	for _, child := range n.Children {
+		generateNodeStructs(child, w)
+	}
+}
+
 // generateNodeStructs recursively emits Go structs for all nodes in the hierarchy.
 func generateNodeStructs(n *Node, w io.Writer) {
 	typeName := typeNameForNode(n)
@@ -86,33 +124,11 @@ func generateNodeStructs(n *Node, w io.Writer) {
 	}
 }
 
-// func generateQualifiedGetter(n *Node, child *Node, w io.Writer) {
-// 	childType := typeNameForNode(child)
-// 	fieldName := fieldNameForNode(child)
-// 	// e.g. Fx func(fxNum int64) *TrackFx
-// 	fmt.Fprintf(w, "func (%s %s) %s(%s %s) *%s {\n",
-// 		lowercase(typeNameForNode(n))[0],
-// 		typeNameForNode(n),
-// 		fieldName,
-// 		child.Qualifier.ParamName,
-// 		child.Qualifier.ParamType,
-// 		childType,
-// 	)
-// 	fmt.Fprintf(w, "    return %s{\n")
-// 	fmt.Fprintf(w, "    }\n")
-// 	fmt.Fprintf(w, "}\n\n")
-// }
-
-// Returns the Go type name for the state struct for a node.
-func stateTypeNameForNode(n *Node) string {
-	return typeNameForNode(n) + "State"
-}
-
 // Generates the qualified child getter method.
 // n: parent node, child: qualified child node, w: output writer.
 func generateQualifiedGetter(n *Node, child *Node, w io.Writer) {
 	childType := typeNameForNode(child)
-	childStateType := stateTypeNameForNode(child)
+	childStateType := typeNameForNode(child) + "State"
 	parentType := typeNameForNode(n)
 	// parentStateType := stateTypeNameForNode(n)
 	fieldName := fieldNameForNode(child)
@@ -219,17 +235,17 @@ func generateBindMethod(n *Node, w io.Writer) {
 
 func generateSetMethod(n *Node, w io.Writer) {
 	typeName := typeNameForNode(n)
-	fmt.Fprintf(w, "func (ep *%s) Set(val %s ) {\n", typeName, n.Endpoint.ValueType)
+	fmt.Fprintf(w, "func (ep *%s) Set(val %s ) error {\n", typeName, n.Endpoint.ValueType)
 	fmt.Fprintf(w, "    addr := %s\n", getOscPathForNode(n)) // TODO
 	switch n.Endpoint.ValueType {
 	case "int64":
-		fmt.Fprintf(w, "    ep.device.SetInt(addr, val)\n")
+		fmt.Fprintf(w, "    return ep.device.SetInt(addr, val)\n")
 	case "float64":
-		fmt.Fprintf(w, "    ep.device.SetFloat(addr, val)\n")
+		fmt.Fprintf(w, "    return ep.device.SetFloat(addr, val)\n")
 	case "string":
-		fmt.Fprintf(w, "    ep.device.SetString(addr, val)\n")
+		fmt.Fprintf(w, "    return ep.device.SetString(addr, val)\n")
 	case "bool":
-		fmt.Fprintf(w, "    ep.device.SetBool(addr, val)\n")
+		fmt.Fprintf(w, "    return ep.device.SetBool(addr, val)\n")
 	default:
 		panic("bug")
 	}
@@ -238,5 +254,5 @@ func generateSetMethod(n *Node, w io.Writer) {
 
 // GenerateAllStructs is a convenience function to drive the codegen process.
 func GenerateAllStructs(root *Node, w io.Writer) {
-	generateNodeStructs(root, w)
+	generateRootStruct(root, w)
 }
