@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"go/format"
 	"log"
 	"os"
 )
@@ -66,7 +67,11 @@ func main() {
 	generator.generatePreamble(&code)
 	GenerateAllStructs(tree, &code)
 
-	if err := os.WriteFile(outputPath, code.Bytes(), 0644); err != nil {
+	formatted, err := format.Source(code.Bytes())
+	if err != nil {
+		log.Fatalf("Failed to format generated code: %v", err)
+	}
+	if err := os.WriteFile(outputPath, formatted, 0644); err != nil {
 		log.Fatalf("Failed to write output file: %v", err)
 	}
 }
