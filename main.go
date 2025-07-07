@@ -1,3 +1,4 @@
+//go:generate go run cmd/generatebindings/main.go
 package main
 
 import (
@@ -11,7 +12,7 @@ import (
 	dev "github.com/jdginn/arpad/devices"
 	reaperlib "github.com/jdginn/arpad/devices/reaper"
 	xtouchlib "github.com/jdginn/arpad/devices/xtouch"
-	mLib "github.com/jdginn/arpad/mode"
+	. "github.com/jdginn/arpad/mode"
 )
 
 // Modes:
@@ -42,7 +43,6 @@ import (
 // - Global mute (mapped to Global View)
 // - Control room monitoring selection (main monitors, mono mixcube, nearfield monitors, headphones-only, other?) mapped to View bttons (excluding Global View)
 // - Per-channel record arm always controls the DAW
-type Mode uint64
 
 const (
 	DEFAULT Mode = 1 << iota
@@ -56,37 +56,6 @@ const (
 	ALL = 0xFFFFFFFFFFFFFFFF
 )
 
-type ModeManager struct {
-	*mLib.ModeManager[Mode]
-
-	// Extra metadata we want to keep track of that is not actually part of mode management logic
-	selectedTrackRecord string
-	selectedTrackMix    int64
-}
-
-var mm *ModeManager
-
-func init() {
-	mm = &ModeManager{mLib.NewModeManager[Mode](MIX), "", 0}
-}
-
-type bindable[P, A any] interface {
-	Bind(P, func(A) error)
-}
-
-// This is just eliding the first argument because it never changes and visual clarity is at a premium
-func bind[P, A any](mode Mode, bindable bindable[P, A], path P, callback func(A) error) {
-	mLib.Bind(mm.ModeManager, mode, bindable.Bind, path, callback)
-}
-
-type setable[T any] interface {
-	Set(T) error
-}
-
-func set[T any](mode Mode, setable setable[T], val T) error {
-	return mLib.Set(mm.ModeManager, mode, setable.Set)(val)
-}
-
 const MIDI_IN = "IAC Driver Bus 1"
 
 // const MIDI_IN = "X-Touch INT"
@@ -96,7 +65,7 @@ const MIDI_OUT = "IAC Driver Bus 1"
 
 const TOTAL_TRACKS = 8
 
-func normalizeFader(abs uint16) float64 {
+func normalizeFader(abs int16) float64 {
 	return float64(abs) / 4 / float64(math.MaxUint16)
 }
 
@@ -128,37 +97,49 @@ func main() {
 		// XTouch bindings
 		//
 		// MIX Mode
-		bind(MIX, c.Fader, nil, func(args dev.ArgsPitchBend) error {
-			return reaper.Track.SendTrackVolume(trackNum, normalizeFader(args.Absolute))
+		Bind(MIX, c.Fader, func(val int16) error {
+			return reaper.Track(trackNum).Volume.Set(normalizeFader(val))
 		})
-		bind(MIX, c.Mute, nil, func(b bool) error {
-			return reaper.Track.SendTrackMute(trackNum, b)
+		Bind(MIX, c.Mute, func(b bool) error {
+			return reaper.Track(trackNum).Mute.Set(b)
 		})
-		bind(MIX, c.Solo, nil, func(b bool) error {
-			return reaper.Track.SendTrackSolo(trackNum, b)
+		Bind(MIX, c.Solo, func(b bool) error {
+			return reaper.Track(trackNum).Solo.Set(b)
 		})
-		bind(MIX, c.Rec, nil, func(b bool) error {
-			return reaper.Track.SendTrackRecArm(trackNum, b)
+		Bind(MIX, c.Rec, func(b bool) error {
+			return reaper.Track(trackNum).Recarm.Set(b)
 		})
-		bind(MIX, c.Select, nil, func(b bool) error {
-			return reaper.Track.SendTrackSelect(trackNum, b)
+		Bind(MIX, c.Select, func(b bool) error {
+			return reaper.Track(trackNum).Select.Set(b)
 		})
+		// ...
+	}
+
+	// Reaper bindings
+	//
+	// MIX Mode
+	for trackNum := int64(1); trackNum <= TOTAL_TRACKS; trackNum++ {
+		c := xtouch.Channels[trackNum]
+		Bind(MIX, reaper.Track(trackNum).Volume, func(val float64) error {
+			return Stateful(MIX, c.Fader).Set(int16(val))
+		})
+		// ...
 	}
 
 	// Mode selection
-	bind(MIX, xtouch.EncoderAssign.TRACK, nil, func(b bool) error {
-		return mm.SetMode(MIX)
+	Bind(MIX, xtouch.EncoderAssign.TRACK, func(b bool) error {
+		return SetMode(MIX)
 	})
-	bind(MIX, xtouch.EncoderAssign.PAN_SURROUND, nil, func(b bool) error {
-		return mm.SetMode(RECORD)
+	Bind(MIX, xtouch.EncoderAssign.PAN_SURROUND, func(b bool) error {
+		return SetMode(RECORD)
 	})
 
 	// Layer selection within modes
-	bind(MIX|MIX_THIS_TRACK_SENDS, xtouch.View.GLOBAL, nil, func(b bool) error {
-		return mm.SetMode(MIX_SENDS_TO_THIS_BUS)
+	Bind(MIX|MIX_THIS_TRACK_SENDS, xtouch.View.GLOBAL, func(b bool) error {
+		return SetMode(MIX_SENDS_TO_THIS_BUS)
 	})
 
-	mm.SetMode(MIX)
+	SetMode(MIX)
 	reaper.Run()
 	fmt.Println("Reaper is running...")
 	go xtouch.Run()
