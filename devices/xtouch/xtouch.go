@@ -35,14 +35,13 @@ type Fader struct {
 // Bind specifies the callback to run when this fader is moved.
 //
 // NOTE: the nil first argument is to satisfy the dev.Binding interface
-func (f *Fader) Bind(nil, callback func(dev.ArgsPitchBend) error) {
-	fmt.Println("binding to BindPitchBend...")
-	f.d.BindPitchBend(dev.PathPitchBend{uint8(f.ChannelNo)}, callback)
+func (f *Fader) Bind(callback func(int16) error) {
+	f.d.PitchBend(uint8(f.ChannelNo)).Bind(callback)
 }
 
 // SetFaderAbsolute moves this fader to a value between 0 and max(int16).
-func (f *Fader) SetFaderAbsolute(val int16) error {
-	return f.d.Send(midi.Pitchbend(uint8(f.ChannelNo), val))
+func (f *Fader) Set(val int16) error {
+	return f.d.PitchBend(uint8(f.ChannelNo)).Set(val)
 }
 
 type ScribbleColor int
@@ -83,7 +82,7 @@ func (s *Scribble) SendScribble(color ScribbleColor, msgTop, msgBottom []byte) e
 	b = append(b, byte(color))
 	b = append(b, msgTop...)
 	b = append(b, msgBottom...)
-	return s.d.Send(midi.SysEx(b))
+	return s.d.SysEx.Set(midi.SysEx(b)) // TODO: check this
 }
 
 type Meter struct {
@@ -92,12 +91,12 @@ type Meter struct {
 	channel uint8
 }
 
-func (m *Meter) SendRelative(val float64) error {
+func (m *Meter) Send(val float64) error {
 	if val > 1.0 {
 		return fmt.Errorf("Invalid val: val must be between 0 and 1.0")
 	}
 	offset := m.channel*16 + uint8(math.Round(8*val))
-	return m.d.Send(midi.AfterTouch(0, offset))
+	return m.d.Aftertouch(0).Set(offset) // TODO: check this
 }
 
 type XTouch struct {
@@ -131,7 +130,7 @@ func (x *XTouch) startHandshake() error {
 		for {
 			select {
 			case <-ticker.C:
-				if err := x.base.Send(midi.SysEx([]byte(handshakePingMessage))); err != nil {
+				if err := x.base.SysEx.Set(midi.SysEx([]byte(handshakePingMessage))); err != nil {
 					fmt.Printf("Error sending handshake ping: %v\n", err)
 				}
 
@@ -149,7 +148,7 @@ func (x *XTouch) startHandshake() error {
 	}()
 
 	// Set up handler for response messages
-	x.base.BindSysEx([]byte(handshakeResponseMessage), func(msg []byte) error {
+	x.base.SysEx.Match([]byte(handshakeResponseMessage)).Bind(func(msg []byte) error {
 		x.handshakeMutex.Lock()
 		x.lastResponse = time.Now()
 		x.handshakeMutex.Unlock()
@@ -182,24 +181,18 @@ func (x *XTouch) Run() {
 // NewFader returns a new fader on the gien channel.
 //
 // NewFader accepts an optional, variadic list of callbacks to run when the fader is moved.
-func (x *XTouch) NewFader(channelNo uint8, callbacks ...func(dev.ArgsPitchBend) error) *Fader {
-	for _, e := range callbacks {
-		x.base.BindPitchBend(dev.PathPitchBend{uint8(1 + channelNo)}, e)
-	}
+func (x *XTouch) NewFader(channelNo uint8) *Fader {
 	return &Fader{
 		d:         x.base,
 		ChannelNo: channelNo,
 	}
 }
 
-func (x *XTouch) NewEncoder(channelNo uint8, id uint8, callbacks ...func(dev.ArgsCC) error) Encoder {
+func (x *XTouch) NewEncoder(channelNo uint8, id uint8) Encoder {
 	// id should be 0-7
-	encoderCC := 16 + (id % 8) // Maps to CC 16-23
+	// encoderCC := 16 + (id % 8) // Maps to CC 16-23
 	ledLowCC := 48 + (id % 8)  // Maps to CC 48-55
 	ledHighCC := 56 + (id % 8) // Maps to CC 56-63
-	for _, e := range callbacks {
-		x.base.BindCC(dev.PathCC{channelNo, encoderCC}, e)
-	}
 	return Encoder{
 		d:           x.base,
 		channel:     channelNo,

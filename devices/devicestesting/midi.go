@@ -2,7 +2,6 @@ package devicestesting
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 	"testing"
 
@@ -172,42 +171,42 @@ func NewTestMidiDevice(t *testing.T) (*MidiDevice, *MockMIDIPort) {
 	}, mockPort
 }
 
-// BindCC wraps the original BindCC with automatic callback tracking
-func (d *MidiDevice) BindCC(path devices.PathCC, callback func(devices.ArgsCC) error) int {
-	handle := d.Tracker.RegisterCallback(fmt.Sprintf("CC binding for channel %d controller %d",
-		path.Channel, path.Controller))
-	d.MidiDevice.BindCC(path, WrapCallback(d.Tracker, handle, callback))
-	return handle
-}
-
-// BindPitchBend wraps the original BindPitchBend with automatic callback tracking
-func (d *MidiDevice) BindPitchBend(path devices.PathPitchBend, callback func(devices.ArgsPitchBend) error) int {
-	handle := d.Tracker.RegisterCallback(fmt.Sprintf("PitchBend binding for channel %d",
-		path.Channel))
-	d.MidiDevice.BindPitchBend(path, WrapCallback(d.Tracker, handle, callback))
-	return handle
-}
-
-// BindNote wraps the original BindNote with automatic callback tracking
-func (d *MidiDevice) BindNote(path devices.PathNote, callback func(bool) error) int {
-	handle := d.Tracker.RegisterCallback(fmt.Sprintf("Note binding for channel %d key %d",
-		path.Channel, path.Key))
-	d.MidiDevice.BindNote(path, WrapCallback(d.Tracker, handle, callback))
-	return handle
-}
-
-// BindAfterTouch wraps the original BindAfterTouch with automatic callback tracking
-func (d *MidiDevice) BindAfterTouch(path devices.PathAfterTouch, callback func(devices.ArgsAfterTouch) error) int {
-	handle := d.Tracker.RegisterCallback(fmt.Sprintf("AfterTouch binding for channel %d",
-		path.Channel))
-	d.MidiDevice.BindAfterTouch(path, WrapCallback(d.Tracker, handle, callback))
-	return handle
-}
-
-// BindSysEx wraps the existing BindSysEx with automatic callback tracking
-func (d *MidiDevice) BindSysEx(path devices.PathSysEx, callback func([]byte) error) int {
-	handle := d.Tracker.RegisterCallback(fmt.Sprintf("SysEx binding for pattern %x",
-		path))
-	d.MidiDevice.BindSysEx(path, WrapCallback(d.Tracker, handle, callback))
-	return handle
-}
+// // BindCC wraps the original BindCC with automatic callback tracking
+// func (d *MidiDevice) BindCC(path devices.PathCC, callback func(devices.ArgsCC) error) int {
+// 	handle := d.Tracker.RegisterCallback(fmt.Sprintf("CC binding for channel %d controller %d",
+// 		path.Channel, path.Controller))
+// 	d.MidiDevice.BindCC(path, WrapCallback(d.Tracker, handle, callback))
+// 	return handle
+// }
+//
+// // BindPitchBend wraps the original BindPitchBend with automatic callback tracking
+// func (d *MidiDevice) BindPitchBend(path devices.PathPitchBend, callback func(devices.ArgsPitchBend) error) int {
+// 	handle := d.Tracker.RegisterCallback(fmt.Sprintf("PitchBend binding for channel %d",
+// 		path.Channel))
+// 	d.MidiDevice.BindPitchBend(path, WrapCallback(d.Tracker, handle, callback))
+// 	return handle
+// }
+//
+// // BindNote wraps the original BindNote with automatic callback tracking
+// func (d *MidiDevice) BindNote(path devices.PathNote, callback func(bool) error) int {
+// 	handle := d.Tracker.RegisterCallback(fmt.Sprintf("Note binding for channel %d key %d",
+// 		path.Channel, path.Key))
+// 	d.MidiDevice.BindNote(path, WrapCallback(d.Tracker, handle, callback))
+// 	return handle
+// }
+//
+// // BindAfterTouch wraps the original BindAfterTouch with automatic callback tracking
+// func (d *MidiDevice) BindAfterTouch(path devices.PathAfterTouch, callback func(devices.ArgsAfterTouch) error) int {
+// 	handle := d.Tracker.RegisterCallback(fmt.Sprintf("AfterTouch binding for channel %d",
+// 		path.Channel))
+// 	d.MidiDevice.BindAfterTouch(path, WrapCallback(d.Tracker, handle, callback))
+// 	return handle
+// }
+//
+// // BindSysEx wraps the existing BindSysEx with automatic callback tracking
+// func (d *MidiDevice) BindSysEx(path devices.PathSysEx, callback func([]byte) error) int {
+// 	handle := d.Tracker.RegisterCallback(fmt.Sprintf("SysEx binding for pattern %x",
+// 		path))
+// 	d.MidiDevice.BindSysEx(path, WrapCallback(d.Tracker, handle, callback))
+// 	return handle
+// }

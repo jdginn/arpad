@@ -2,7 +2,6 @@ package xtouch
 
 import (
 	dev "github.com/jdginn/arpad/devices"
-	midi "gitlab.com/gomidi/midi/v2"
 )
 
 type ledState uint8
@@ -28,15 +27,15 @@ func (b *baseButton) IsPressed() bool {
 }
 
 func (b *baseButton) SetLEDOff() error {
-	return b.d.Send(midi.NoteOn(b.channel, b.key, 0))
+	return b.d.Note(b.channel, b.key).Set(true) // TODO: fix this to 0
 }
 
 func (b *baseButton) SetLEDFlashing() error {
-	return b.d.Send(midi.NoteOn(b.channel, b.key, 1))
+	return b.d.Note(b.channel, b.key).Set(true) // TODO: fix this to 1
 }
 
 func (b *baseButton) SetLEDOn() error {
-	return b.d.Send(midi.NoteOn(b.channel, b.key, 127))
+	return b.d.Note(b.channel, b.key).Set(true) // TODO: fix this to 127
 }
 
 // Button that executes a function when the button is pressed
@@ -48,7 +47,7 @@ type Button struct {
 }
 
 // Bind specifies the callback to run when this button is pressed.
-func (b *Button) Bind(nil, callback func(bool) error) {
+func (b *Button) Bind(callback func(bool) error) {
 	b.callbacks = append(b.callbacks, callback)
 }
 
@@ -64,7 +63,7 @@ func (x *XTouch) NewButton(channel, key uint8, callbacks ...func(bool) error) *B
 		},
 		callbacks: callbacks,
 	}
-	x.base.BindNote(dev.PathNote{channel, key}, func(v bool) error {
+	x.base.Note(channel, key).Bind(func(v bool) error {
 		b.isPressed = v
 		if b.isPressed {
 			b.SetLEDOn()
@@ -72,8 +71,6 @@ func (x *XTouch) NewButton(channel, key uint8, callbacks ...func(bool) error) *B
 				e(b.isPressed)
 			}
 			return nil
-		} else {
-			b.SetLEDOff()
 		}
 		return nil
 	})
@@ -99,7 +96,7 @@ func (x *XTouch) NewMomentaryButton(channel, key uint8, callbacks ...func(bool) 
 		},
 		callbacks: callbacks,
 	}
-	x.base.BindNote(dev.PathNote{channel, key}, func(v bool) error {
+	x.base.Note(channel, key).Bind(func(v bool) error {
 		b.isPressed = v
 		if b.isPressed {
 			b.SetLEDOn()
@@ -115,7 +112,7 @@ func (x *XTouch) NewMomentaryButton(channel, key uint8, callbacks ...func(bool) 
 }
 
 // Bind specifies the callback to run when this button is pressed.
-func (b *MomentaryButton) Bind(nil, callback func(bool) error) {
+func (b *MomentaryButton) Bind(callback func(bool) error) {
 	b.callbacks = append(b.callbacks, callback)
 }
 
@@ -135,7 +132,7 @@ func (b *ToggleButton) IsToggled() bool {
 	return b.isToggled
 }
 
-func (b *ToggleButton) Bind(nil, callback func(bool) error) {
+func (b *ToggleButton) Bind(callback func(bool) error) {
 	b.callbacks = append(b.callbacks, callback)
 }
 
@@ -151,7 +148,7 @@ func (x *XTouch) NewToggleButton(channel, key uint8, callbacks ...func(bool) err
 		},
 		callbacks: callbacks,
 	}
-	x.base.BindNote(dev.PathNote{channel, key}, func(v bool) error {
+	x.base.Note(channel, key).Bind(func(v bool) error {
 		b.isPressed = v
 		if v {
 			b.isToggled = !b.isToggled

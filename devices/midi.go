@@ -13,11 +13,13 @@ type MidiDevice struct {
 	inPort  drivers.In
 	outPort drivers.Out
 
+	SysEx *sysEx
+
 	cc         []*cC
 	pitchBend  []*pitchBend
 	note       []*note
 	aftertouch []*afterTouch
-	sysex      []*sysEx
+	sysex      []*sysExMatch
 }
 
 func (f *MidiDevice) CC(channel, controller uint8) *cC {
@@ -50,13 +52,6 @@ func (f *MidiDevice) Aftertouch(channel uint8) *afterTouch {
 	}
 }
 
-func (f *MidiDevice) SysEx(pattern []byte) *sysEx {
-	return &sysEx{
-		device:  f,
-		pattern: pattern,
-	}
-}
-
 type cC struct {
 	device     *MidiDevice
 	channel    uint8
@@ -70,7 +65,7 @@ func (ep *cC) Bind(callback func(value uint8) error) {
 	ep.device.cc = append(ep.device.cc, ep)
 }
 
-func (ep *cC) Send(value uint8) error {
+func (ep *cC) Set(value uint8) error {
 	return ep.device.outPort.Send(midi.ControlChange(ep.channel, ep.controller, value))
 }
 
@@ -86,7 +81,7 @@ func (ep *pitchBend) Bind(callback func(int16) error) {
 	ep.device.pitchBend = append(ep.device.pitchBend, ep)
 }
 
-func (ep *pitchBend) Send(value int16) error {
+func (ep *pitchBend) Set(value int16) error {
 	return ep.device.outPort.Send(midi.Pitchbend(ep.channel, value))
 }
 
@@ -122,35 +117,49 @@ func (ep *afterTouch) Bind(callback func(uint8) error) {
 	ep.device.aftertouch = append(ep.device.aftertouch, ep)
 }
 
-func (ep *afterTouch) Send(value uint8) error {
+func (ep *afterTouch) Set(value uint8) error {
 	return ep.device.outPort.Send(midi.AfterTouch(ep.channel, value))
 }
 
 type sysEx struct {
+	device *MidiDevice
+}
+
+func (ep *sysEx) Match(pattern []byte) *sysExMatch {
+	return &sysExMatch{
+		pattern: pattern,
+		device:  ep.device,
+	}
+}
+
+func (ep *sysEx) Set(value []byte) error {
+	return ep.device.outPort.Send(midi.SysEx(value))
+}
+
+type sysExMatch struct {
 	pattern  []byte
 	device   *MidiDevice
 	callback func([]byte) error
 	nCalls   int64
 }
 
-func (ep *sysEx) Bind(callback func([]byte) error) {
+func (ep *sysExMatch) Bind(callback func([]byte) error) {
 	ep.callback = callback
 	ep.device.sysex = append(ep.device.sysex, ep)
 }
 
-func (ep *sysEx) Send(value []byte) error {
-	return ep.device.outPort.Send(midi.SysEx(value))
-}
-
 func NewMidiDevice(inPort drivers.In, outPort drivers.Out) *MidiDevice {
 	return &MidiDevice{
-		inPort:     inPort,
-		outPort:    outPort,
+		inPort:  inPort,
+		outPort: outPort,
+		SysEx: &sysEx{
+			device: &MidiDevice{},
+		},
 		cc:         []*cC{},
 		pitchBend:  []*pitchBend{},
 		note:       []*note{},
 		aftertouch: []*afterTouch{},
-		sysex:      []*sysEx{},
+		sysex:      []*sysExMatch{},
 	}
 }
 

@@ -5,7 +5,6 @@ import (
 	"math"
 
 	dev "github.com/jdginn/arpad/devices"
-	midi "gitlab.com/gomidi/midi/v2"
 )
 
 // EncoderDirection represents the rotation direction of an encoder
@@ -30,18 +29,18 @@ type Encoder struct {
 }
 
 // TODO: binding needs to be a little more carefully thought through...
-func (e *Encoder) Bind(nil, callback func(dev.ArgsCC) error) {
-	e.d.BindCC(dev.PathCC{e.channel, e.encoderCC}, callback)
+func (e *Encoder) Bind(callback func(uint8) error) {
+	e.d.CC(e.channel, e.encoderCC).Bind(callback)
 }
 
 func (e *Encoder) SetLEDRingAllSegments() error {
-	const lowValue uint8 = 127
+	const lowValue uint8 = 0 // TODO: check this
 	const highValue uint8 = 127
-	if err := e.d.Send(midi.ControlChange(e.channel, e.ledRingLow, lowValue)); err != nil {
+	if err := e.d.CC(e.channel, e.ledRingLow).Set(lowValue); err != nil {
 		return fmt.Errorf("failed to set low LED ring value: %v", err)
 	}
-	if err := e.d.Send(midi.ControlChange(e.channel, e.ledRingHigh, highValue)); err != nil {
-		return fmt.Errorf("failed to set high LED ring value: %v", err)
+	if err := e.d.CC(e.channel, e.ledRingHigh).Set(highValue); err != nil {
+		return fmt.Errorf("failed to set low LED ring value: %v", err)
 	}
 	return nil
 }
@@ -49,11 +48,11 @@ func (e *Encoder) SetLEDRingAllSegments() error {
 func (e *Encoder) ClearLEDRing() error {
 	const lowValue uint8 = 0
 	const highValue uint8 = 0
-	if err := e.d.Send(midi.ControlChange(e.channel, e.ledRingLow, lowValue)); err != nil {
+	if err := e.d.CC(e.channel, e.ledRingLow).Set(lowValue); err != nil {
 		return fmt.Errorf("failed to set low LED ring value: %v", err)
 	}
-	if err := e.d.Send(midi.ControlChange(e.channel, e.ledRingHigh, highValue)); err != nil {
-		return fmt.Errorf("failed to set high LED ring value: %v", err)
+	if err := e.d.CC(e.channel, e.ledRingHigh).Set(highValue); err != nil {
+		return fmt.Errorf("failed to set low LED ring value: %v", err)
 	}
 	return nil
 }
@@ -109,11 +108,11 @@ func (e *Encoder) SetLEDRingRelative(v float64) error {
 	highValue = highPattern[step]
 
 	// Send both CC messages
-	if err := e.d.Send(midi.ControlChange(e.channel, e.ledRingLow, lowValue)); err != nil {
+	if err := e.d.CC(e.channel, e.ledRingLow).Set(lowValue); err != nil {
 		return fmt.Errorf("failed to set low LED ring value: %v", err)
 	}
-	if err := e.d.Send(midi.ControlChange(e.channel, e.ledRingHigh, highValue)); err != nil {
-		return fmt.Errorf("failed to set high LED ring value: %v", err)
+	if err := e.d.CC(e.channel, e.ledRingLow).Set(highValue); err != nil {
+		return fmt.Errorf("failed to set low LED ring value: %v", err)
 	}
 
 	return nil
