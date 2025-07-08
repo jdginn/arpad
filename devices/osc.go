@@ -8,9 +8,9 @@ import (
 )
 
 type OscDevice struct {
-	client     OscClient
-	server     OscServer
-	dispatcher OscDispatcher
+	Client     OscClient
+	Server     OscServer
+	Dispatcher OscDispatcher
 }
 
 // Interfaces for better testability
@@ -28,9 +28,9 @@ type OscDispatcher interface {
 
 func NewOscDevice(client OscClient, server OscServer, dispatcher OscDispatcher) *OscDevice {
 	return &OscDevice{
-		client:     client,
-		server:     server,
-		dispatcher: dispatcher,
+		Client:     client,
+		Server:     server,
+		Dispatcher: dispatcher,
 	}
 }
 
@@ -45,23 +45,23 @@ func NewOscDevice(client OscClient, server OscServer, dispatcher OscDispatcher) 
 
 func (o *OscDevice) Run() error {
 	// Now Run() just starts the server
-	return o.server.ListenAndServe()
+	return o.Server.ListenAndServe()
 }
 
 func (o *OscDevice) SetInt(key string, val int64) error {
-	return o.client.Send(osc.NewMessage(key, val))
+	return o.Client.Send(osc.NewMessage(key, val))
 }
 
 func (o *OscDevice) SetFloat(key string, val float64) error {
-	return o.client.Send(osc.NewMessage(key, float32(val)))
+	return o.Client.Send(osc.NewMessage(key, float32(val)))
 }
 
 func (o *OscDevice) SetString(key string, val string) error {
-	return o.client.Send(osc.NewMessage(key, val))
+	return o.Client.Send(osc.NewMessage(key, val))
 }
 
 func (o *OscDevice) SetBool(key string, val bool) error {
-	return o.client.Send(osc.NewMessage(key, val))
+	return o.Client.Send(osc.NewMessage(key, val))
 }
 
 // BindInt binds a callback to run whenever a message is received for the given OSC address.
@@ -70,7 +70,7 @@ func (o *OscDevice) SetBool(key string, val bool) error {
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as an int.
 func (o *OscDevice) BindInt(addr string, effect func(int64) error) {
-	o.dispatcher.AddMsgHandler(addr, func(msg *osc.Message) {
+	o.Dispatcher.AddMsgHandler(addr, func(msg *osc.Message) {
 		var val any
 		if len(msg.Arguments) == 0 {
 			val = 0
@@ -108,7 +108,7 @@ func (o *OscDevice) BindInt(addr string, effect func(int64) error) {
 // The given address MUST return a float or be convertable to float.
 // WARNING: Conversions are best-effort and could panic.
 func (o *OscDevice) BindFloat(key string, effect func(float64) error) {
-	o.dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
+	o.Dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
 		var val any
 		if len(msg.Arguments) == 0 {
 			val = 0.0
@@ -147,7 +147,7 @@ func (o *OscDevice) BindFloat(key string, effect func(float64) error) {
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as a string.
 func (o *OscDevice) BindString(key string, effect func(string) error) {
-	o.dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
+	o.Dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
 		var val any
 		if len(msg.Arguments) == 0 {
 			val = ""
@@ -182,7 +182,7 @@ func (o *OscDevice) BindString(key string, effect func(string) error) {
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as a boolean.
 func (o *OscDevice) BindBool(key string, effect func(bool) error) {
-	o.dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
+	o.Dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
 		var val any
 		if len(msg.Arguments) == 0 {
 			val = false
