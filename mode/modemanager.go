@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-type Mode int
+type Mode uint64
 
 // bindable represents an endpoint that can have a callback bound to it to monitor state changes.
 // The callback will be invoked whenever the endpoint's value changes.
@@ -18,24 +18,38 @@ type setable[T any] interface {
 	Set(T) error
 }
 
-// registry tracks the last value sent for each (mode, setable)
-type registryKey struct {
+type setableEvent struct {
 	mode   Mode
 	target any
 }
-type registry struct {
-	mu       sync.Mutex
-	currMode Mode
-	values   map[registryKey]any
+
+type callbackEvent struct {
+	mode     Mode
+	callback func() error
 }
 
-var reg = &registry{values: make(map[registryKey]any)}
+// registry tracks events that need to be performed upon state transition
+//
+// 1. setables: tracks the last known value for decorated setables and calls the relevant ones
+// with that value upon state transition In this way, setables have automatically-managed state.
+//
+// 2. callbacks: tracks a list of callbacks to invoke upon state transition. Callbacks are opaque
+// to this package and have no automatic state management; the user is responsible for managing
+// any state on their own.
+type registry struct {
+	mu        sync.Mutex
+	currMode  Mode
+	setables  map[setableEvent]any
+	callbacks []callbackEvent
+}
+
+var reg = &registry{setables: make(map[setableEvent]any)}
 
 func SetMode(newMode Mode) (errs error) {
 	reg.mu.Lock()
 	defer reg.mu.Unlock()
 	reg.currMode = newMode
-	for k, val := range reg.values {
+	for k, val := range reg.setables {
 		if k.mode == newMode {
 			if s, ok := k.target.(setable[any]); ok {
 				err := s.Set(val)
@@ -56,8 +70,8 @@ type statefulSetable[T any] struct {
 
 func (s *statefulSetable[T]) Set(val T) error {
 	reg.mu.Lock()
-	k := registryKey{s.mode, s.target}
-	prev, ok := reg.values[k]
+	k := setableEvent{s.mode, s.target}
+	prev, ok := reg.setables[k]
 	reg.mu.Unlock()
 	if ok && reflect.DeepEqual(prev, val) {
 		return nil // Not dirty, don't resend
@@ -66,7 +80,7 @@ func (s *statefulSetable[T]) Set(val T) error {
 		return err
 	}
 	reg.mu.Lock()
-	reg.values[k] = val
+	reg.setables[k] = val
 	reg.mu.Unlock()
 	return nil
 }
@@ -74,6 +88,20 @@ func (s *statefulSetable[T]) Set(val T) error {
 // Factory function
 func Stateful[T any](mode Mode, s setable[T]) setable[T] {
 	return &statefulSetable[T]{mode: mode, target: s}
+}
+
+func OnTransition(callback func()) (errs error) {
+	reg.mu.Lock()
+	defer reg.mu.Unlock()
+	for _, e := range reg.callbacks {
+		if reg.currMode|e.mode != 0 {
+			err := e.callback()
+			if err != nil {
+				errs = errors.Join(errs, err)
+			}
+		}
+	}
+	return errs
 }
 
 func Bind[A any](mode Mode, binder bindable[A], callback func(A) error) {
