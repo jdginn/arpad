@@ -373,11 +373,11 @@ func (x XTouch) NewUtility() Utility {
 type Transport struct {
 	Marker  *Button
 	Nudge   *Button
-	Cycle   *Button
+	Cycle   *ToggleButton
 	Drop    *Button
 	Replace *Button
-	Click   *Button
-	Solo    *Button
+	Click   *ToggleButton
+	Solo    *ToggleButton
 	REW     *Button
 	FF      *Button
 	STOP    *Button
@@ -389,11 +389,11 @@ func (x *XTouch) NewTransport() Transport {
 	return Transport{
 		Marker:  x.NewButton(0, 84),
 		Nudge:   x.NewButton(0, 85),
-		Cycle:   x.NewButton(0, 86),
+		Cycle:   x.NewToggleButton(0, 86),
 		Drop:    x.NewButton(0, 87),
 		Replace: x.NewButton(0, 88),
-		Click:   x.NewButton(0, 89),
-		Solo:    x.NewButton(0, 90),
+		Click:   x.NewToggleButton(0, 89),
+		Solo:    x.NewToggleButton(0, 90),
 		REW:     x.NewButton(0, 91),
 		FF:      x.NewButton(0, 92),
 		STOP:    x.NewButton(0, 93),

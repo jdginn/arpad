@@ -17,7 +17,8 @@ type MidiDevice struct {
 
 	cc         []*cC
 	pitchBend  []*pitchBend
-	note       []*note
+	noteOn     []*noteOn
+	noteOff    []*noteOff
 	aftertouch []*afterTouch
 	sysex      []*sysExMatch
 }
@@ -39,9 +40,16 @@ func (f *MidiDevice) PitchBend(channel uint8) *pitchBend {
 
 func (f *MidiDevice) Note(channel, key uint8) *note {
 	return &note{
-		device:  f,
-		channel: channel,
-		key:     key,
+		On: &noteOn{
+			device:  f,
+			channel: channel,
+			key:     key,
+		},
+		Off: &noteOff{
+			device:  f,
+			channel: channel,
+			key:     key,
+		},
 	}
 }
 
@@ -57,7 +65,6 @@ type cC struct {
 	channel    uint8
 	controller uint8
 	callback   func(value uint8) error
-	nCalls     int64
 }
 
 func (ep *cC) Bind(callback func(value uint8) error) {
@@ -73,7 +80,6 @@ type pitchBend struct {
 	device   *MidiDevice
 	channel  uint8
 	callback func(int16) error
-	nCalls   int64
 }
 
 func (ep *pitchBend) Bind(callback func(int16) error) {
@@ -86,22 +92,39 @@ func (ep *pitchBend) Set(value int16) error {
 }
 
 type note struct {
+	On  *noteOn
+	Off *noteOff
+}
+
+type noteOn struct {
 	device   *MidiDevice
 	channel  uint8
 	key      uint8
-	callback func(bool) error
-	nCalls   int64
+	callback func(uint8) error
 }
 
-func (ep *note) Bind(callback func(bool) error) {
+func (ep *noteOn) Bind(callback func(uint8) error) {
 	ep.callback = callback
-	ep.device.note = append(ep.device.note, ep)
+	ep.device.noteOn = append(ep.device.noteOn, ep)
 }
 
-func (ep *note) Set(value bool) error {
-	if value {
-		return ep.device.outPort.Send(midi.NoteOn(ep.channel, ep.key, 0)) // TODO
-	}
+func (ep *noteOn) Set(velocity uint8) error {
+	return ep.device.outPort.Send(midi.NoteOn(ep.channel, ep.key, velocity))
+}
+
+type noteOff struct {
+	device   *MidiDevice
+	channel  uint8
+	key      uint8
+	callback func() error
+}
+
+func (ep *noteOff) Bind(callback func() error) {
+	ep.callback = callback
+	ep.device.noteOff = append(ep.device.noteOff, ep)
+}
+
+func (ep *noteOff) Set() error {
 	return ep.device.outPort.Send(midi.NoteOff(ep.channel, ep.key))
 }
 
@@ -109,7 +132,6 @@ type afterTouch struct {
 	device   *MidiDevice
 	channel  uint8
 	callback func(uint8) error
-	nCalls   int64
 }
 
 func (ep *afterTouch) Bind(callback func(uint8) error) {
@@ -140,7 +162,6 @@ type sysExMatch struct {
 	pattern  []byte
 	device   *MidiDevice
 	callback func([]byte) error
-	nCalls   int64
 }
 
 func (ep *sysExMatch) Bind(callback func([]byte) error) {
@@ -157,7 +178,8 @@ func NewMidiDevice(inPort drivers.In, outPort drivers.Out) *MidiDevice {
 		},
 		cc:         []*cC{},
 		pitchBend:  []*pitchBend{},
-		note:       []*note{},
+		noteOn:     []*noteOn{},
+		noteOff:    []*noteOff{},
 		aftertouch: []*afterTouch{},
 		sysex:      []*sysExMatch{},
 	}
@@ -208,9 +230,9 @@ func (f *MidiDevice) Run() {
 				fmt.Println("failed to parse Note On message:", err)
 				return
 			}
-			for _, note := range f.note {
+			for _, note := range f.noteOn {
 				if note.key == key && note.channel == channel {
-					if err := note.callback(true); err != nil {
+					if err := note.callback(velocity); err != nil {
 						fmt.Println("failed to process Note On:", err)
 					}
 				}
@@ -221,9 +243,9 @@ func (f *MidiDevice) Run() {
 				fmt.Println("failed to parse Note Off message:", err)
 				return
 			}
-			for _, note := range f.note {
+			for _, note := range f.noteOff {
 				if note.key == key && note.channel == channel {
-					if err := note.callback(false); err != nil {
+					if err := note.callback(); err != nil {
 						fmt.Println("failed to process Note Off:", err)
 					}
 				}

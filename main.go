@@ -69,6 +69,20 @@ func normalizeFader(abs int16) float64 {
 	return float64(abs) / 4 / float64(math.MaxUint16)
 }
 
+type trackData struct {
+	idx   int
+	name  string
+	sends map[int]*trackSendData
+	rcvs  map[int]*trackSendData
+}
+
+type trackSendData struct {
+	sendIdx uint64
+	rcvIdx  uint64
+	vol     float64
+	pan     float64
+}
+
 func main() {
 	defer midi.CloseDriver()
 	fmt.Printf("outports:\n" + midi.GetOutPorts().String() + "\n")
@@ -88,55 +102,83 @@ func main() {
 
 	// motu := motulib.NewHTTPDatastore("http://localhost:8888")
 
-	var reaper reaperlib.Reaper
+	var reaper reaperlib.Reaper // TODO: use NewReaper()
 
-	// Per-channel strip controls are defined here
+	// XTouch bindings
+	//
+	// Per-channel strip controls
 	for trackNum := int64(1); trackNum <= TOTAL_TRACKS; trackNum++ {
 		c := xtouch.Channels[trackNum]
+		rt := reaper.Track(trackNum)
 
-		// XTouch bindings
-		//
 		// MIX Mode
 		Bind(MIX, c.Fader, func(val int16) error {
-			return reaper.Track(trackNum).Volume.Set(normalizeFader(val))
+			return rt.Volume.Set(normalizeFader(val))
 		})
 		Bind(MIX, c.Mute, func(b bool) error {
-			return reaper.Track(trackNum).Mute.Set(b)
+			return rt.Mute.Set(b)
 		})
 		Bind(MIX, c.Solo, func(b bool) error {
-			return reaper.Track(trackNum).Solo.Set(b)
+			return rt.Solo.Set(b)
 		})
 		Bind(MIX, c.Rec, func(b bool) error {
-			return reaper.Track(trackNum).Recarm.Set(b)
+			return rt.Recarm.Set(b)
 		})
-		Bind(MIX, c.Select, func(b bool) error {
-			return reaper.Track(trackNum).Select.Set(b)
+		Bind(MIX, c.Select.On, func(uint8) error {
+			return rt.Select.Set(true)
 		})
 		// ...
 	}
+
+	// Transport
+	Bind(ALL, xtouch.Transport.PLAY.On, func(uint8) error {
+		return reaper.Play.Set(true)
+	})
+	Bind(ALL, xtouch.Transport.STOP.On, func(uint8) error {
+		return reaper.Stop.Set(true)
+	})
+	Bind(ALL, xtouch.Transport.Click, func(b bool) error {
+		return reaper.Click.Set(b)
+	})
+	Bind(MIX, xtouch.Transport.Solo, func(b bool) error {
+		return reaper.Soloreset.Set(b)
+	})
+	Bind(MIX, xtouch.Transport.REW.On, func(uint8) error {
+		return reaper.Rewind.Set(true)
+	})
+	Bind(ALL, xtouch.Transport.FF.On, func(b uint8) error {
+		return reaper.Forward.Set(true)
+	})
+
+	// Mode selection
+	Bind(MIX, xtouch.EncoderAssign.TRACK.On, func(uint8) error {
+		return SetMode(MIX)
+	})
+	Bind(MIX, xtouch.EncoderAssign.PAN_SURROUND.On, func(uint8) error {
+		return SetMode(RECORD)
+	})
+
+	// Layer selection within modes
+	Bind(MIX|MIX_THIS_TRACK_SENDS, xtouch.View.GLOBAL.On, func(uint8) error {
+		return SetMode(MIX_SENDS_TO_THIS_BUS)
+	})
 
 	// Reaper bindings
 	//
 	// MIX Mode
 	for trackNum := int64(1); trackNum <= TOTAL_TRACKS; trackNum++ {
 		c := xtouch.Channels[trackNum]
-		Bind(MIX, reaper.Track(trackNum).Volume, func(val float64) error {
+		Bind(ALL, reaper.Track(trackNum).Volume, func(val float64) error {
 			return Stateful(MIX, c.Fader).Set(int16(val))
 		})
 		// ...
 	}
-
-	// Mode selection
-	Bind(MIX, xtouch.EncoderAssign.TRACK, func(b bool) error {
-		return SetMode(MIX)
+	// Transport
+	Bind(ALL, reaper.Play, func(b bool) error {
+		return xtouch.Transport.PLAY.SetLED(b)
 	})
-	Bind(MIX, xtouch.EncoderAssign.PAN_SURROUND, func(b bool) error {
-		return SetMode(RECORD)
-	})
-
-	// Layer selection within modes
-	Bind(MIX|MIX_THIS_TRACK_SENDS, xtouch.View.GLOBAL, func(b bool) error {
-		return SetMode(MIX_SENDS_TO_THIS_BUS)
+	Bind(ALL, reaper.Click, func(b bool) error {
+		return xtouch.Transport.Click.SetLED(b)
 	})
 
 	SetMode(MIX)
