@@ -26,6 +26,8 @@ type Encoder struct {
 	buttonCC    uint8 // CC 32-29 for button press
 	ledRingLow  uint8 // For CC 48-55
 	ledRingHigh uint8 // For CC 56-63
+
+	Ring ring
 }
 
 // TODO: binding needs to be a little more carefully thought through...
@@ -33,33 +35,15 @@ func (e *Encoder) Bind(callback func(uint8) error) {
 	e.d.CC(e.channel, e.encoderCC).Bind(callback)
 }
 
-func (e *Encoder) SetLEDRingAllSegments() error {
-	const lowValue uint8 = 0 // TODO: check this
-	const highValue uint8 = 127
-	if err := e.d.CC(e.channel, e.ledRingLow).Set(lowValue); err != nil {
-		return fmt.Errorf("failed to set low LED ring value: %v", err)
-	}
-	if err := e.d.CC(e.channel, e.ledRingHigh).Set(highValue); err != nil {
-		return fmt.Errorf("failed to set low LED ring value: %v", err)
-	}
-	return nil
-}
-
-func (e *Encoder) ClearLEDRing() error {
-	const lowValue uint8 = 0
-	const highValue uint8 = 0
-	if err := e.d.CC(e.channel, e.ledRingLow).Set(lowValue); err != nil {
-		return fmt.Errorf("failed to set low LED ring value: %v", err)
-	}
-	if err := e.d.CC(e.channel, e.ledRingHigh).Set(highValue); err != nil {
-		return fmt.Errorf("failed to set low LED ring value: %v", err)
-	}
-	return nil
+type ring struct {
+	*Encoder
+	AllSegments      ringSetAllSegments
+	ClearAllSegments ringClearAllSegments
 }
 
 // SetLEDRingRelative sets the encoder LED ring based on a relative float value [0.0, 1.0].
 // The sweep animates smoothly from left to right, using bit patterns to interpolate between segments.
-func (e *Encoder) SetLEDRingRelative(v float64) error {
+func (e *ring) Set(v float64) error {
 	var lowValue, highValue uint8
 
 	// Clamp value
@@ -115,5 +99,37 @@ func (e *Encoder) SetLEDRingRelative(v float64) error {
 		return fmt.Errorf("failed to set low LED ring value: %v", err)
 	}
 
+	return nil
+}
+
+type ringSetAllSegments struct {
+	*Encoder
+}
+
+func (e *ringSetAllSegments) Set() error {
+	const lowValue uint8 = 0 // TODO: check this
+	const highValue uint8 = 127
+	if err := e.d.CC(e.channel, e.ledRingLow).Set(lowValue); err != nil {
+		return fmt.Errorf("failed to set low LED ring value: %v", err)
+	}
+	if err := e.d.CC(e.channel, e.ledRingHigh).Set(highValue); err != nil {
+		return fmt.Errorf("failed to set low LED ring value: %v", err)
+	}
+	return nil
+}
+
+type ringClearAllSegments struct {
+	*Encoder
+}
+
+func (e *ringClearAllSegments) Set() error {
+	const lowValue uint8 = 0
+	const highValue uint8 = 0
+	if err := e.d.CC(e.channel, e.ledRingLow).Set(lowValue); err != nil {
+		return fmt.Errorf("failed to set low LED ring value: %v", err)
+	}
+	if err := e.d.CC(e.channel, e.ledRingHigh).Set(highValue); err != nil {
+		return fmt.Errorf("failed to set low LED ring value: %v", err)
+	}
 	return nil
 }

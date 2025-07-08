@@ -188,17 +188,22 @@ func (x *XTouch) NewFader(channelNo uint8) *Fader {
 	}
 }
 
-func (x *XTouch) NewEncoder(channelNo uint8, id uint8) Encoder {
+func (x *XTouch) NewEncoder(channelNo uint8, id uint8) *Encoder {
 	// id should be 0-7
 	// encoderCC := 16 + (id % 8) // Maps to CC 16-23
 	ledLowCC := 48 + (id % 8)  // Maps to CC 48-55
 	ledHighCC := 56 + (id % 8) // Maps to CC 56-63
-	return Encoder{
+	enc := &Encoder{
 		d:           x.base,
 		channel:     channelNo,
 		ledRingLow:  ledLowCC,
 		ledRingHigh: ledHighCC,
 	}
+	enc.Ring = ring{
+		AllSegments:      ringSetAllSegments{enc},
+		ClearAllSegments: ringClearAllSegments{enc},
+	}
+	return enc
 }
 
 func (x *XTouch) NewScribble(channel uint8) Scribble {
@@ -219,7 +224,7 @@ func (x *XTouch) NewMeter(channel uint8) Meter {
 // for each channel strip under control.
 type channelStrip struct {
 	// TODO: Encoder
-	Encoder       Encoder
+	Encoder       *Encoder
 	EncoderButton *Button
 	Scribble      Scribble
 	Rec           *ToggleButton
@@ -455,8 +460,8 @@ type XTouchDefault struct {
 }
 
 // New returns a properly initialized XTouchDefault struct.
-func New(d *dev.MidiDevice) XTouchDefault {
-	x := XTouchDefault{
+func New(d *dev.MidiDevice) *XTouchDefault {
+	x := &XTouchDefault{
 		XTouch: XTouch{
 			base:            d,
 			handshakeActive: false,
