@@ -60,10 +60,21 @@ func generateRootStruct(n *Node, w io.Writer) {
 	}
 	fmt.Fprintf(w, "}\n\n")
 
-	fmt.Fprintf(w, "func NewReaper(device *devices.OscDevice) *Reaper {\n")
+	fmt.Fprintf(w, "func NewReaper(dev *devices.OscDevice) *Reaper {\n")
 	fmt.Fprintf(w, "    return &Reaper{\n")
-	fmt.Fprintf(w, "        device: device,\n")
+	fmt.Fprintf(w, "        device: dev,\n")
+	for _, cc := range n.Children {
+		if cc.Qualifier == nil {
+			fmt.Fprintf(w, "		%s: &%s{\n", fieldNameForNode(cc), typeNameForNode(cc))
+			fmt.Fprintf(w, "			device: dev,\n")
+			fmt.Fprintf(w, "		},\n")
+		}
+	}
 	fmt.Fprintf(w, "    }\n")
+	fmt.Fprintf(w, "}\n\n")
+
+	fmt.Fprintf(w, "func (ep *Reaper) OscDispatcher() devices.OscDispatcher{\n")
+	fmt.Fprintf(w, "    return ep.device.Dispatcher\n")
 	fmt.Fprintf(w, "}\n\n")
 
 	fmt.Fprintf(w, "func (ep *Reaper) Run() {\n")
@@ -143,6 +154,13 @@ func generateQualifiedGetter(n *Node, child *Node, w io.Writer) {
 		recvName, parentType, fieldName, paramName, paramType, childType,
 	)
 	fmt.Fprintf(w, "	return &%s{\n", childType)
+	for _, cc := range child.Children {
+		if cc.Qualifier == nil {
+			fmt.Fprintf(w, "		%s: &%s{\n", fieldNameForNode(cc), typeNameForNode(cc))
+			fmt.Fprintf(w, "			device: %s.device,\n", recvName)
+			fmt.Fprintf(w, "		},\n")
+		}
+	}
 	fmt.Fprintf(w, "		state: %s{\n", childStateType)
 	// Copy all parent state fields that exist in the child, from parent.state
 	for _, pf := range collectParentQualifierFields(child) {

@@ -69,6 +69,9 @@ func main() {
 
 	formatted, err := format.Source(code.Bytes())
 	if err != nil {
+		if err := os.WriteFile(outputPath, code.Bytes(), 0644); err != nil {
+			log.Fatalf("Failed to write output file: %v", err)
+		}
 		log.Fatalf("Failed to format generated code: %v", err)
 	}
 	if err := os.WriteFile(outputPath, formatted, 0644); err != nil {
