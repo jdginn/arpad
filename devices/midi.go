@@ -170,7 +170,7 @@ func (ep *sysExMatch) Bind(callback func([]byte) error) {
 }
 
 func NewMidiDevice(inPort drivers.In, outPort drivers.Out) *MidiDevice {
-	return &MidiDevice{
+	d := &MidiDevice{
 		inPort:  inPort,
 		outPort: outPort,
 		SysEx: &sysEx{
@@ -183,6 +183,8 @@ func NewMidiDevice(inPort drivers.In, outPort drivers.Out) *MidiDevice {
 		aftertouch: []*afterTouch{},
 		sysex:      []*sysExMatch{},
 	}
+	d.SysEx = &sysEx{device: d}
+	return d
 }
 
 // Run starts this device and causes it to listen and respond to incoming MIDI messages.
