@@ -2,14 +2,20 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"math"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/hypebeast/go-osc/osc"
 	"gitlab.com/gomidi/midi/v2"
-	_ "gitlab.com/gomidi/midi/v2/drivers/midicatdrv"
 
-	dev "github.com/jdginn/arpad/devices"
+	// _ "gitlab.com/gomidi/midi/v2/drivers/midicatdrv"
+	_ "gitlab.com/gomidi/midi/v2/drivers/rtmididrv" // autoregisters driver
+
+	"github.com/jdginn/arpad/devices"
 	reaperlib "github.com/jdginn/arpad/devices/reaper"
 	xtouchlib "github.com/jdginn/arpad/devices/xtouch"
 	. "github.com/jdginn/arpad/mode"
@@ -56,27 +62,62 @@ const (
 	ALL = 0xFFFFFFFFFFFFFFFF
 )
 
+// const MIDI_IN = "X-Touch INT"
 const MIDI_IN = "IAC Driver Bus 1"
 
-// const MIDI_IN = "X-Touch INT"
+// const MIDI_OUT = "X-Touch EXT"
 const MIDI_OUT = "IAC Driver Bus 1"
 
-// const MIDI_OUT = "X-Touch EXT"
+const (
+	OSC_REAPER_IP   = "0.0.0.0"
+	OSC_REAPER_PORT = 9000
+	OSC_ARPAD_IP    = "192.168.1.146"
+	OSC_ARPAD_PORT  = 9001
+)
 
-const TOTAL_TRACKS = 8
+const DEVICE_TRACKS = 8
 
 func normalizeFader(abs int16) float64 {
 	return float64(abs) / 4 / float64(math.MaxUint16)
 }
 
+func getFirstWildcard(prefix, path string) string {
+	if !strings.HasPrefix(path, prefix) {
+		return ""
+	}
+	rest := strings.TrimPrefix(path, prefix)
+	// If there are more slashes, split and return the first part
+	parts := strings.SplitN(rest, "/", 2)
+	return parts[0]
+}
+
 type trackData struct {
-	idx   int
-	name  string
-	sends map[int]*trackSendData
-	rcvs  map[int]*trackSendData
+	x          *xtouchlib.XTouchDefault
+	surfaceIdx int64
+	reaperIdx  int64
+	name       string
+	volume     float64
+	pan        float64
+	mute       bool
+	solo       bool
+	rec        bool
+	sends      map[int]*trackSendData
+	rcvs       map[int]*trackSendData
+}
+
+func (t *trackData) onStateTransition() (errs error) {
+	xt := t.x.Channels[t.surfaceIdx]
+	return errors.Join(errs,
+		xt.Fader.Set(int16(t.volume)),
+		xt.Encoder.Ring.Set(t.pan),
+		xt.Mute.SetLED(t.mute),
+		xt.Solo.SetLED(t.solo),
+		xt.Rec.SetLED(t.rec),
+	)
 }
 
 type trackSendData struct {
+	*trackData
 	sendIdx uint64
 	rcvIdx  uint64
 	vol     float64
@@ -98,16 +139,56 @@ func main() {
 	}
 	fmt.Println(out)
 
-	xtouch := xtouchlib.New(dev.NewMidiDevice(in, out))
+	xtouch := xtouchlib.New(devices.NewMidiDevice(in, out))
 
 	// motu := motulib.NewHTTPDatastore("http://localhost:8888")
 
-	var reaper reaperlib.Reaper // TODO: use NewReaper()
+	reaper := reaperlib.NewReaper(devices.NewOscDevice(OSC_ARPAD_IP, OSC_ARPAD_PORT, OSC_REAPER_IP, OSC_REAPER_PORT))
+
+	trackStates := make(map[int64]*trackData)
+
+	dispatcher := reaper.OscDispatcher()
+
+	// Find and populate our collection of track states
+	if err := dispatcher.AddMsgHandler("*", func(m *osc.Message) {
+		fmt.Printf("Found %s\n", getFirstWildcard("/track/", m.Address))
+		idx, err := strconv.ParseInt(getFirstWildcard("/track/", m.Address), 10, 64)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to find valid wildcard in path %s: %v", m.Address, err))
+		}
+		if _, ok := trackStates[idx]; !ok {
+			trackStates[idx] = &trackData{
+				x:         xtouch,
+				reaperIdx: idx,
+				// TODO: there's an argument that we might need to make sure this runs FIRST but I'm not sure
+			}
+		}
+	}); err != nil {
+		panic(err)
+	}
+
+	// Reaper bindings
+	//
+	// MIX Mode
+	for trackNum := int64(1); trackNum < DEVICE_TRACKS; trackNum++ {
+		c := xtouch.Channels[trackNum]
+		Bind(ALL, reaper.Track(trackNum).Volume, func(val float64) error {
+			return Stateful(MIX, c.Fader).Set(int16(val))
+		})
+		// ...
+	}
+	// Transport
+	Bind(ALL, reaper.Play, func(b bool) error {
+		return xtouch.Transport.PLAY.SetLED(b)
+	})
+	Bind(ALL, reaper.Click, func(b bool) error {
+		return xtouch.Transport.Click.SetLED(b)
+	})
 
 	// XTouch bindings
 	//
 	// Per-channel strip controls
-	for trackNum := int64(1); trackNum <= TOTAL_TRACKS; trackNum++ {
+	for trackNum := int64(1); trackNum < DEVICE_TRACKS; trackNum++ {
 		c := xtouch.Channels[trackNum]
 		rt := reaper.Track(trackNum)
 
@@ -161,24 +242,6 @@ func main() {
 	// Layer selection within modes
 	Bind(MIX|MIX_THIS_TRACK_SENDS, xtouch.View.GLOBAL.On, func(uint8) error {
 		return SetMode(MIX_SENDS_TO_THIS_BUS)
-	})
-
-	// Reaper bindings
-	//
-	// MIX Mode
-	for trackNum := int64(1); trackNum <= TOTAL_TRACKS; trackNum++ {
-		c := xtouch.Channels[trackNum]
-		Bind(ALL, reaper.Track(trackNum).Volume, func(val float64) error {
-			return Stateful(MIX, c.Fader).Set(int16(val))
-		})
-		// ...
-	}
-	// Transport
-	Bind(ALL, reaper.Play, func(b bool) error {
-		return xtouch.Transport.PLAY.SetLED(b)
-	})
-	Bind(ALL, reaper.Click, func(b bool) error {
-		return xtouch.Transport.Click.SetLED(b)
 	})
 
 	SetMode(MIX)
