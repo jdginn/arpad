@@ -8,29 +8,24 @@ import (
 )
 
 type OscDevice struct {
-	Client     OscClient
-	Server     OscServer
-	Dispatcher OscDispatcher
+	Client     *osc.Client
+	Server     *osc.Server
+	Dispatcher *osc.StandardDispatcher
+
+	clientIP   string
+	clientPort int
+	serverIP   string
+	serverPort int
 }
 
-// Interfaces for better testability
-type OscClient interface {
-	Send(*osc.Message) error
-}
-
-type OscServer interface {
-	ListenAndServe() error
-}
-
-type OscDispatcher interface {
-	AddMsgHandler(string, func(*osc.Message))
-}
-
-func NewOscDevice(client OscClient, server OscServer, dispatcher OscDispatcher) *OscDevice {
+func NewOscDevice(clientIp string, clientPort int, serverIp string, serverPort int) *OscDevice {
 	return &OscDevice{
-		Client:     client,
-		Server:     server,
-		Dispatcher: dispatcher,
+		Client:     osc.NewClient(clientIp, clientPort),
+		Dispatcher: osc.NewStandardDispatcher(),
+		clientIP:   clientIp,
+		clientPort: clientPort,
+		serverIP:   serverIp,
+		serverPort: serverPort,
 	}
 }
 
@@ -45,6 +40,10 @@ func NewOscDevice(client OscClient, server OscServer, dispatcher OscDispatcher) 
 
 func (o *OscDevice) Run() error {
 	// Now Run() just starts the server
+	o.Server = &osc.Server{
+		Addr:       fmt.Sprintf("%s:%d", o.serverIP, o.serverPort),
+		Dispatcher: o.Dispatcher,
+	}
 	return o.Server.ListenAndServe()
 }
 
