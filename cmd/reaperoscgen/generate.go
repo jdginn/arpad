@@ -63,6 +63,7 @@ func generateRootStruct(n *Node, w io.Writer) {
 	fmt.Fprintf(w, "func NewReaper(dev *devices.OscDevice) *Reaper {\n")
 	fmt.Fprintf(w, "    return &Reaper{\n")
 	fmt.Fprintf(w, "        device: dev,\n")
+	// Initialize child structs taht are not behind a qualified getter
 	for _, cc := range n.Children {
 		if cc.Qualifier == nil {
 			fmt.Fprintf(w, "		%s: &%s{\n", fieldNameForNode(cc), typeNameForNode(cc))
@@ -73,7 +74,7 @@ func generateRootStruct(n *Node, w io.Writer) {
 	fmt.Fprintf(w, "    }\n")
 	fmt.Fprintf(w, "}\n\n")
 
-	fmt.Fprintf(w, "func (ep *Reaper) OscDispatcher() devices.OscDispatcher{\n")
+	fmt.Fprintf(w, "func (ep *Reaper) OscDispatcher() *osc.StandardDispatcher{\n")
 	fmt.Fprintf(w, "    return ep.device.Dispatcher\n")
 	fmt.Fprintf(w, "}\n\n")
 
@@ -158,6 +159,12 @@ func generateQualifiedGetter(n *Node, child *Node, w io.Writer) {
 		if cc.Qualifier == nil {
 			fmt.Fprintf(w, "		%s: &%s{\n", fieldNameForNode(cc), typeNameForNode(cc))
 			fmt.Fprintf(w, "			device: %s.device,\n", recvName)
+			fmt.Fprintf(w, "			state: %s{\n", typeNameForNode(cc)+"State")
+			// for _, pf := range collectParentQualifierFields(cc) {
+			// 	fmt.Fprintf(w, "			%s: %s.state.%s,\n", pf.ParamName, recvName, pf.ParamName)
+			// }
+			fmt.Fprintf(w, "			%s: %s,\n", child.Qualifier.ParamName, paramName)
+			fmt.Fprintf(w, "			},\n")
 			fmt.Fprintf(w, "		},\n")
 		}
 	}

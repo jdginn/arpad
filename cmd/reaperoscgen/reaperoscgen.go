@@ -28,6 +28,8 @@ func (g *Generator) generatePreamble(buf *bytes.Buffer) {
 	fmt.Fprintf(buf, "import (\n")
 	fmt.Fprintf(buf, "    \"fmt\"\n")
 	fmt.Fprintf(buf, "\n")
+	fmt.Fprintf(buf, "    \"github.com/hypebeast/go-osc/osc\"\n")
+	fmt.Fprintf(buf, "\n")
 	fmt.Fprintf(buf, "    \"github.com/jdginn/arpad/devices\"\n")
 	fmt.Fprintf(buf, ")\n\n")
 }
