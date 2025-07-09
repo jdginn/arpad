@@ -191,6 +191,8 @@ func NewMidiDevice(inPort drivers.In, outPort drivers.Out) *MidiDevice {
 //
 // For any message with an effect registered, that effect will be run each time such a message is received.
 func (f *MidiDevice) Run() {
+	f.inPort.Open()
+	defer f.inPort.Close()
 	f.outPort.Open()
 	defer f.outPort.Close()
 
