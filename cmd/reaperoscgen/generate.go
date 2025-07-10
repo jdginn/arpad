@@ -6,51 +6,26 @@ import (
 	"strings"
 )
 
-// capitalize returns the string with its first letter uppercased.
-func capitalize(s string) string {
-	if s == "" {
-		return ""
+func generateInitializationTopLevel(n *Field, w io.Writer) {
+	if n.TypeNode.Qualifier != nil {
+		return
 	}
-	return strings.ToUpper(s[:1]) + s[1:]
-}
-
-// lowercase returns the string with its first letter lowercased.
-func lowercase(s string) string {
-	if s == "" {
-		return ""
-	}
-	return strings.ToLower(s[:1]) + s[1:]
-}
-
-// typeNameForNode produces a unique Go type name for a node by joining ancestor names.
-func typeNameForNode(n *Node) string {
-	var names []string
-	curr := n
-	if curr.Parent == nil {
-		return "Reaper"
-	}
-	// if curr.Endpoint != nil {
-	// 	names = append(names, "Endpoint")
-	// }
-	for curr != nil && curr.Parent != nil { // skip root ("reaper") parent
-		names = append([]string{capitalize(curr.Name)}, names...)
-		curr = curr.Parent
-	}
-	return lowercase(strings.Join(names, ""))
-}
-
-// fieldNameForNode produces a field name for a child node.
-func fieldNameForNode(n *Node) string {
-	return capitalize(n.Name)
-}
-
-func generateInitialization(n *Node, w io.Writer) {
-	fmt.Fprintf(w, "		%s: &%s{\n", fieldNameForNode(n), typeNameForNode(n))
+	fmt.Fprintf(w, "		%s: &%s{\n", n.Name, n.TypeNode.Name)
 	fmt.Fprintf(w, "			device: dev,\n")
-	for _, child := range n.Children {
-		if child.Qualifier == nil {
-			generateInitialization(child, w)
-		}
+	for _, child := range n.TypeNode.Fields {
+		generateInitializationTopLevel(child, w)
+	}
+	fmt.Fprintf(w, "		},\n")
+}
+
+func generateInitializationGetter(recvName string, n *Field, w io.Writer) {
+	if n.TypeNode.Qualifier != nil {
+		return
+	}
+	fmt.Fprintf(w, "		%s: &%s{\n", n.Name, n.TypeNode.Name)
+	fmt.Fprintf(w, "			device: %s.device,\n", recvName)
+	for _, child := range n.TypeNode.Fields {
+		generateInitializationGetter(recvName, child, w)
 	}
 	fmt.Fprintf(w, "		},\n")
 }
@@ -61,12 +36,10 @@ func generateRootStruct(n *Node, w io.Writer) {
 	}
 	fmt.Fprintf(w, "type Reaper struct {\n")
 	fmt.Fprintf(w, "    device *devices.OscDevice\n")
-	for _, child := range n.Children {
-		childType := typeNameForNode(child)
-		fieldName := fieldNameForNode(child)
-		if child.Qualifier == nil {
+	for _, child := range n.Fields {
+		if child.TypeNode.Qualifier == nil {
 			// e.g. Value *TrackFxParamValueEndpoint
-			fmt.Fprintf(w, "    %s *%s\n", fieldName, childType)
+			fmt.Fprintf(w, "    %s *%s\n", child.Name, child.TypeNode.Name)
 		}
 	}
 	fmt.Fprintf(w, "}\n\n")
@@ -74,11 +47,9 @@ func generateRootStruct(n *Node, w io.Writer) {
 	fmt.Fprintf(w, "func NewReaper(dev *devices.OscDevice) *Reaper {\n")
 	fmt.Fprintf(w, "    return &Reaper{\n")
 	fmt.Fprintf(w, "        device: dev,\n")
-	// Initialize child structs taht are not behind a qualified getter
-	for _, child := range n.Children {
-		if child.Qualifier == nil {
-			generateInitialization(child, w)
-		}
+	// Initialize child structs that are not behind a qualified getter
+	for _, child := range n.Fields {
+		generateInitializationTopLevel(child, w)
 	}
 	fmt.Fprintf(w, "    }\n")
 	fmt.Fprintf(w, "}\n\n")
@@ -91,15 +62,15 @@ func generateRootStruct(n *Node, w io.Writer) {
 	fmt.Fprintf(w, "    ep.device.Run()\n")
 	fmt.Fprintf(w, "}\n\n")
 
-	for _, child := range n.Children {
-		if child.Qualifier != nil {
+	for _, child := range n.Fields {
+		if child.TypeNode.Qualifier != nil {
 			generateQualifiedGetter(n, child, w)
 		}
 	}
 
 	// Recurse for all children
-	for _, child := range n.Children {
-		generateNodeStructs(child, w)
+	for _, child := range n.Fields {
+		generateNodeStructs(child.TypeNode, w)
 	}
 }
 
@@ -108,14 +79,12 @@ func generateNodeStructs(n *Node, w io.Writer) {
 	typeName := typeNameForNode(n)
 	fmt.Fprintf(w, "type %s struct {\n", typeName)
 	fmt.Fprintf(w, "    device *devices.OscDevice\n")
-	for _, child := range n.Children {
-		childType := typeNameForNode(child)
-		fieldName := fieldNameForNode(child)
-		if child.Qualifier == nil {
+	for _, child := range n.Fields {
+		if child.TypeNode.Qualifier == nil {
 			// e.g. Value *TrackFxParamValueEndpoint
-			fmt.Fprintf(w, "    %s *%s\n", fieldName, childType)
+			fmt.Fprintf(w, "    %s *%s\n", child.Name, child.TypeNode.Name)
 		}
-		// NOTE: if a qualifier is required, we define a qualified getter method
+		// NOTE: if a qualifier is required, we generate a qualified getter method
 	}
 
 	needState := len(n.StateFields) > 0
@@ -128,8 +97,8 @@ func generateNodeStructs(n *Node, w io.Writer) {
 		generateStateStruct(n, w)
 	}
 
-	for _, child := range n.Children {
-		if child.Qualifier != nil {
+	for _, child := range n.Fields {
+		if child.TypeNode.Qualifier != nil {
 			generateQualifiedGetter(n, child, w)
 		}
 	}
@@ -140,55 +109,36 @@ func generateNodeStructs(n *Node, w io.Writer) {
 	}
 
 	// Recurse for all children
-	for _, child := range n.Children {
-		generateNodeStructs(child, w)
+	for _, child := range n.Fields {
+		generateNodeStructs(child.TypeNode, w)
 	}
 }
 
 // Generates the qualified child getter method.
-// n: parent node, child: qualified child node, w: output writer.
-func generateQualifiedGetter(n *Node, child *Node, w io.Writer) {
-	childType := typeNameForNode(child)
-	childStateType := typeNameForNode(child) + "State"
-	parentType := typeNameForNode(n)
-	// parentStateType := stateTypeNameForNode(n)
-	fieldName := fieldNameForNode(child)
-	paramName := child.Qualifier.ParamName
-	paramType := child.Qualifier.ParamType
-
-	// Use receiver name as first letter of parent type, lowercased and unique if needed
-	recvName := lowercase(parentType)
+func generateQualifiedGetter(n *Node, field *Field, w io.Writer) {
+	// Use receiver name as first letter of parent type, lowercased
+	recvName := lowercase(n.Name)
 
 	// Build the child state struct literal
 	fmt.Fprintf(w, "func (%s *%s) %s(%s %s) *%s {\n",
-		recvName, parentType, fieldName, paramName, paramType, childType,
+		recvName, n.Name, field.Name, field.TypeNode.Qualifier.ParamName, field.TypeNode.Qualifier.ParamType, field.TypeNode.Name,
 	)
-	fmt.Fprintf(w, "	return &%s{\n", childType)
-	for _, grandChild := range child.Children {
-		if grandChild.Qualifier == nil {
-			fmt.Fprintf(w, "		%s: &%s{\n", fieldNameForNode(grandChild), typeNameForNode(grandChild))
-			fmt.Fprintf(w, "			device: %s.device,\n", recvName)
-			fmt.Fprintf(w, "			state: %s{\n", typeNameForNode(grandChild)+"State")
-			// for _, pf := range collectParentQualifierFields(cc) {
-			// 	fmt.Fprintf(w, "			%s: %s.state.%s,\n", pf.ParamName, recvName, pf.ParamName)
-			// }
-			fmt.Fprintf(w, "			%s: %s,\n", child.Qualifier.ParamName, paramName)
-			fmt.Fprintf(w, "			},\n")
-			fmt.Fprintf(w, "		},\n")
-		}
-	}
-	fmt.Fprintf(w, "		state: %s{\n", childStateType)
+	fmt.Fprintf(w, "	return &%s{\n", field.TypeNode.Name)
+	fmt.Fprintf(w, "		state: %s{\n", field.TypeNode.Name+"State")
 	// Copy all parent state fields that exist in the child, from parent.state
-	for _, pf := range collectParentQualifierFields(child) {
+	for _, pf := range collectParentQualifierFields(field.TypeNode) {
 		fmt.Fprintf(w, "			%s: %s.state.%s,\n", pf.ParamName, recvName, pf.ParamName)
 	}
 	// Set the child's new qualifier field from the argument (it's always the last in childFields)
-	if child.Qualifier != nil {
-		fmt.Fprintf(w, "			%s: %s,\n", child.Qualifier.ParamName, paramName)
+	if field.TypeNode.Qualifier != nil {
+		fmt.Fprintf(w, "			%s: %s,\n", field.TypeNode.Qualifier.ParamName, field.TypeNode.Qualifier.ParamName)
 	}
 	fmt.Fprintf(w, "		},\n")
 	// Copy device pointer if your struct has it
 	fmt.Fprintf(w, "		device: %s.device,\n", recvName)
+	for _, field := range field.TypeNode.Fields {
+		generateInitializationGetter(recvName, field, w)
+	}
 	fmt.Fprintf(w, "	}\n")
 	fmt.Fprintf(w, "}\n\n")
 }
@@ -235,7 +185,7 @@ func getOscPathForNode(n *Node) string {
 	if len(n.StateFields) == 0 {
 		sb.WriteString("\"")
 		sb.WriteString(getOscPathRegex(n))
-		sb.WriteString("\"\n")
+		sb.WriteString("\"")
 		return sb.String()
 	}
 	sb.WriteString("fmt.Sprintf(\n        \"")

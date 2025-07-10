@@ -5,14 +5,37 @@ import (
 	"strings"
 )
 
+// capitalize returns the string with its first letter uppercased.
+func capitalize(s string) string {
+	if s == "" {
+		return ""
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+// lowercase returns the string with its first letter lowercased.
+func lowercase(s string) string {
+	if s == "" {
+		return ""
+	}
+	return strings.ToLower(s[:1]) + s[1:]
+}
+
 type Node struct {
-	Name        string           // path segment name
-	Qualifier   *Qualifier       // nil if not a wildcard, else describes param
-	Children    map[string]*Node // next path segments
-	Endpoint    *Endpoint        // non-nil if this node is a leaf
-	Parent      *Node            // for upward traversal (optional)
-	StateFields []Qualifier      // for codegen
+	pathSegment string // path segment name
+	Name        string
+	Qualifier   *Qualifier  // nil if not a wildcard, else describes param
+	Fields      []*Field    // next path segments
+	Endpoint    *Endpoint   // non-nil if this node is a leaf
+	Parent      *Node       // for upward traversal (optional)
+	StateFields []Qualifier // for codegen
 	PathElement string
+}
+
+type Field struct {
+	Name     string
+	Type     string
+	TypeNode *Node
 }
 
 type Qualifier struct {
@@ -31,8 +54,9 @@ type Endpoint struct {
 // BuildTree constructs the OSC API hierarchy from a flat list of Actions.
 func BuildTree(actions []*Action) *Node {
 	root := &Node{
-		Name:     "Reaper", // Convention: top-level node
-		Children: make(map[string]*Node),
+		pathSegment: "Reaper", // Convention: top-level node
+		Name:        "Reaper",
+		Fields:      []*Field{},
 		// Parent: nil
 	}
 	for _, act := range actions {
@@ -42,6 +66,35 @@ func BuildTree(actions []*Action) *Node {
 	}
 	populateStateFields(root)
 	return root
+}
+
+// Get returns the first element in the slice for which the predicate returns true.
+// If no such element exists, it returns the zero value of T and false.
+func get[T any](s []T, predicate func(T) bool) (T, bool) {
+	for _, v := range s {
+		if predicate(v) {
+			return v, true
+		}
+	}
+	var zero T
+	return zero, false
+}
+
+// typeNameForNode produces a unique Go type name for a node by joining ancestor names.
+func typeNameForNode(n *Node) string {
+	var names []string
+	curr := n
+	if curr.Parent == nil {
+		return "Reaper"
+	}
+	// if curr.Endpoint != nil {
+	// 	names = append(names, "Endpoint")
+	// }
+	for curr != nil && curr.Parent != nil { // skip root ("reaper") parent
+		names = append([]string{capitalize(curr.pathSegment)}, names...)
+		curr = curr.Parent
+	}
+	return lowercase(strings.Join(names, ""))
 }
 
 // insertPattern inserts a single OSC pattern into the hierarchy tree.
@@ -55,24 +108,29 @@ func insertPattern(root *Node, act *Action, pat *OSCPattern) {
 			// Mark current node as requiring a qualifier (param) if not already set.
 			if curr.Qualifier == nil {
 				curr.Qualifier = &Qualifier{
-					ParamName: guessParamName(curr.Name),
+					ParamName: guessParamName(curr.pathSegment),
 					ParamType: "int64", // TODO: infer from context if needed.
 				}
 			}
 			continue // Do NOT create a node for "@"
 		}
-		// Descend or create child node for literal segment
-		child, exists := curr.Children[seg]
+		child, exists := get(curr.Fields, func(f *Field) bool {
+			return f.TypeNode.pathSegment == seg
+		})
 		if !exists {
-			child = &Node{
-				Name:        seg,
-				Children:    make(map[string]*Node),
-				Parent:      curr,
-				PathElement: seg,
+			child = &Field{
+				Name: capitalize(seg),
+				TypeNode: &Node{
+					pathSegment: seg,
+					Fields:      []*Field{},
+					Parent:      curr,
+					PathElement: seg,
+				},
 			}
-			curr.Children[seg] = child
+			child.TypeNode.Name = typeNameForNode(child.TypeNode)
+			curr.Fields = append(curr.Fields, child)
 		}
-		curr = child
+		curr = child.TypeNode
 	}
 	// At the leaf, attach endpoint metadata
 	curr.Endpoint = &Endpoint{
@@ -125,8 +183,8 @@ func populateStateFields(n *Node) {
 	parentQualifierFields := collectParentQualifierFields(n)
 	childQualifierFields := collectChildQualifierFields(n)
 	n.StateFields = append(parentQualifierFields, childQualifierFields...)
-	for _, child := range n.Children {
-		populateStateFields(child)
+	for _, child := range n.Fields {
+		populateStateFields(child.TypeNode)
 	}
 }
 
@@ -136,13 +194,13 @@ func printHierarchy(root *Node) string {
 	var walk func(n *Node, depth int)
 	walk = func(n *Node, depth int) {
 		indent := strings.Repeat("  ", depth)
-		name := n.Name
+		name := n.pathSegment
 		if n.Qualifier != nil {
 			name += fmt.Sprintf(" (%s %s)", n.Qualifier.ParamName, n.Qualifier.ParamType)
 		}
 		sb.WriteString(fmt.Sprintf("%s%s\n", indent, name))
-		for _, child := range n.Children {
-			walk(child, depth+1)
+		for _, child := range n.Fields {
+			walk(child.TypeNode, depth+1)
 		}
 	}
 	walk(root, 0)
