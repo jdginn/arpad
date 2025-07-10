@@ -44,6 +44,17 @@ func fieldNameForNode(n *Node) string {
 	return capitalize(n.Name)
 }
 
+func generateInitialization(n *Node, w io.Writer) {
+	fmt.Fprintf(w, "		%s: &%s{\n", fieldNameForNode(n), typeNameForNode(n))
+	fmt.Fprintf(w, "			device: dev,\n")
+	for _, child := range n.Children {
+		if child.Qualifier == nil {
+			generateInitialization(child, w)
+		}
+	}
+	fmt.Fprintf(w, "		},\n")
+}
+
 func generateRootStruct(n *Node, w io.Writer) {
 	if n.Parent != nil {
 		panic("Code bug: should not call generateRootStruct on non-root node (i.e. on a node other than `Reaper`")
@@ -64,11 +75,9 @@ func generateRootStruct(n *Node, w io.Writer) {
 	fmt.Fprintf(w, "    return &Reaper{\n")
 	fmt.Fprintf(w, "        device: dev,\n")
 	// Initialize child structs taht are not behind a qualified getter
-	for _, cc := range n.Children {
-		if cc.Qualifier == nil {
-			fmt.Fprintf(w, "		%s: &%s{\n", fieldNameForNode(cc), typeNameForNode(cc))
-			fmt.Fprintf(w, "			device: dev,\n")
-			fmt.Fprintf(w, "		},\n")
+	for _, child := range n.Children {
+		if child.Qualifier == nil {
+			generateInitialization(child, w)
 		}
 	}
 	fmt.Fprintf(w, "    }\n")
@@ -155,11 +164,11 @@ func generateQualifiedGetter(n *Node, child *Node, w io.Writer) {
 		recvName, parentType, fieldName, paramName, paramType, childType,
 	)
 	fmt.Fprintf(w, "	return &%s{\n", childType)
-	for _, cc := range child.Children {
-		if cc.Qualifier == nil {
-			fmt.Fprintf(w, "		%s: &%s{\n", fieldNameForNode(cc), typeNameForNode(cc))
+	for _, grandChild := range child.Children {
+		if grandChild.Qualifier == nil {
+			fmt.Fprintf(w, "		%s: &%s{\n", fieldNameForNode(grandChild), typeNameForNode(grandChild))
 			fmt.Fprintf(w, "			device: %s.device,\n", recvName)
-			fmt.Fprintf(w, "			state: %s{\n", typeNameForNode(cc)+"State")
+			fmt.Fprintf(w, "			state: %s{\n", typeNameForNode(grandChild)+"State")
 			// for _, pf := range collectParentQualifierFields(cc) {
 			// 	fmt.Fprintf(w, "			%s: %s.state.%s,\n", pf.ParamName, recvName, pf.ParamName)
 			// }
