@@ -10,47 +10,630 @@ import (
 
 type Reaper struct {
 	device       *devices.OscDevice
-	Lastmarker   *lastmarker
-	Pause        *pause
-	Scrub        *scrub
-	Playrate     *playrate
-	Reaperconfig *reaperconfig
-	Bymarker     *bymarker
-	Lastregion   *lastregion
-	Play         *play
-	Zoom         *zoom
-	Replace      *replace
-	Fxinst       *fxinst
-	Beat         *beat
-	Click        *click
-	Record       *record
-	Stop         *stop
-	Fxeq         *fxeq
-	Editloop     *editloop
 	Scroll       *scroll
+	Zoom         *zoom
 	Time         *time
+	Beat         *beat
 	Samples      *samples
 	Frames       *frames
+	Click        *click
+	Replace      *replace
 	Repeat       *repeat
-	Anysolo      *anysolo
-	Forward      *forward
+	Record       *record
+	Stop         *stop
+	Play         *play
+	Pause        *pause
 	Autorecarm   *autorecarm
 	Soloreset    *soloreset
-	Tempo        *tempo
-	Master       *master
-	Device       *device
+	Anysolo      *anysolo
 	Rewind       *rewind
+	Forward      *forward
+	Bymarker     *bymarker
+	Editloop     *editloop
+	Scrub        *scrub
+	Playrate     *playrate
+	Tempo        *tempo
+	Lastmarker   *lastmarker
+	Lastregion   *lastregion
 	Loop         *loop
+	Master       *master
+	Fxeq         *fxeq
+	Fxinst       *fxinst
+	Device       *device
+	Reaperconfig *reaperconfig
 }
 
-func NewReaper(device *devices.OscDevice) *Reaper {
+func NewReaper(dev *devices.OscDevice) *Reaper {
 	return &Reaper{
-		device: device,
+		device: dev,
+		Scroll: &scroll{
+			device: dev,
+			X: &scrollX{
+				device: dev,
+				Minus: &scrollXMinus{
+					device: dev,
+				},
+				Plus: &scrollXPlus{
+					device: dev,
+				},
+			},
+			Y: &scrollY{
+				device: dev,
+				Minus: &scrollYMinus{
+					device: dev,
+				},
+				Plus: &scrollYPlus{
+					device: dev,
+				},
+			},
+		},
+		Zoom: &zoom{
+			device: dev,
+			X: &zoomX{
+				device: dev,
+				Minus: &zoomXMinus{
+					device: dev,
+				},
+				Plus: &zoomXPlus{
+					device: dev,
+				},
+			},
+			Y: &zoomY{
+				device: dev,
+				Minus: &zoomYMinus{
+					device: dev,
+				},
+				Plus: &zoomYPlus{
+					device: dev,
+				},
+			},
+		},
+		Time: &time{
+			device: dev,
+			Str: &timeStr{
+				device: dev,
+			},
+		},
+		Beat: &beat{
+			device: dev,
+			Str: &beatStr{
+				device: dev,
+			},
+		},
+		Samples: &samples{
+			device: dev,
+			Str: &samplesStr{
+				device: dev,
+			},
+		},
+		Frames: &frames{
+			device: dev,
+			Str: &framesStr{
+				device: dev,
+			},
+		},
+		Click: &click{
+			device: dev,
+		},
+		Replace: &replace{
+			device: dev,
+		},
+		Repeat: &repeat{
+			device: dev,
+		},
+		Record: &record{
+			device: dev,
+		},
+		Stop: &stop{
+			device: dev,
+		},
+		Play: &play{
+			device: dev,
+		},
+		Pause: &pause{
+			device: dev,
+		},
+		Autorecarm: &autorecarm{
+			device: dev,
+		},
+		Soloreset: &soloreset{
+			device: dev,
+		},
+		Anysolo: &anysolo{
+			device: dev,
+		},
+		Rewind: &rewind{
+			device: dev,
+		},
+		Forward: &forward{
+			device: dev,
+		},
+		Bymarker: &bymarker{
+			device: dev,
+		},
+		Editloop: &editloop{
+			device: dev,
+		},
+		Scrub: &scrub{
+			device: dev,
+		},
+		Playrate: &playrate{
+			device: dev,
+			Raw: &playrateRaw{
+				device: dev,
+			},
+			Rotary: &playrateRotary{
+				device: dev,
+			},
+			Str: &playrateStr{
+				device: dev,
+			},
+		},
+		Tempo: &tempo{
+			device: dev,
+			Raw: &tempoRaw{
+				device: dev,
+			},
+			Rotary: &tempoRotary{
+				device: dev,
+			},
+			Str: &tempoStr{
+				device: dev,
+			},
+		},
+		Lastmarker: &lastmarker{
+			device: dev,
+			Name: &lastmarkerName{
+				device: dev,
+			},
+			Number: &lastmarkerNumber{
+				device: dev,
+				Str: &lastmarkerNumberStr{
+					device: dev,
+				},
+			},
+			Time: &lastmarkerTime{
+				device: dev,
+			},
+		},
+		Lastregion: &lastregion{
+			device: dev,
+			Name: &lastregionName{
+				device: dev,
+			},
+			Number: &lastregionNumber{
+				device: dev,
+				Str: &lastregionNumberStr{
+					device: dev,
+				},
+			},
+			Time: &lastregionTime{
+				device: dev,
+			},
+			Length: &lastregionLength{
+				device: dev,
+			},
+		},
+		Loop: &loop{
+			device: dev,
+			Start: &loopStart{
+				device: dev,
+				Time: &loopStartTime{
+					device: dev,
+				},
+			},
+			End: &loopEnd{
+				device: dev,
+				Time: &loopEndTime{
+					device: dev,
+				},
+			},
+		},
+		Master: &master{
+			device: dev,
+			Volume: &masterVolume{
+				device: dev,
+				Str: &masterVolumeStr{
+					device: dev,
+				},
+			},
+			Pan: &masterPan{
+				device: dev,
+				Str: &masterPanStr{
+					device: dev,
+				},
+			},
+			Vu: &masterVu{
+				device: dev,
+				L: &masterVuL{
+					device: dev,
+				},
+				R: &masterVuR{
+					device: dev,
+				},
+			},
+		},
+		Fxeq: &fxeq{
+			device: dev,
+			Bypass: &fxeqBypass{
+				device: dev,
+			},
+			Openui: &fxeqOpenui{
+				device: dev,
+			},
+			Preset: &fxeqPreset{
+				device: dev,
+			},
+			Presetminus: &fxeqPresetminus{
+				device: dev,
+			},
+			Presetplus: &fxeqPresetplus{
+				device: dev,
+			},
+			Gain: &fxeqGain{
+				device: dev,
+				Db: &fxeqGainDb{
+					device: dev,
+				},
+				Str: &fxeqGainStr{
+					device: dev,
+				},
+			},
+			Wetdry: &fxeqWetdry{
+				device: dev,
+				Str: &fxeqWetdryStr{
+					device: dev,
+				},
+			},
+			Hipass: &fxeqHipass{
+				device: dev,
+				Str: &fxeqHipassStr{
+					device: dev,
+				},
+				Bypass: &fxeqHipassBypass{
+					device: dev,
+				},
+				Freq: &fxeqHipassFreq{
+					device: dev,
+					Hz: &fxeqHipassFreqHz{
+						device: dev,
+					},
+					Str: &fxeqHipassFreqStr{
+						device: dev,
+					},
+				},
+				Q: &fxeqHipassQ{
+					device: dev,
+					Oct: &fxeqHipassQOct{
+						device: dev,
+					},
+					Str: &fxeqHipassQStr{
+						device: dev,
+					},
+				},
+			},
+			Loshelf: &fxeqLoshelf{
+				device: dev,
+				Str: &fxeqLoshelfStr{
+					device: dev,
+				},
+				Bypass: &fxeqLoshelfBypass{
+					device: dev,
+				},
+				Freq: &fxeqLoshelfFreq{
+					device: dev,
+					Hz: &fxeqLoshelfFreqHz{
+						device: dev,
+					},
+					Str: &fxeqLoshelfFreqStr{
+						device: dev,
+					},
+				},
+				Gain: &fxeqLoshelfGain{
+					device: dev,
+					Db: &fxeqLoshelfGainDb{
+						device: dev,
+					},
+					Str: &fxeqLoshelfGainStr{
+						device: dev,
+					},
+				},
+				Q: &fxeqLoshelfQ{
+					device: dev,
+					Oct: &fxeqLoshelfQOct{
+						device: dev,
+					},
+					Str: &fxeqLoshelfQStr{
+						device: dev,
+					},
+				},
+			},
+			Notch: &fxeqNotch{
+				device: dev,
+				Str: &fxeqNotchStr{
+					device: dev,
+				},
+				Bypass: &fxeqNotchBypass{
+					device: dev,
+				},
+				Freq: &fxeqNotchFreq{
+					device: dev,
+					Hz: &fxeqNotchFreqHz{
+						device: dev,
+					},
+					Str: &fxeqNotchFreqStr{
+						device: dev,
+					},
+				},
+				Gain: &fxeqNotchGain{
+					device: dev,
+					Db: &fxeqNotchGainDb{
+						device: dev,
+					},
+					Str: &fxeqNotchGainStr{
+						device: dev,
+					},
+				},
+				Q: &fxeqNotchQ{
+					device: dev,
+					Oct: &fxeqNotchQOct{
+						device: dev,
+					},
+					Str: &fxeqNotchQStr{
+						device: dev,
+					},
+				},
+			},
+			Hishelf: &fxeqHishelf{
+				device: dev,
+				Str: &fxeqHishelfStr{
+					device: dev,
+				},
+				Bypass: &fxeqHishelfBypass{
+					device: dev,
+				},
+				Freq: &fxeqHishelfFreq{
+					device: dev,
+					Hz: &fxeqHishelfFreqHz{
+						device: dev,
+					},
+					Str: &fxeqHishelfFreqStr{
+						device: dev,
+					},
+				},
+				Gain: &fxeqHishelfGain{
+					device: dev,
+					Sb: &fxeqHishelfGainSb{
+						device: dev,
+					},
+					Str: &fxeqHishelfGainStr{
+						device: dev,
+					},
+				},
+				Q: &fxeqHishelfQ{
+					device: dev,
+					Oct: &fxeqHishelfQOct{
+						device: dev,
+					},
+					Str: &fxeqHishelfQStr{
+						device: dev,
+					},
+				},
+			},
+			Lopass: &fxeqLopass{
+				device: dev,
+				Str: &fxeqLopassStr{
+					device: dev,
+				},
+				Bypass: &fxeqLopassBypass{
+					device: dev,
+				},
+				Freq: &fxeqLopassFreq{
+					device: dev,
+					Hz: &fxeqLopassFreqHz{
+						device: dev,
+					},
+					Str: &fxeqLopassFreqStr{
+						device: dev,
+					},
+				},
+				Q: &fxeqLopassQ{
+					device: dev,
+					Oct: &fxeqLopassQOct{
+						device: dev,
+					},
+					Str: &fxeqLopassQStr{
+						device: dev,
+					},
+				},
+			},
+		},
+		Fxinst: &fxinst{
+			device: dev,
+			Name: &fxinstName{
+				device: dev,
+			},
+			Bypass: &fxinstBypass{
+				device: dev,
+			},
+			Openui: &fxinstOpenui{
+				device: dev,
+			},
+			Preset: &fxinstPreset{
+				device: dev,
+			},
+			Presetminus: &fxinstPresetminus{
+				device: dev,
+			},
+			Presetplus: &fxinstPresetplus{
+				device: dev,
+			},
+		},
+		Device: &device{
+			device: dev,
+			Track: &deviceTrack{
+				device: dev,
+				Follows: &deviceTrackFollows{
+					device: dev,
+					Device: &deviceTrackFollowsDevice{
+						device: dev,
+					},
+					Last_touched: &deviceTrackFollowsLast_touched{
+						device: dev,
+					},
+				},
+				Bank: &deviceTrackBank{
+					device: dev,
+					Follows: &deviceTrackBankFollows{
+						device: dev,
+						Device: &deviceTrackBankFollowsDevice{
+							device: dev,
+						},
+						Mixer: &deviceTrackBankFollowsMixer{
+							device: dev,
+						},
+					},
+					Minus: &deviceTrackBankMinus{
+						device: dev,
+					},
+					Plus: &deviceTrackBankPlus{
+						device: dev,
+					},
+				},
+				Minus: &deviceTrackMinus{
+					device: dev,
+				},
+				Plus: &deviceTrackPlus{
+					device: dev,
+				},
+			},
+			Send: &deviceSend{
+				device: dev,
+			},
+			Receive: &deviceReceive{
+				device: dev,
+			},
+			Fx: &deviceFx{
+				device: dev,
+				Follows: &deviceFxFollows{
+					device: dev,
+					Device: &deviceFxFollowsDevice{
+						device: dev,
+					},
+					Last_touched: &deviceFxFollowsLast_touched{
+						device: dev,
+					},
+					Focused: &deviceFxFollowsFocused{
+						device: dev,
+					},
+				},
+				Minus: &deviceFxMinus{
+					device: dev,
+				},
+				Plus: &deviceFxPlus{
+					device: dev,
+				},
+			},
+			Fxparam: &deviceFxparam{
+				device: dev,
+				Bank: &deviceFxparamBank{
+					device: dev,
+					Str: &deviceFxparamBankStr{
+						device: dev,
+					},
+					Minus: &deviceFxparamBankMinus{
+						device: dev,
+					},
+					Plus: &deviceFxparamBankPlus{
+						device: dev,
+					},
+				},
+			},
+			Fxinstparam: &deviceFxinstparam{
+				device: dev,
+				Bank: &deviceFxinstparamBank{
+					device: dev,
+					Str: &deviceFxinstparamBankStr{
+						device: dev,
+					},
+					Minus: &deviceFxinstparamBankMinus{
+						device: dev,
+					},
+					Plus: &deviceFxinstparamBankPlus{
+						device: dev,
+					},
+				},
+			},
+			Marker: &deviceMarker{
+				device: dev,
+				Bank: &deviceMarkerBank{
+					device: dev,
+					Minus: &deviceMarkerBankMinus{
+						device: dev,
+					},
+					Plus: &deviceMarkerBankPlus{
+						device: dev,
+					},
+				},
+			},
+			Region: &deviceRegion{
+				device: dev,
+				Bank: &deviceRegionBank{
+					device: dev,
+					Minus: &deviceRegionBankMinus{
+						device: dev,
+					},
+					Plus: &deviceRegionBankPlus{
+						device: dev,
+					},
+				},
+			},
+		},
+		Reaperconfig: &reaperconfig{
+			device: dev,
+			Track: &reaperconfigTrack{
+				device: dev,
+				Follows: &reaperconfigTrackFollows{
+					device: dev,
+					Reaperconfig: &reaperconfigTrackFollowsReaperconfig{
+						device: dev,
+					},
+					Device: &reaperconfigTrackFollowsDevice{
+						device: dev,
+					},
+				},
+			},
+		},
 	}
+}
+
+func (ep *Reaper) OscDispatcher() devices.Dispatcher {
+	return ep.device.Dispatcher
 }
 
 func (ep *Reaper) Run() {
 	ep.device.Run()
+}
+
+func (reaper *Reaper) Marker(markerNum int64) *marker {
+	return &marker{
+		state: markerState{
+			markerNum: markerNum,
+		},
+		device: reaper.device,
+		Name: &markerName{
+			device: reaper.device,
+		},
+		Number: &markerNumber{
+			device: reaper.device,
+			Str: &markerNumberStr{
+				device: reaper.device,
+			},
+		},
+		Time: &markerTime{
+			device: reaper.device,
+		},
+	}
 }
 
 func (reaper *Reaper) Region(regionNum int64) *region {
@@ -59,24 +642,342 @@ func (reaper *Reaper) Region(regionNum int64) *region {
 			regionNum: regionNum,
 		},
 		device: reaper.device,
+		Name: &regionName{
+			device: reaper.device,
+		},
+		Number: &regionNumber{
+			device: reaper.device,
+			Str: &regionNumberStr{
+				device: reaper.device,
+			},
+		},
+		Time: &regionTime{
+			device: reaper.device,
+		},
+		Length: &regionLength{
+			device: reaper.device,
+		},
 	}
 }
 
-func (reaper *Reaper) Fxinstparam(fxinstparamNum int64) *fxinstparam {
-	return &fxinstparam{
-		state: fxinstparamState{
-			fxinstparamNum: fxinstparamNum,
+func (reaper *Reaper) Marker_id(marker_idNum int64) *marker_id {
+	return &marker_id{
+		state: marker_idState{
+			marker_idNum: marker_idNum,
 		},
 		device: reaper.device,
+		Name: &marker_idName{
+			device: reaper.device,
+		},
+		Time: &marker_idTime{
+			device: reaper.device,
+		},
+		Number: &marker_idNumber{
+			device: reaper.device,
+		},
 	}
 }
 
-func (reaper *Reaper) Vkb_midi(vkb_midiNum int64) *vkb_midi {
-	return &vkb_midi{
-		state: vkb_midiState{
-			vkb_midiNum: vkb_midiNum,
+func (reaper *Reaper) Region_id(region_idNum int64) *region_id {
+	return &region_id{
+		state: region_idState{
+			region_idNum: region_idNum,
 		},
 		device: reaper.device,
+		Name: &region_idName{
+			device: reaper.device,
+		},
+		Time: &region_idTime{
+			device: reaper.device,
+		},
+		Length: &region_idLength{
+			device: reaper.device,
+		},
+		Number: &region_idNumber{
+			device: reaper.device,
+		},
+	}
+}
+
+func (reaper *Reaper) Track(trackNum int64) *track {
+	return &track{
+		state: trackState{
+			trackNum: trackNum,
+		},
+		device: reaper.device,
+		Name: &trackName{
+			device: reaper.device,
+		},
+		Number: &trackNumber{
+			device: reaper.device,
+			Str: &trackNumberStr{
+				device: reaper.device,
+			},
+		},
+		Mute: &trackMute{
+			device: reaper.device,
+			Toggle: &trackMuteToggle{
+				device: reaper.device,
+			},
+		},
+		Solo: &trackSolo{
+			device: reaper.device,
+			Toggle: &trackSoloToggle{
+				device: reaper.device,
+			},
+		},
+		Recarm: &trackRecarm{
+			device: reaper.device,
+			Toggle: &trackRecarmToggle{
+				device: reaper.device,
+			},
+		},
+		Monitor: &trackMonitor{
+			device: reaper.device,
+		},
+		Select: &trackSelect{
+			device: reaper.device,
+		},
+		Vu: &trackVu{
+			device: reaper.device,
+			L: &trackVuL{
+				device: reaper.device,
+			},
+			R: &trackVuR{
+				device: reaper.device,
+			},
+		},
+		Volume: &trackVolume{
+			device: reaper.device,
+			Str: &trackVolumeStr{
+				device: reaper.device,
+			},
+			Db: &trackVolumeDb{
+				device: reaper.device,
+			},
+			Touch: &trackVolumeTouch{
+				device: reaper.device,
+			},
+		},
+		Pan: &trackPan{
+			device: reaper.device,
+			Str: &trackPanStr{
+				device: reaper.device,
+			},
+			Touch: &trackPanTouch{
+				device: reaper.device,
+			},
+		},
+		Pan2: &trackPan2{
+			device: reaper.device,
+			Str: &trackPan2Str{
+				device: reaper.device,
+			},
+		},
+		Panmode: &trackPanmode{
+			device: reaper.device,
+		},
+		Auto: &trackAuto{
+			device: reaper.device,
+		},
+		Autotrim: &trackAutotrim{
+			device: reaper.device,
+		},
+		Autoread: &trackAutoread{
+			device: reaper.device,
+		},
+		Autolatch: &trackAutolatch{
+			device: reaper.device,
+		},
+		Autotouch: &trackAutotouch{
+			device: reaper.device,
+		},
+		Autowrite: &trackAutowrite{
+			device: reaper.device,
+		},
+		Fxeq: &trackFxeq{
+			device: reaper.device,
+			Bypass: &trackFxeqBypass{
+				device: reaper.device,
+			},
+			Openui: &trackFxeqOpenui{
+				device: reaper.device,
+			},
+			Preset: &trackFxeqPreset{
+				device: reaper.device,
+			},
+			Presetminus: &trackFxeqPresetminus{
+				device: reaper.device,
+			},
+			Presetplus: &trackFxeqPresetplus{
+				device: reaper.device,
+			},
+			Gain: &trackFxeqGain{
+				device: reaper.device,
+				Db: &trackFxeqGainDb{
+					device: reaper.device,
+				},
+			},
+			Wetdry: &trackFxeqWetdry{
+				device: reaper.device,
+				Str: &trackFxeqWetdryStr{
+					device: reaper.device,
+				},
+			},
+			Hipass: &trackFxeqHipass{
+				device: reaper.device,
+				Freq: &trackFxeqHipassFreq{
+					device: reaper.device,
+					Hz: &trackFxeqHipassFreqHz{
+						device: reaper.device,
+					},
+					Str: &trackFxeqHipassFreqStr{
+						device: reaper.device,
+					},
+				},
+				Q: &trackFxeqHipassQ{
+					device: reaper.device,
+					Oct: &trackFxeqHipassQOct{
+						device: reaper.device,
+					},
+					Str: &trackFxeqHipassQStr{
+						device: reaper.device,
+					},
+				},
+			},
+			Loshelf: &trackFxeqLoshelf{
+				device: reaper.device,
+				Freq: &trackFxeqLoshelfFreq{
+					device: reaper.device,
+					Hz: &trackFxeqLoshelfFreqHz{
+						device: reaper.device,
+					},
+					Str: &trackFxeqLoshelfFreqStr{
+						device: reaper.device,
+					},
+				},
+				Gain: &trackFxeqLoshelfGain{
+					device: reaper.device,
+					Db: &trackFxeqLoshelfGainDb{
+						device: reaper.device,
+					},
+					Str: &trackFxeqLoshelfGainStr{
+						device: reaper.device,
+					},
+				},
+				Q: &trackFxeqLoshelfQ{
+					device: reaper.device,
+					Oct: &trackFxeqLoshelfQOct{
+						device: reaper.device,
+					},
+					Str: &trackFxeqLoshelfQStr{
+						device: reaper.device,
+					},
+				},
+			},
+			Notch: &trackFxeqNotch{
+				device: reaper.device,
+				Freq: &trackFxeqNotchFreq{
+					device: reaper.device,
+					Hz: &trackFxeqNotchFreqHz{
+						device: reaper.device,
+					},
+					Str: &trackFxeqNotchFreqStr{
+						device: reaper.device,
+					},
+				},
+				Gain: &trackFxeqNotchGain{
+					device: reaper.device,
+					Db: &trackFxeqNotchGainDb{
+						device: reaper.device,
+					},
+					Str: &trackFxeqNotchGainStr{
+						device: reaper.device,
+					},
+				},
+				Q: &trackFxeqNotchQ{
+					device: reaper.device,
+					Oct: &trackFxeqNotchQOct{
+						device: reaper.device,
+					},
+					Str: &trackFxeqNotchQStr{
+						device: reaper.device,
+					},
+				},
+			},
+			Hishelf: &trackFxeqHishelf{
+				device: reaper.device,
+				Freq: &trackFxeqHishelfFreq{
+					device: reaper.device,
+					Hz: &trackFxeqHishelfFreqHz{
+						device: reaper.device,
+					},
+					Str: &trackFxeqHishelfFreqStr{
+						device: reaper.device,
+					},
+				},
+				Gain: &trackFxeqHishelfGain{
+					device: reaper.device,
+					Db: &trackFxeqHishelfGainDb{
+						device: reaper.device,
+					},
+					Str: &trackFxeqHishelfGainStr{
+						device: reaper.device,
+					},
+				},
+				Q: &trackFxeqHishelfQ{
+					device: reaper.device,
+					Oct: &trackFxeqHishelfQOct{
+						device: reaper.device,
+					},
+					Str: &trackFxeqHishelfQStr{
+						device: reaper.device,
+					},
+				},
+			},
+			Lopass: &trackFxeqLopass{
+				device: reaper.device,
+				Freq: &trackFxeqLopassFreq{
+					device: reaper.device,
+					Hz: &trackFxeqLopassFreqHz{
+						device: reaper.device,
+					},
+					Str: &trackFxeqLopassFreqStr{
+						device: reaper.device,
+					},
+				},
+				Q: &trackFxeqLopassQ{
+					device: reaper.device,
+					Oct: &trackFxeqLopassQOct{
+						device: reaper.device,
+					},
+					Str: &trackFxeqLopassQStr{
+						device: reaper.device,
+					},
+				},
+			},
+		},
+		Fxinst: &trackFxinst{
+			device: reaper.device,
+			Name: &trackFxinstName{
+				device: reaper.device,
+			},
+			Bypass: &trackFxinstBypass{
+				device: reaper.device,
+			},
+			Openui: &trackFxinstOpenui{
+				device: reaper.device,
+			},
+			Preset: &trackFxinstPreset{
+				device: reaper.device,
+			},
+			Presetminus: &trackFxinstPresetminus{
+				device: reaper.device,
+			},
+			Presetplus: &trackFxinstPresetplus{
+				device: reaper.device,
+			},
+		},
 	}
 }
 
@@ -86,6 +987,60 @@ func (reaper *Reaper) Fx(fxNum int64) *fx {
 			fxNum: fxNum,
 		},
 		device: reaper.device,
+		Name: &fxName{
+			device: reaper.device,
+		},
+		Number: &fxNumber{
+			device: reaper.device,
+			Str: &fxNumberStr{
+				device: reaper.device,
+			},
+		},
+		Bypass: &fxBypass{
+			device: reaper.device,
+		},
+		Openui: &fxOpenui{
+			device: reaper.device,
+		},
+		Preset: &fxPreset{
+			device: reaper.device,
+		},
+		Presetminus: &fxPresetminus{
+			device: reaper.device,
+		},
+		Presetplus: &fxPresetplus{
+			device: reaper.device,
+		},
+		Wetdry: &fxWetdry{
+			device: reaper.device,
+			Str: &fxWetdryStr{
+				device: reaper.device,
+			},
+		},
+		Last_touched: &fxLast_touched{
+			device: reaper.device,
+			Track: &fxLast_touchedTrack{
+				device: reaper.device,
+				Name: &fxLast_touchedTrackName{
+					device: reaper.device,
+				},
+				Number: &fxLast_touchedTrackNumber{
+					device: reaper.device,
+					Str: &fxLast_touchedTrackNumberStr{
+						device: reaper.device,
+					},
+				},
+			},
+			Name: &fxLast_touchedName{
+				device: reaper.device,
+			},
+			Number: &fxLast_touchedNumber{
+				device: reaper.device,
+				Str: &fxLast_touchedNumberStr{
+					device: reaper.device,
+				},
+			},
+		},
 	}
 }
 
@@ -95,13 +1050,91 @@ func (reaper *Reaper) Fxparam(fxparamNum int64) *fxparam {
 			fxparamNum: fxparamNum,
 		},
 		device: reaper.device,
+		Name: &fxparamName{
+			device: reaper.device,
+		},
+		Value: &fxparamValue{
+			device: reaper.device,
+			Str: &fxparamValueStr{
+				device: reaper.device,
+			},
+		},
+		Last_touched: &fxparamLast_touched{
+			device: reaper.device,
+			Name: &fxparamLast_touchedName{
+				device: reaper.device,
+			},
+			Value: &fxparamLast_touchedValue{
+				device: reaper.device,
+				Str: &fxparamLast_touchedValueStr{
+					device: reaper.device,
+				},
+			},
+		},
 	}
 }
 
-func (reaper *Reaper) Marker(markerNum int64) *marker {
-	return &marker{
-		state: markerState{
-			markerNum: markerNum,
+func (reaper *Reaper) Fxinstparam(fxinstparamNum int64) *fxinstparam {
+	return &fxinstparam{
+		state: fxinstparamState{
+			fxinstparamNum: fxinstparamNum,
+		},
+		device: reaper.device,
+		Name: &fxinstparamName{
+			device: reaper.device,
+		},
+		Value: &fxinstparamValue{
+			device: reaper.device,
+			Str: &fxinstparamValueStr{
+				device: reaper.device,
+			},
+		},
+	}
+}
+
+func (reaper *Reaper) Vkb_midi(vkb_midiNum int64) *vkb_midi {
+	return &vkb_midi{
+		state: vkb_midiState{
+			vkb_midiNum: vkb_midiNum,
+		},
+		device: reaper.device,
+		Program: &vkb_midiProgram{
+			device: reaper.device,
+		},
+		Channelpressure: &vkb_midiChannelpressure{
+			device: reaper.device,
+		},
+		Pitch: &vkb_midiPitch{
+			device: reaper.device,
+		},
+	}
+}
+
+func (reaper *Reaper) Action(actionNum int64) *action {
+	return &action{
+		state: actionState{
+			actionNum: actionNum,
+		},
+		device: reaper.device,
+		Str: &actionStr{
+			device: reaper.device,
+		},
+		Cc: &actionCc{
+			device: reaper.device,
+			Soft: &actionCcSoft{
+				device: reaper.device,
+			},
+			Relative: &actionCcRelative{
+				device: reaper.device,
+			},
+		},
+	}
+}
+
+func (reaper *Reaper) Midiaction(midiactionNum int64) *midiaction {
+	return &midiaction{
+		state: midiactionState{
+			midiactionNum: midiactionNum,
 		},
 		device: reaper.device,
 	}
@@ -116,49 +1149,1267 @@ func (reaper *Reaper) Midilistaction(midilistactionNum int64) *midilistaction {
 	}
 }
 
-func (reaper *Reaper) Track(trackNum int64) *track {
-	return &track{
-		state: trackState{
-			trackNum: trackNum,
-		},
-		device: reaper.device,
-	}
+type scroll struct {
+	device *devices.OscDevice
+	X      *scrollX
+	Y      *scrollY
 }
 
-func (reaper *Reaper) Region_id(region_idNum int64) *region_id {
-	return &region_id{
-		state: region_idState{
-			region_idNum: region_idNum,
-		},
-		device: reaper.device,
-	}
+type scrollX struct {
+	device *devices.OscDevice
+	Minus  *scrollXMinus
+	Plus   *scrollXPlus
 }
 
-func (reaper *Reaper) Action(actionNum int64) *action {
-	return &action{
-		state: actionState{
-			actionNum: actionNum,
-		},
-		device: reaper.device,
-	}
+func (ep *scrollX) Bind(callback func(float64) error) {
+	addr := "/scroll/x"
+	ep.device.BindFloat(addr, callback)
 }
 
-func (reaper *Reaper) Marker_id(marker_idNum int64) *marker_id {
-	return &marker_id{
-		state: marker_idState{
-			marker_idNum: marker_idNum,
-		},
-		device: reaper.device,
-	}
+func (ep *scrollX) Set(val float64) error {
+	addr := "/scroll/x"
+	return ep.device.SetFloat(addr, val)
 }
 
-func (reaper *Reaper) Midiaction(midiactionNum int64) *midiaction {
-	return &midiaction{
-		state: midiactionState{
-			midiactionNum: midiactionNum,
-		},
-		device: reaper.device,
-	}
+type scrollXMinus struct {
+	device *devices.OscDevice
+}
+
+func (ep *scrollXMinus) Bind(callback func(bool) error) {
+	addr := "/scroll/x/minus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *scrollXMinus) Set(val bool) error {
+	addr := "/scroll/x/minus"
+	return ep.device.SetBool(addr, val)
+}
+
+type scrollXPlus struct {
+	device *devices.OscDevice
+}
+
+func (ep *scrollXPlus) Bind(callback func(bool) error) {
+	addr := "/scroll/x/plus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *scrollXPlus) Set(val bool) error {
+	addr := "/scroll/x/plus"
+	return ep.device.SetBool(addr, val)
+}
+
+type scrollY struct {
+	device *devices.OscDevice
+	Minus  *scrollYMinus
+	Plus   *scrollYPlus
+}
+
+func (ep *scrollY) Bind(callback func(float64) error) {
+	addr := "/scroll/y"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *scrollY) Set(val float64) error {
+	addr := "/scroll/y"
+	return ep.device.SetFloat(addr, val)
+}
+
+type scrollYMinus struct {
+	device *devices.OscDevice
+}
+
+func (ep *scrollYMinus) Bind(callback func(bool) error) {
+	addr := "/scroll/y/minus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *scrollYMinus) Set(val bool) error {
+	addr := "/scroll/y/minus"
+	return ep.device.SetBool(addr, val)
+}
+
+type scrollYPlus struct {
+	device *devices.OscDevice
+}
+
+func (ep *scrollYPlus) Bind(callback func(bool) error) {
+	addr := "/scroll/y/plus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *scrollYPlus) Set(val bool) error {
+	addr := "/scroll/y/plus"
+	return ep.device.SetBool(addr, val)
+}
+
+type zoom struct {
+	device *devices.OscDevice
+	X      *zoomX
+	Y      *zoomY
+}
+
+type zoomX struct {
+	device *devices.OscDevice
+	Minus  *zoomXMinus
+	Plus   *zoomXPlus
+}
+
+func (ep *zoomX) Bind(callback func(float64) error) {
+	addr := "/zoom/x"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *zoomX) Set(val float64) error {
+	addr := "/zoom/x"
+	return ep.device.SetFloat(addr, val)
+}
+
+type zoomXMinus struct {
+	device *devices.OscDevice
+}
+
+func (ep *zoomXMinus) Bind(callback func(bool) error) {
+	addr := "/zoom/x/minus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *zoomXMinus) Set(val bool) error {
+	addr := "/zoom/x/minus"
+	return ep.device.SetBool(addr, val)
+}
+
+type zoomXPlus struct {
+	device *devices.OscDevice
+}
+
+func (ep *zoomXPlus) Bind(callback func(bool) error) {
+	addr := "/zoom/x/plus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *zoomXPlus) Set(val bool) error {
+	addr := "/zoom/x/plus"
+	return ep.device.SetBool(addr, val)
+}
+
+type zoomY struct {
+	device *devices.OscDevice
+	Minus  *zoomYMinus
+	Plus   *zoomYPlus
+}
+
+func (ep *zoomY) Bind(callback func(float64) error) {
+	addr := "/zoom/y"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *zoomY) Set(val float64) error {
+	addr := "/zoom/y"
+	return ep.device.SetFloat(addr, val)
+}
+
+type zoomYMinus struct {
+	device *devices.OscDevice
+}
+
+func (ep *zoomYMinus) Bind(callback func(bool) error) {
+	addr := "/zoom/y/minus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *zoomYMinus) Set(val bool) error {
+	addr := "/zoom/y/minus"
+	return ep.device.SetBool(addr, val)
+}
+
+type zoomYPlus struct {
+	device *devices.OscDevice
+}
+
+func (ep *zoomYPlus) Bind(callback func(bool) error) {
+	addr := "/zoom/y/plus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *zoomYPlus) Set(val bool) error {
+	addr := "/zoom/y/plus"
+	return ep.device.SetBool(addr, val)
+}
+
+type time struct {
+	device *devices.OscDevice
+	Str    *timeStr
+}
+
+func (ep *time) Bind(callback func(float64) error) {
+	addr := "/time"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *time) Set(val float64) error {
+	addr := "/time"
+	return ep.device.SetFloat(addr, val)
+}
+
+type timeStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *timeStr) Bind(callback func(string) error) {
+	addr := "/time/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *timeStr) Set(val string) error {
+	addr := "/time/str"
+	return ep.device.SetString(addr, val)
+}
+
+type beat struct {
+	device *devices.OscDevice
+	Str    *beatStr
+}
+
+type beatStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *beatStr) Bind(callback func(string) error) {
+	addr := "/beat/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *beatStr) Set(val string) error {
+	addr := "/beat/str"
+	return ep.device.SetString(addr, val)
+}
+
+type samples struct {
+	device *devices.OscDevice
+	Str    *samplesStr
+}
+
+func (ep *samples) Bind(callback func(float64) error) {
+	addr := "/samples"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *samples) Set(val float64) error {
+	addr := "/samples"
+	return ep.device.SetFloat(addr, val)
+}
+
+type samplesStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *samplesStr) Bind(callback func(string) error) {
+	addr := "/samples/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *samplesStr) Set(val string) error {
+	addr := "/samples/str"
+	return ep.device.SetString(addr, val)
+}
+
+type frames struct {
+	device *devices.OscDevice
+	Str    *framesStr
+}
+
+type framesStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *framesStr) Bind(callback func(string) error) {
+	addr := "/frames/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *framesStr) Set(val string) error {
+	addr := "/frames/str"
+	return ep.device.SetString(addr, val)
+}
+
+type click struct {
+	device *devices.OscDevice
+}
+
+func (ep *click) Bind(callback func(bool) error) {
+	addr := "/click"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *click) Set(val bool) error {
+	addr := "/click"
+	return ep.device.SetBool(addr, val)
+}
+
+type replace struct {
+	device *devices.OscDevice
+}
+
+func (ep *replace) Bind(callback func(bool) error) {
+	addr := "/replace"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *replace) Set(val bool) error {
+	addr := "/replace"
+	return ep.device.SetBool(addr, val)
+}
+
+type repeat struct {
+	device *devices.OscDevice
+}
+
+func (ep *repeat) Bind(callback func(bool) error) {
+	addr := "/repeat"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *repeat) Set(val bool) error {
+	addr := "/repeat"
+	return ep.device.SetBool(addr, val)
+}
+
+type record struct {
+	device *devices.OscDevice
+}
+
+func (ep *record) Bind(callback func(bool) error) {
+	addr := "/record"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *record) Set(val bool) error {
+	addr := "/record"
+	return ep.device.SetBool(addr, val)
+}
+
+type stop struct {
+	device *devices.OscDevice
+}
+
+func (ep *stop) Bind(callback func(bool) error) {
+	addr := "/stop"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *stop) Set(val bool) error {
+	addr := "/stop"
+	return ep.device.SetBool(addr, val)
+}
+
+type play struct {
+	device *devices.OscDevice
+}
+
+func (ep *play) Bind(callback func(bool) error) {
+	addr := "/play"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *play) Set(val bool) error {
+	addr := "/play"
+	return ep.device.SetBool(addr, val)
+}
+
+type pause struct {
+	device *devices.OscDevice
+}
+
+func (ep *pause) Bind(callback func(bool) error) {
+	addr := "/pause"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *pause) Set(val bool) error {
+	addr := "/pause"
+	return ep.device.SetBool(addr, val)
+}
+
+type autorecarm struct {
+	device *devices.OscDevice
+}
+
+func (ep *autorecarm) Bind(callback func(bool) error) {
+	addr := "/autorecarm"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *autorecarm) Set(val bool) error {
+	addr := "/autorecarm"
+	return ep.device.SetBool(addr, val)
+}
+
+type soloreset struct {
+	device *devices.OscDevice
+}
+
+func (ep *soloreset) Bind(callback func(bool) error) {
+	addr := "/soloreset"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *soloreset) Set(val bool) error {
+	addr := "/soloreset"
+	return ep.device.SetBool(addr, val)
+}
+
+type anysolo struct {
+	device *devices.OscDevice
+}
+
+func (ep *anysolo) Bind(callback func(bool) error) {
+	addr := "/anysolo"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *anysolo) Set(val bool) error {
+	addr := "/anysolo"
+	return ep.device.SetBool(addr, val)
+}
+
+type rewind struct {
+	device *devices.OscDevice
+}
+
+func (ep *rewind) Bind(callback func(bool) error) {
+	addr := "/rewind"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *rewind) Set(val bool) error {
+	addr := "/rewind"
+	return ep.device.SetBool(addr, val)
+}
+
+type forward struct {
+	device *devices.OscDevice
+}
+
+func (ep *forward) Bind(callback func(bool) error) {
+	addr := "/forward"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *forward) Set(val bool) error {
+	addr := "/forward"
+	return ep.device.SetBool(addr, val)
+}
+
+type bymarker struct {
+	device *devices.OscDevice
+}
+
+func (ep *bymarker) Bind(callback func(bool) error) {
+	addr := "/bymarker"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *bymarker) Set(val bool) error {
+	addr := "/bymarker"
+	return ep.device.SetBool(addr, val)
+}
+
+type editloop struct {
+	device *devices.OscDevice
+}
+
+func (ep *editloop) Bind(callback func(bool) error) {
+	addr := "/editloop"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *editloop) Set(val bool) error {
+	addr := "/editloop"
+	return ep.device.SetBool(addr, val)
+}
+
+type marker struct {
+	device *devices.OscDevice
+	Name   *markerName
+	Number *markerNumber
+	Time   *markerTime
+	state  markerState
+}
+
+type markerState struct {
+	markerNum int64
+}
+
+func (ep *marker) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/marker/%d",
+		ep.state.markerNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *marker) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/marker/%d",
+		ep.state.markerNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type markerName struct {
+	device *devices.OscDevice
+	state  markerNameState
+}
+
+type markerNameState struct {
+	markerNum int64
+}
+
+func (ep *markerName) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/marker/%d/name",
+		ep.state.markerNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *markerName) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/marker/%d/name",
+		ep.state.markerNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type markerNumber struct {
+	device *devices.OscDevice
+	Str    *markerNumberStr
+	state  markerNumberState
+}
+
+type markerNumberState struct {
+	markerNum int64
+}
+
+type markerNumberStr struct {
+	device *devices.OscDevice
+	state  markerNumberStrState
+}
+
+type markerNumberStrState struct {
+	markerNum int64
+}
+
+func (ep *markerNumberStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/marker/%d/number/str",
+		ep.state.markerNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *markerNumberStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/marker/%d/number/str",
+		ep.state.markerNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type markerTime struct {
+	device *devices.OscDevice
+	state  markerTimeState
+}
+
+type markerTimeState struct {
+	markerNum int64
+}
+
+func (ep *markerTime) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/marker/%d/time",
+		ep.state.markerNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *markerTime) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/marker/%d/time",
+		ep.state.markerNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type region struct {
+	device *devices.OscDevice
+	Name   *regionName
+	Number *regionNumber
+	Time   *regionTime
+	Length *regionLength
+	state  regionState
+}
+
+type regionState struct {
+	regionNum int64
+}
+
+func (ep *region) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/region/%d",
+		ep.state.regionNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *region) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/region/%d",
+		ep.state.regionNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type regionName struct {
+	device *devices.OscDevice
+	state  regionNameState
+}
+
+type regionNameState struct {
+	regionNum int64
+}
+
+func (ep *regionName) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/region/%d/name",
+		ep.state.regionNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *regionName) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/region/%d/name",
+		ep.state.regionNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type regionNumber struct {
+	device *devices.OscDevice
+	Str    *regionNumberStr
+	state  regionNumberState
+}
+
+type regionNumberState struct {
+	regionNum int64
+}
+
+type regionNumberStr struct {
+	device *devices.OscDevice
+	state  regionNumberStrState
+}
+
+type regionNumberStrState struct {
+	regionNum int64
+}
+
+func (ep *regionNumberStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/region/%d/number/str",
+		ep.state.regionNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *regionNumberStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/region/%d/number/str",
+		ep.state.regionNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type regionTime struct {
+	device *devices.OscDevice
+	state  regionTimeState
+}
+
+type regionTimeState struct {
+	regionNum int64
+}
+
+func (ep *regionTime) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/region/%d/time",
+		ep.state.regionNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *regionTime) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/region/%d/time",
+		ep.state.regionNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type regionLength struct {
+	device *devices.OscDevice
+	state  regionLengthState
+}
+
+type regionLengthState struct {
+	regionNum int64
+}
+
+func (ep *regionLength) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/region/%d/length",
+		ep.state.regionNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *regionLength) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/region/%d/length",
+		ep.state.regionNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type scrub struct {
+	device *devices.OscDevice
+}
+
+func (ep *scrub) Bind(callback func(float64) error) {
+	addr := "/scrub"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *scrub) Set(val float64) error {
+	addr := "/scrub"
+	return ep.device.SetFloat(addr, val)
+}
+
+type playrate struct {
+	device *devices.OscDevice
+	Raw    *playrateRaw
+	Rotary *playrateRotary
+	Str    *playrateStr
+}
+
+func (ep *playrate) Bind(callback func(float64) error) {
+	addr := "/playrate"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *playrate) Set(val float64) error {
+	addr := "/playrate"
+	return ep.device.SetFloat(addr, val)
+}
+
+type playrateRaw struct {
+	device *devices.OscDevice
+}
+
+func (ep *playrateRaw) Bind(callback func(float64) error) {
+	addr := "/playrate/raw"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *playrateRaw) Set(val float64) error {
+	addr := "/playrate/raw"
+	return ep.device.SetFloat(addr, val)
+}
+
+type playrateRotary struct {
+	device *devices.OscDevice
+}
+
+func (ep *playrateRotary) Bind(callback func(float64) error) {
+	addr := "/playrate/rotary"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *playrateRotary) Set(val float64) error {
+	addr := "/playrate/rotary"
+	return ep.device.SetFloat(addr, val)
+}
+
+type playrateStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *playrateStr) Bind(callback func(string) error) {
+	addr := "/playrate/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *playrateStr) Set(val string) error {
+	addr := "/playrate/str"
+	return ep.device.SetString(addr, val)
+}
+
+type tempo struct {
+	device *devices.OscDevice
+	Raw    *tempoRaw
+	Rotary *tempoRotary
+	Str    *tempoStr
+}
+
+func (ep *tempo) Bind(callback func(float64) error) {
+	addr := "/tempo"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *tempo) Set(val float64) error {
+	addr := "/tempo"
+	return ep.device.SetFloat(addr, val)
+}
+
+type tempoRaw struct {
+	device *devices.OscDevice
+}
+
+func (ep *tempoRaw) Bind(callback func(float64) error) {
+	addr := "/tempo/raw"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *tempoRaw) Set(val float64) error {
+	addr := "/tempo/raw"
+	return ep.device.SetFloat(addr, val)
+}
+
+type tempoRotary struct {
+	device *devices.OscDevice
+}
+
+func (ep *tempoRotary) Bind(callback func(float64) error) {
+	addr := "/tempo/rotary"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *tempoRotary) Set(val float64) error {
+	addr := "/tempo/rotary"
+	return ep.device.SetFloat(addr, val)
+}
+
+type tempoStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *tempoStr) Bind(callback func(string) error) {
+	addr := "/tempo/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *tempoStr) Set(val string) error {
+	addr := "/tempo/str"
+	return ep.device.SetString(addr, val)
+}
+
+type lastmarker struct {
+	device *devices.OscDevice
+	Name   *lastmarkerName
+	Number *lastmarkerNumber
+	Time   *lastmarkerTime
+}
+
+type lastmarkerName struct {
+	device *devices.OscDevice
+}
+
+func (ep *lastmarkerName) Bind(callback func(string) error) {
+	addr := "/lastmarker/name"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *lastmarkerName) Set(val string) error {
+	addr := "/lastmarker/name"
+	return ep.device.SetString(addr, val)
+}
+
+type lastmarkerNumber struct {
+	device *devices.OscDevice
+	Str    *lastmarkerNumberStr
+}
+
+type lastmarkerNumberStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *lastmarkerNumberStr) Bind(callback func(string) error) {
+	addr := "/lastmarker/number/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *lastmarkerNumberStr) Set(val string) error {
+	addr := "/lastmarker/number/str"
+	return ep.device.SetString(addr, val)
+}
+
+type lastmarkerTime struct {
+	device *devices.OscDevice
+}
+
+func (ep *lastmarkerTime) Bind(callback func(float64) error) {
+	addr := "/lastmarker/time"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *lastmarkerTime) Set(val float64) error {
+	addr := "/lastmarker/time"
+	return ep.device.SetFloat(addr, val)
+}
+
+type lastregion struct {
+	device *devices.OscDevice
+	Name   *lastregionName
+	Number *lastregionNumber
+	Time   *lastregionTime
+	Length *lastregionLength
+}
+
+type lastregionName struct {
+	device *devices.OscDevice
+}
+
+func (ep *lastregionName) Bind(callback func(string) error) {
+	addr := "/lastregion/name"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *lastregionName) Set(val string) error {
+	addr := "/lastregion/name"
+	return ep.device.SetString(addr, val)
+}
+
+type lastregionNumber struct {
+	device *devices.OscDevice
+	Str    *lastregionNumberStr
+}
+
+type lastregionNumberStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *lastregionNumberStr) Bind(callback func(string) error) {
+	addr := "/lastregion/number/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *lastregionNumberStr) Set(val string) error {
+	addr := "/lastregion/number/str"
+	return ep.device.SetString(addr, val)
+}
+
+type lastregionTime struct {
+	device *devices.OscDevice
+}
+
+func (ep *lastregionTime) Bind(callback func(float64) error) {
+	addr := "/lastregion/time"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *lastregionTime) Set(val float64) error {
+	addr := "/lastregion/time"
+	return ep.device.SetFloat(addr, val)
+}
+
+type lastregionLength struct {
+	device *devices.OscDevice
+}
+
+func (ep *lastregionLength) Bind(callback func(float64) error) {
+	addr := "/lastregion/length"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *lastregionLength) Set(val float64) error {
+	addr := "/lastregion/length"
+	return ep.device.SetFloat(addr, val)
+}
+
+type marker_id struct {
+	device *devices.OscDevice
+	Name   *marker_idName
+	Time   *marker_idTime
+	Number *marker_idNumber
+	state  marker_idState
+}
+
+type marker_idState struct {
+	marker_idNum int64
+}
+
+type marker_idName struct {
+	device *devices.OscDevice
+	state  marker_idNameState
+}
+
+type marker_idNameState struct {
+	marker_idNum int64
+}
+
+func (ep *marker_idName) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/marker_id/%d/name",
+		ep.state.marker_idNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *marker_idName) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/marker_id/%d/name",
+		ep.state.marker_idNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type marker_idTime struct {
+	device *devices.OscDevice
+	state  marker_idTimeState
+}
+
+type marker_idTimeState struct {
+	marker_idNum int64
+}
+
+func (ep *marker_idTime) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/marker_id/%d/time",
+		ep.state.marker_idNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *marker_idTime) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/marker_id/%d/time",
+		ep.state.marker_idNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type marker_idNumber struct {
+	device *devices.OscDevice
+	state  marker_idNumberState
+}
+
+type marker_idNumberState struct {
+	marker_idNum int64
+}
+
+func (ep *marker_idNumber) Bind(callback func(int64) error) {
+	addr := fmt.Sprintf(
+		"/marker_id/%d/number",
+		ep.state.marker_idNum,
+	)
+
+	ep.device.BindInt(addr, callback)
+}
+
+func (ep *marker_idNumber) Set(val int64) error {
+	addr := fmt.Sprintf(
+		"/marker_id/%d/number",
+		ep.state.marker_idNum,
+	)
+
+	return ep.device.SetInt(addr, val)
+}
+
+type region_id struct {
+	device *devices.OscDevice
+	Name   *region_idName
+	Time   *region_idTime
+	Length *region_idLength
+	Number *region_idNumber
+	state  region_idState
+}
+
+type region_idState struct {
+	region_idNum int64
+}
+
+type region_idName struct {
+	device *devices.OscDevice
+	state  region_idNameState
+}
+
+type region_idNameState struct {
+	region_idNum int64
+}
+
+func (ep *region_idName) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/region_id/%d/name",
+		ep.state.region_idNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *region_idName) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/region_id/%d/name",
+		ep.state.region_idNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type region_idTime struct {
+	device *devices.OscDevice
+	state  region_idTimeState
+}
+
+type region_idTimeState struct {
+	region_idNum int64
+}
+
+func (ep *region_idTime) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/region_id/%d/time",
+		ep.state.region_idNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *region_idTime) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/region_id/%d/time",
+		ep.state.region_idNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type region_idLength struct {
+	device *devices.OscDevice
+	state  region_idLengthState
+}
+
+type region_idLengthState struct {
+	region_idNum int64
+}
+
+func (ep *region_idLength) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/region_id/%d/length",
+		ep.state.region_idNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *region_idLength) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/region_id/%d/length",
+		ep.state.region_idNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type region_idNumber struct {
+	device *devices.OscDevice
+	state  region_idNumberState
+}
+
+type region_idNumberState struct {
+	region_idNum int64
+}
+
+func (ep *region_idNumber) Bind(callback func(int64) error) {
+	addr := fmt.Sprintf(
+		"/region_id/%d/number",
+		ep.state.region_idNum,
+	)
+
+	ep.device.BindInt(addr, callback)
+}
+
+func (ep *region_idNumber) Set(val int64) error {
+	addr := fmt.Sprintf(
+		"/region_id/%d/number",
+		ep.state.region_idNum,
+	)
+
+	return ep.device.SetInt(addr, val)
+}
+
+type loop struct {
+	device *devices.OscDevice
+	Start  *loopStart
+	End    *loopEnd
+}
+
+type loopStart struct {
+	device *devices.OscDevice
+	Time   *loopStartTime
+}
+
+type loopStartTime struct {
+	device *devices.OscDevice
+}
+
+func (ep *loopStartTime) Bind(callback func(float64) error) {
+	addr := "/loop/start/time"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *loopStartTime) Set(val float64) error {
+	addr := "/loop/start/time"
+	return ep.device.SetFloat(addr, val)
+}
+
+type loopEnd struct {
+	device *devices.OscDevice
+	Time   *loopEndTime
+}
+
+type loopEndTime struct {
+	device *devices.OscDevice
+}
+
+func (ep *loopEndTime) Bind(callback func(float64) error) {
+	addr := "/loop/end/time"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *loopEndTime) Set(val float64) error {
+	addr := "/loop/end/time"
+	return ep.device.SetFloat(addr, val)
 }
 
 type master struct {
@@ -174,6 +2425,21 @@ func (master *master) Send(sendNum int64) *masterSend {
 			sendNum: sendNum,
 		},
 		device: master.device,
+		Name: &masterSendName{
+			device: master.device,
+		},
+		Volume: &masterSendVolume{
+			device: master.device,
+			Str: &masterSendVolumeStr{
+				device: master.device,
+			},
+		},
+		Pan: &masterSendPan{
+			device: master.device,
+			Str: &masterSendPanStr{
+				device: master.device,
+			},
+		},
 	}
 }
 
@@ -184,13 +2450,11 @@ type masterVolume struct {
 
 func (ep *masterVolume) Bind(callback func(float64) error) {
 	addr := "/master/volume"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *masterVolume) Set(val float64) error {
 	addr := "/master/volume"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -200,13 +2464,11 @@ type masterVolumeStr struct {
 
 func (ep *masterVolumeStr) Bind(callback func(string) error) {
 	addr := "/master/volume/str"
-
 	ep.device.BindString(addr, callback)
 }
 
 func (ep *masterVolumeStr) Set(val string) error {
 	addr := "/master/volume/str"
-
 	return ep.device.SetString(addr, val)
 }
 
@@ -217,13 +2479,11 @@ type masterPan struct {
 
 func (ep *masterPan) Bind(callback func(float64) error) {
 	addr := "/master/pan"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *masterPan) Set(val float64) error {
 	addr := "/master/pan"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -233,13 +2493,11 @@ type masterPanStr struct {
 
 func (ep *masterPanStr) Bind(callback func(string) error) {
 	addr := "/master/pan/str"
-
 	ep.device.BindString(addr, callback)
 }
 
 func (ep *masterPanStr) Set(val string) error {
 	addr := "/master/pan/str"
-
 	return ep.device.SetString(addr, val)
 }
 
@@ -251,13 +2509,11 @@ type masterVu struct {
 
 func (ep *masterVu) Bind(callback func(float64) error) {
 	addr := "/master/vu"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *masterVu) Set(val float64) error {
 	addr := "/master/vu"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -267,13 +2523,11 @@ type masterVuL struct {
 
 func (ep *masterVuL) Bind(callback func(float64) error) {
 	addr := "/master/vu/L"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *masterVuL) Set(val float64) error {
 	addr := "/master/vu/L"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -283,13 +2537,11 @@ type masterVuR struct {
 
 func (ep *masterVuR) Bind(callback func(float64) error) {
 	addr := "/master/vu/R"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *masterVuR) Set(val float64) error {
 	addr := "/master/vu/R"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -442,3353 +2694,28 @@ func (ep *masterSendPanStr) Set(val string) error {
 	return ep.device.SetString(addr, val)
 }
 
-type action struct {
-	device *devices.OscDevice
-	Str    *actionStr
-	Cc     *actionCc
-	state  actionState
-}
-
-type actionState struct {
-	actionNum int64
-}
-
-func (ep *action) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/action/%d",
-		ep.state.actionNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *action) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/action/%d",
-		ep.state.actionNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type actionStr struct {
-	device *devices.OscDevice
-	state  actionStrState
-}
-
-type actionStrState struct {
-	actionNum int64
-}
-
-func (ep *actionStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/action/%d/str",
-		ep.state.actionNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *actionStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/action/%d/str",
-		ep.state.actionNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type actionCc struct {
-	device   *devices.OscDevice
-	Soft     *actionCcSoft
-	Relative *actionCcRelative
-	state    actionCcState
-}
-
-type actionCcState struct {
-	actionNum int64
-}
-
-func (ep *actionCc) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/action/%d/cc",
-		ep.state.actionNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *actionCc) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/action/%d/cc",
-		ep.state.actionNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type actionCcSoft struct {
-	device *devices.OscDevice
-	state  actionCcSoftState
-}
-
-type actionCcSoftState struct {
-	actionNum int64
-}
-
-func (ep *actionCcSoft) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/action/%d/cc/soft",
-		ep.state.actionNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *actionCcSoft) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/action/%d/cc/soft",
-		ep.state.actionNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type actionCcRelative struct {
-	device *devices.OscDevice
-	state  actionCcRelativeState
-}
-
-type actionCcRelativeState struct {
-	actionNum int64
-}
-
-func (ep *actionCcRelative) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/action/%d/cc/relative",
-		ep.state.actionNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *actionCcRelative) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/action/%d/cc/relative",
-		ep.state.actionNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type device struct {
-	device      *devices.OscDevice
-	Marker      *deviceMarker
-	Region      *deviceRegion
-	Track       *deviceTrack
-	Send        *deviceSend
-	Receive     *deviceReceive
-	Fx          *deviceFx
-	Fxparam     *deviceFxparam
-	Fxinstparam *deviceFxinstparam
-}
-
-type deviceFx struct {
-	device  *devices.OscDevice
-	Follows *deviceFxFollows
-	Minus   *deviceFxMinus
-	Plus    *deviceFxPlus
-}
-
-func (deviceFx *deviceFx) Count(countNum int64) *deviceFxCount {
-	return &deviceFxCount{
-		state: deviceFxCountState{
-			countNum: countNum,
-		},
-		device: deviceFx.device,
-	}
-}
-
-func (deviceFx *deviceFx) Select(selectNum int64) *deviceFxSelect {
-	return &deviceFxSelect{
-		state: deviceFxSelectState{
-			selectNum: selectNum,
-		},
-		device: deviceFx.device,
-	}
-}
-
-type deviceFxCount struct {
-	device *devices.OscDevice
-	state  deviceFxCountState
-}
-
-type deviceFxCountState struct {
-	countNum int64
-}
-
-func (ep *deviceFxCount) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/device/fx/count/%d",
-		ep.state.countNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceFxCount) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/device/fx/count/%d",
-		ep.state.countNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceFxFollows struct {
-	device       *devices.OscDevice
-	Device       *deviceFxFollowsDevice
-	Last_touched *deviceFxFollowsLast_touched
-	Focused      *deviceFxFollowsFocused
-}
-
-func (ep *deviceFxFollows) Bind(callback func(string) error) {
-	addr := "/device/fx/follows"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *deviceFxFollows) Set(val string) error {
-	addr := "/device/fx/follows"
-
-	return ep.device.SetString(addr, val)
-}
-
-type deviceFxFollowsLast_touched struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceFxFollowsLast_touched) Bind(callback func(bool) error) {
-	addr := "/device/fx/follows/last_touched"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceFxFollowsLast_touched) Set(val bool) error {
-	addr := "/device/fx/follows/last_touched"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceFxFollowsFocused struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceFxFollowsFocused) Bind(callback func(bool) error) {
-	addr := "/device/fx/follows/focused"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceFxFollowsFocused) Set(val bool) error {
-	addr := "/device/fx/follows/focused"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceFxFollowsDevice struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceFxFollowsDevice) Bind(callback func(bool) error) {
-	addr := "/device/fx/follows/device"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceFxFollowsDevice) Set(val bool) error {
-	addr := "/device/fx/follows/device"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceFxSelect struct {
-	device *devices.OscDevice
-	state  deviceFxSelectState
-}
-
-type deviceFxSelectState struct {
-	selectNum int64
-}
-
-func (ep *deviceFxSelect) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/device/fx/select/%d",
-		ep.state.selectNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceFxSelect) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/device/fx/select/%d",
-		ep.state.selectNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceFxMinus struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceFxMinus) Bind(callback func(bool) error) {
-	addr := "/device/fx/minus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceFxMinus) Set(val bool) error {
-	addr := "/device/fx/minus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceFxPlus struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceFxPlus) Bind(callback func(bool) error) {
-	addr := "/device/fx/plus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceFxPlus) Set(val bool) error {
-	addr := "/device/fx/plus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceFxparam struct {
-	device *devices.OscDevice
-	Bank   *deviceFxparamBank
-}
-
-func (deviceFxparam *deviceFxparam) Count(countNum int64) *deviceFxparamCount {
-	return &deviceFxparamCount{
-		state: deviceFxparamCountState{
-			countNum: countNum,
-		},
-		device: deviceFxparam.device,
-	}
-}
-
-type deviceFxparamBank struct {
-	device *devices.OscDevice
-	Str    *deviceFxparamBankStr
-	Minus  *deviceFxparamBankMinus
-	Plus   *deviceFxparamBankPlus
-}
-
-func (deviceFxparamBank *deviceFxparamBank) Select(selectNum int64) *deviceFxparamBankSelect {
-	return &deviceFxparamBankSelect{
-		state: deviceFxparamBankSelectState{
-			selectNum: selectNum,
-		},
-		device: deviceFxparamBank.device,
-	}
-}
-
-type deviceFxparamBankSelect struct {
-	device *devices.OscDevice
-	state  deviceFxparamBankSelectState
-}
-
-type deviceFxparamBankSelectState struct {
-	selectNum int64
-}
-
-func (ep *deviceFxparamBankSelect) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/device/fxparam/bank/select/%d",
-		ep.state.selectNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceFxparamBankSelect) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/device/fxparam/bank/select/%d",
-		ep.state.selectNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceFxparamBankStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceFxparamBankStr) Bind(callback func(string) error) {
-	addr := "/device/fxparam/bank/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *deviceFxparamBankStr) Set(val string) error {
-	addr := "/device/fxparam/bank/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type deviceFxparamBankMinus struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceFxparamBankMinus) Bind(callback func(bool) error) {
-	addr := "/device/fxparam/bank/minus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceFxparamBankMinus) Set(val bool) error {
-	addr := "/device/fxparam/bank/minus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceFxparamBankPlus struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceFxparamBankPlus) Bind(callback func(bool) error) {
-	addr := "/device/fxparam/bank/plus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceFxparamBankPlus) Set(val bool) error {
-	addr := "/device/fxparam/bank/plus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceFxparamCount struct {
-	device *devices.OscDevice
-	state  deviceFxparamCountState
-}
-
-type deviceFxparamCountState struct {
-	countNum int64
-}
-
-func (ep *deviceFxparamCount) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/device/fxparam/count/%d",
-		ep.state.countNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceFxparamCount) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/device/fxparam/count/%d",
-		ep.state.countNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceFxinstparam struct {
-	device *devices.OscDevice
-	Bank   *deviceFxinstparamBank
-}
-
-func (deviceFxinstparam *deviceFxinstparam) Count(countNum int64) *deviceFxinstparamCount {
-	return &deviceFxinstparamCount{
-		state: deviceFxinstparamCountState{
-			countNum: countNum,
-		},
-		device: deviceFxinstparam.device,
-	}
-}
-
-type deviceFxinstparamCount struct {
-	device *devices.OscDevice
-	state  deviceFxinstparamCountState
-}
-
-type deviceFxinstparamCountState struct {
-	countNum int64
-}
-
-func (ep *deviceFxinstparamCount) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/device/fxinstparam/count/%d",
-		ep.state.countNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceFxinstparamCount) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/device/fxinstparam/count/%d",
-		ep.state.countNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceFxinstparamBank struct {
-	device *devices.OscDevice
-	Str    *deviceFxinstparamBankStr
-	Minus  *deviceFxinstparamBankMinus
-	Plus   *deviceFxinstparamBankPlus
-}
-
-func (deviceFxinstparamBank *deviceFxinstparamBank) Select(selectNum int64) *deviceFxinstparamBankSelect {
-	return &deviceFxinstparamBankSelect{
-		state: deviceFxinstparamBankSelectState{
-			selectNum: selectNum,
-		},
-		device: deviceFxinstparamBank.device,
-	}
-}
-
-type deviceFxinstparamBankSelect struct {
-	device *devices.OscDevice
-	state  deviceFxinstparamBankSelectState
-}
-
-type deviceFxinstparamBankSelectState struct {
-	selectNum int64
-}
-
-func (ep *deviceFxinstparamBankSelect) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/device/fxinstparam/bank/select/%d",
-		ep.state.selectNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceFxinstparamBankSelect) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/device/fxinstparam/bank/select/%d",
-		ep.state.selectNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceFxinstparamBankStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceFxinstparamBankStr) Bind(callback func(string) error) {
-	addr := "/device/fxinstparam/bank/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *deviceFxinstparamBankStr) Set(val string) error {
-	addr := "/device/fxinstparam/bank/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type deviceFxinstparamBankMinus struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceFxinstparamBankMinus) Bind(callback func(bool) error) {
-	addr := "/device/fxinstparam/bank/minus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceFxinstparamBankMinus) Set(val bool) error {
-	addr := "/device/fxinstparam/bank/minus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceFxinstparamBankPlus struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceFxinstparamBankPlus) Bind(callback func(bool) error) {
-	addr := "/device/fxinstparam/bank/plus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceFxinstparamBankPlus) Set(val bool) error {
-	addr := "/device/fxinstparam/bank/plus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceMarker struct {
-	device *devices.OscDevice
-	Bank   *deviceMarkerBank
-}
-
-func (deviceMarker *deviceMarker) Count(countNum int64) *deviceMarkerCount {
-	return &deviceMarkerCount{
-		state: deviceMarkerCountState{
-			countNum: countNum,
-		},
-		device: deviceMarker.device,
-	}
-}
-
-type deviceMarkerCount struct {
-	device *devices.OscDevice
-	state  deviceMarkerCountState
-}
-
-type deviceMarkerCountState struct {
-	countNum int64
-}
-
-func (ep *deviceMarkerCount) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/device/marker/count/%d",
-		ep.state.countNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceMarkerCount) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/device/marker/count/%d",
-		ep.state.countNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceMarkerBank struct {
-	device *devices.OscDevice
-	Minus  *deviceMarkerBankMinus
-	Plus   *deviceMarkerBankPlus
-}
-
-func (deviceMarkerBank *deviceMarkerBank) Select(selectNum int64) *deviceMarkerBankSelect {
-	return &deviceMarkerBankSelect{
-		state: deviceMarkerBankSelectState{
-			selectNum: selectNum,
-		},
-		device: deviceMarkerBank.device,
-	}
-}
-
-type deviceMarkerBankSelect struct {
-	device *devices.OscDevice
-	state  deviceMarkerBankSelectState
-}
-
-type deviceMarkerBankSelectState struct {
-	selectNum int64
-}
-
-func (ep *deviceMarkerBankSelect) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/device/marker/bank/select/%d",
-		ep.state.selectNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceMarkerBankSelect) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/device/marker/bank/select/%d",
-		ep.state.selectNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceMarkerBankMinus struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceMarkerBankMinus) Bind(callback func(bool) error) {
-	addr := "/device/marker/bank/minus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceMarkerBankMinus) Set(val bool) error {
-	addr := "/device/marker/bank/minus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceMarkerBankPlus struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceMarkerBankPlus) Bind(callback func(bool) error) {
-	addr := "/device/marker/bank/plus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceMarkerBankPlus) Set(val bool) error {
-	addr := "/device/marker/bank/plus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceRegion struct {
-	device *devices.OscDevice
-	Bank   *deviceRegionBank
-}
-
-func (deviceRegion *deviceRegion) Count(countNum int64) *deviceRegionCount {
-	return &deviceRegionCount{
-		state: deviceRegionCountState{
-			countNum: countNum,
-		},
-		device: deviceRegion.device,
-	}
-}
-
-type deviceRegionCount struct {
-	device *devices.OscDevice
-	state  deviceRegionCountState
-}
-
-type deviceRegionCountState struct {
-	countNum int64
-}
-
-func (ep *deviceRegionCount) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/device/region/count/%d",
-		ep.state.countNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceRegionCount) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/device/region/count/%d",
-		ep.state.countNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceRegionBank struct {
-	device *devices.OscDevice
-	Minus  *deviceRegionBankMinus
-	Plus   *deviceRegionBankPlus
-}
-
-func (deviceRegionBank *deviceRegionBank) Select(selectNum int64) *deviceRegionBankSelect {
-	return &deviceRegionBankSelect{
-		state: deviceRegionBankSelectState{
-			selectNum: selectNum,
-		},
-		device: deviceRegionBank.device,
-	}
-}
-
-type deviceRegionBankSelect struct {
-	device *devices.OscDevice
-	state  deviceRegionBankSelectState
-}
-
-type deviceRegionBankSelectState struct {
-	selectNum int64
-}
-
-func (ep *deviceRegionBankSelect) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/device/region/bank/select/%d",
-		ep.state.selectNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceRegionBankSelect) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/device/region/bank/select/%d",
-		ep.state.selectNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceRegionBankMinus struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceRegionBankMinus) Bind(callback func(bool) error) {
-	addr := "/device/region/bank/minus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceRegionBankMinus) Set(val bool) error {
-	addr := "/device/region/bank/minus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceRegionBankPlus struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceRegionBankPlus) Bind(callback func(bool) error) {
-	addr := "/device/region/bank/plus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceRegionBankPlus) Set(val bool) error {
-	addr := "/device/region/bank/plus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceTrack struct {
-	device  *devices.OscDevice
-	Follows *deviceTrackFollows
-	Bank    *deviceTrackBank
-	Minus   *deviceTrackMinus
-	Plus    *deviceTrackPlus
-}
-
-func (deviceTrack *deviceTrack) Count(countNum int64) *deviceTrackCount {
-	return &deviceTrackCount{
-		state: deviceTrackCountState{
-			countNum: countNum,
-		},
-		device: deviceTrack.device,
-	}
-}
-
-func (deviceTrack *deviceTrack) Select(selectNum int64) *deviceTrackSelect {
-	return &deviceTrackSelect{
-		state: deviceTrackSelectState{
-			selectNum: selectNum,
-		},
-		device: deviceTrack.device,
-	}
-}
-
-type deviceTrackSelect struct {
-	device *devices.OscDevice
-	state  deviceTrackSelectState
-}
-
-type deviceTrackSelectState struct {
-	selectNum int64
-}
-
-func (ep *deviceTrackSelect) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/device/track/select/%d",
-		ep.state.selectNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceTrackSelect) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/device/track/select/%d",
-		ep.state.selectNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceTrackMinus struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceTrackMinus) Bind(callback func(bool) error) {
-	addr := "/device/track/minus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceTrackMinus) Set(val bool) error {
-	addr := "/device/track/minus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceTrackPlus struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceTrackPlus) Bind(callback func(bool) error) {
-	addr := "/device/track/plus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceTrackPlus) Set(val bool) error {
-	addr := "/device/track/plus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceTrackCount struct {
-	device *devices.OscDevice
-	state  deviceTrackCountState
-}
-
-type deviceTrackCountState struct {
-	countNum int64
-}
-
-func (ep *deviceTrackCount) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/device/track/count/%d",
-		ep.state.countNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceTrackCount) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/device/track/count/%d",
-		ep.state.countNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceTrackFollows struct {
-	device       *devices.OscDevice
-	Device       *deviceTrackFollowsDevice
-	Last_touched *deviceTrackFollowsLast_touched
-}
-
-func (ep *deviceTrackFollows) Bind(callback func(string) error) {
-	addr := "/device/track/follows"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *deviceTrackFollows) Set(val string) error {
-	addr := "/device/track/follows"
-
-	return ep.device.SetString(addr, val)
-}
-
-type deviceTrackFollowsDevice struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceTrackFollowsDevice) Bind(callback func(bool) error) {
-	addr := "/device/track/follows/device"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceTrackFollowsDevice) Set(val bool) error {
-	addr := "/device/track/follows/device"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceTrackFollowsLast_touched struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceTrackFollowsLast_touched) Bind(callback func(bool) error) {
-	addr := "/device/track/follows/last_touched"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceTrackFollowsLast_touched) Set(val bool) error {
-	addr := "/device/track/follows/last_touched"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceTrackBank struct {
-	device  *devices.OscDevice
-	Plus    *deviceTrackBankPlus
-	Follows *deviceTrackBankFollows
-	Minus   *deviceTrackBankMinus
-}
-
-func (deviceTrackBank *deviceTrackBank) Select(selectNum int64) *deviceTrackBankSelect {
-	return &deviceTrackBankSelect{
-		state: deviceTrackBankSelectState{
-			selectNum: selectNum,
-		},
-		device: deviceTrackBank.device,
-	}
-}
-
-type deviceTrackBankMinus struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceTrackBankMinus) Bind(callback func(bool) error) {
-	addr := "/device/track/bank/minus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceTrackBankMinus) Set(val bool) error {
-	addr := "/device/track/bank/minus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceTrackBankPlus struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceTrackBankPlus) Bind(callback func(bool) error) {
-	addr := "/device/track/bank/plus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceTrackBankPlus) Set(val bool) error {
-	addr := "/device/track/bank/plus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceTrackBankFollows struct {
-	device *devices.OscDevice
-	Device *deviceTrackBankFollowsDevice
-	Mixer  *deviceTrackBankFollowsMixer
-}
-
-func (ep *deviceTrackBankFollows) Bind(callback func(string) error) {
-	addr := "/device/track/bank/follows"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *deviceTrackBankFollows) Set(val string) error {
-	addr := "/device/track/bank/follows"
-
-	return ep.device.SetString(addr, val)
-}
-
-type deviceTrackBankFollowsDevice struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceTrackBankFollowsDevice) Bind(callback func(bool) error) {
-	addr := "/device/track/bank/follows/device"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceTrackBankFollowsDevice) Set(val bool) error {
-	addr := "/device/track/bank/follows/device"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceTrackBankFollowsMixer struct {
-	device *devices.OscDevice
-}
-
-func (ep *deviceTrackBankFollowsMixer) Bind(callback func(bool) error) {
-	addr := "/device/track/bank/follows/mixer"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceTrackBankFollowsMixer) Set(val bool) error {
-	addr := "/device/track/bank/follows/mixer"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceTrackBankSelect struct {
-	device *devices.OscDevice
-	state  deviceTrackBankSelectState
-}
-
-type deviceTrackBankSelectState struct {
-	selectNum int64
-}
-
-func (ep *deviceTrackBankSelect) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/device/track/bank/select/%d",
-		ep.state.selectNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceTrackBankSelect) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/device/track/bank/select/%d",
-		ep.state.selectNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceSend struct {
-	device *devices.OscDevice
-}
-
-func (deviceSend *deviceSend) Count(countNum int64) *deviceSendCount {
-	return &deviceSendCount{
-		state: deviceSendCountState{
-			countNum: countNum,
-		},
-		device: deviceSend.device,
-	}
-}
-
-type deviceSendCount struct {
-	device *devices.OscDevice
-	state  deviceSendCountState
-}
-
-type deviceSendCountState struct {
-	countNum int64
-}
-
-func (ep *deviceSendCount) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/device/send/count/%d",
-		ep.state.countNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceSendCount) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/device/send/count/%d",
-		ep.state.countNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type deviceReceive struct {
-	device *devices.OscDevice
-}
-
-func (deviceReceive *deviceReceive) Count(countNum int64) *deviceReceiveCount {
-	return &deviceReceiveCount{
-		state: deviceReceiveCountState{
-			countNum: countNum,
-		},
-		device: deviceReceive.device,
-	}
-}
-
-type deviceReceiveCount struct {
-	device *devices.OscDevice
-	state  deviceReceiveCountState
-}
-
-type deviceReceiveCountState struct {
-	countNum int64
-}
-
-func (ep *deviceReceiveCount) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/device/receive/count/%d",
-		ep.state.countNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *deviceReceiveCount) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/device/receive/count/%d",
-		ep.state.countNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type rewind struct {
-	device *devices.OscDevice
-}
-
-func (ep *rewind) Bind(callback func(bool) error) {
-	addr := "/rewind"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *rewind) Set(val bool) error {
-	addr := "/rewind"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type marker_id struct {
-	device *devices.OscDevice
-	Time   *marker_idTime
-	Number *marker_idNumber
-	Name   *marker_idName
-	state  marker_idState
-}
-
-type marker_idState struct {
-	marker_idNum int64
-}
-
-type marker_idTime struct {
-	device *devices.OscDevice
-	state  marker_idTimeState
-}
-
-type marker_idTimeState struct {
-	marker_idNum int64
-}
-
-func (ep *marker_idTime) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/marker_id/%d/time",
-		ep.state.marker_idNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *marker_idTime) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/marker_id/%d/time",
-		ep.state.marker_idNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type marker_idNumber struct {
-	device *devices.OscDevice
-	state  marker_idNumberState
-}
-
-type marker_idNumberState struct {
-	marker_idNum int64
-}
-
-func (ep *marker_idNumber) Bind(callback func(int64) error) {
-	addr := fmt.Sprintf(
-		"/marker_id/%d/number",
-		ep.state.marker_idNum,
-	)
-
-	ep.device.BindInt(addr, callback)
-}
-
-func (ep *marker_idNumber) Set(val int64) error {
-	addr := fmt.Sprintf(
-		"/marker_id/%d/number",
-		ep.state.marker_idNum,
-	)
-
-	return ep.device.SetInt(addr, val)
-}
-
-type marker_idName struct {
-	device *devices.OscDevice
-	state  marker_idNameState
-}
-
-type marker_idNameState struct {
-	marker_idNum int64
-}
-
-func (ep *marker_idName) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/marker_id/%d/name",
-		ep.state.marker_idNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *marker_idName) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/marker_id/%d/name",
-		ep.state.marker_idNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type loop struct {
-	device *devices.OscDevice
-	Start  *loopStart
-	End    *loopEnd
-}
-
-type loopStart struct {
-	device *devices.OscDevice
-	Time   *loopStartTime
-}
-
-type loopStartTime struct {
-	device *devices.OscDevice
-}
-
-func (ep *loopStartTime) Bind(callback func(float64) error) {
-	addr := "/loop/start/time"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *loopStartTime) Set(val float64) error {
-	addr := "/loop/start/time"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type loopEnd struct {
-	device *devices.OscDevice
-	Time   *loopEndTime
-}
-
-type loopEndTime struct {
-	device *devices.OscDevice
-}
-
-func (ep *loopEndTime) Bind(callback func(float64) error) {
-	addr := "/loop/end/time"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *loopEndTime) Set(val float64) error {
-	addr := "/loop/end/time"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type midiaction struct {
-	device *devices.OscDevice
-	state  midiactionState
-}
-
-type midiactionState struct {
-	midiactionNum int64
-}
-
-func (ep *midiaction) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/midiaction/%d",
-		ep.state.midiactionNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *midiaction) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/midiaction/%d",
-		ep.state.midiactionNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type lastmarker struct {
-	device *devices.OscDevice
-	Name   *lastmarkerName
-	Number *lastmarkerNumber
-	Time   *lastmarkerTime
-}
-
-type lastmarkerName struct {
-	device *devices.OscDevice
-}
-
-func (ep *lastmarkerName) Bind(callback func(string) error) {
-	addr := "/lastmarker/name"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *lastmarkerName) Set(val string) error {
-	addr := "/lastmarker/name"
-
-	return ep.device.SetString(addr, val)
-}
-
-type lastmarkerNumber struct {
-	device *devices.OscDevice
-	Str    *lastmarkerNumberStr
-}
-
-type lastmarkerNumberStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *lastmarkerNumberStr) Bind(callback func(string) error) {
-	addr := "/lastmarker/number/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *lastmarkerNumberStr) Set(val string) error {
-	addr := "/lastmarker/number/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type lastmarkerTime struct {
-	device *devices.OscDevice
-}
-
-func (ep *lastmarkerTime) Bind(callback func(float64) error) {
-	addr := "/lastmarker/time"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *lastmarkerTime) Set(val float64) error {
-	addr := "/lastmarker/time"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type pause struct {
-	device *devices.OscDevice
-}
-
-func (ep *pause) Bind(callback func(bool) error) {
-	addr := "/pause"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *pause) Set(val bool) error {
-	addr := "/pause"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type region struct {
-	device *devices.OscDevice
-	Length *regionLength
-	Name   *regionName
-	Number *regionNumber
-	Time   *regionTime
-	state  regionState
-}
-
-type regionState struct {
-	regionNum int64
-}
-
-func (ep *region) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/region/%d",
-		ep.state.regionNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *region) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/region/%d",
-		ep.state.regionNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type regionLength struct {
-	device *devices.OscDevice
-	state  regionLengthState
-}
-
-type regionLengthState struct {
-	regionNum int64
-}
-
-func (ep *regionLength) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/region/%d/length",
-		ep.state.regionNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *regionLength) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/region/%d/length",
-		ep.state.regionNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type regionName struct {
-	device *devices.OscDevice
-	state  regionNameState
-}
-
-type regionNameState struct {
-	regionNum int64
-}
-
-func (ep *regionName) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/region/%d/name",
-		ep.state.regionNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *regionName) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/region/%d/name",
-		ep.state.regionNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type regionNumber struct {
-	device *devices.OscDevice
-	Str    *regionNumberStr
-	state  regionNumberState
-}
-
-type regionNumberState struct {
-	regionNum int64
-}
-
-type regionNumberStr struct {
-	device *devices.OscDevice
-	state  regionNumberStrState
-}
-
-type regionNumberStrState struct {
-	regionNum int64
-}
-
-func (ep *regionNumberStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/region/%d/number/str",
-		ep.state.regionNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *regionNumberStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/region/%d/number/str",
-		ep.state.regionNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type regionTime struct {
-	device *devices.OscDevice
-	state  regionTimeState
-}
-
-type regionTimeState struct {
-	regionNum int64
-}
-
-func (ep *regionTime) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/region/%d/time",
-		ep.state.regionNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *regionTime) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/region/%d/time",
-		ep.state.regionNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type scrub struct {
-	device *devices.OscDevice
-}
-
-func (ep *scrub) Bind(callback func(float64) error) {
-	addr := "/scrub"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *scrub) Set(val float64) error {
-	addr := "/scrub"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type playrate struct {
-	device *devices.OscDevice
-	Raw    *playrateRaw
-	Rotary *playrateRotary
-	Str    *playrateStr
-}
-
-func (ep *playrate) Bind(callback func(float64) error) {
-	addr := "/playrate"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *playrate) Set(val float64) error {
-	addr := "/playrate"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type playrateRaw struct {
-	device *devices.OscDevice
-}
-
-func (ep *playrateRaw) Bind(callback func(float64) error) {
-	addr := "/playrate/raw"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *playrateRaw) Set(val float64) error {
-	addr := "/playrate/raw"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type playrateRotary struct {
-	device *devices.OscDevice
-}
-
-func (ep *playrateRotary) Bind(callback func(float64) error) {
-	addr := "/playrate/rotary"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *playrateRotary) Set(val float64) error {
-	addr := "/playrate/rotary"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type playrateStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *playrateStr) Bind(callback func(string) error) {
-	addr := "/playrate/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *playrateStr) Set(val string) error {
-	addr := "/playrate/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxinstparam struct {
-	device *devices.OscDevice
-	Name   *fxinstparamName
-	Value  *fxinstparamValue
-	state  fxinstparamState
-}
-
-type fxinstparamState struct {
-	fxinstparamNum int64
-}
-
-type fxinstparamName struct {
-	device *devices.OscDevice
-	state  fxinstparamNameState
-}
-
-type fxinstparamNameState struct {
-	fxinstparamNum int64
-}
-
-func (ep *fxinstparamName) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fxinstparam/%d/name",
-		ep.state.fxinstparamNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxinstparamName) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fxinstparam/%d/name",
-		ep.state.fxinstparamNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxinstparamValue struct {
-	device *devices.OscDevice
-	Str    *fxinstparamValueStr
-	state  fxinstparamValueState
-}
-
-type fxinstparamValueState struct {
-	fxinstparamNum int64
-}
-
-func (ep *fxinstparamValue) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/fxinstparam/%d/value",
-		ep.state.fxinstparamNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxinstparamValue) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/fxinstparam/%d/value",
-		ep.state.fxinstparamNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxinstparamValueStr struct {
-	device *devices.OscDevice
-	state  fxinstparamValueStrState
-}
-
-type fxinstparamValueStrState struct {
-	fxinstparamNum int64
-}
-
-func (ep *fxinstparamValueStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fxinstparam/%d/value/str",
-		ep.state.fxinstparamNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxinstparamValueStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fxinstparam/%d/value/str",
-		ep.state.fxinstparamNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type vkb_midi struct {
-	device          *devices.OscDevice
-	Program         *vkb_midiProgram
-	Channelpressure *vkb_midiChannelpressure
-	Pitch           *vkb_midiPitch
-	state           vkb_midiState
-}
-
-type vkb_midiState struct {
-	vkb_midiNum int64
-}
-
-func (vkb_midi *vkb_midi) Note(noteNum int64) *vkb_midiNote {
-	return &vkb_midiNote{
-		state: vkb_midiNoteState{
-			vkb_midiNum: vkb_midi.state.vkb_midiNum,
-			noteNum:     noteNum,
-		},
-		device: vkb_midi.device,
-	}
-}
-
-func (vkb_midi *vkb_midi) Polyaftertouch(polyaftertouchNum int64) *vkb_midiPolyaftertouch {
-	return &vkb_midiPolyaftertouch{
-		state: vkb_midiPolyaftertouchState{
-			vkb_midiNum:       vkb_midi.state.vkb_midiNum,
-			polyaftertouchNum: polyaftertouchNum,
-		},
-		device: vkb_midi.device,
-	}
-}
-
-func (vkb_midi *vkb_midi) Cc(ccNum int64) *vkb_midiCc {
-	return &vkb_midiCc{
-		state: vkb_midiCcState{
-			vkb_midiNum: vkb_midi.state.vkb_midiNum,
-			ccNum:       ccNum,
-		},
-		device: vkb_midi.device,
-	}
-}
-
-type vkb_midiPitch struct {
-	device *devices.OscDevice
-	state  vkb_midiPitchState
-}
-
-type vkb_midiPitchState struct {
-	vkb_midiNum int64
-}
-
-func (ep *vkb_midiPitch) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/vkb_midi/%d/pitch",
-		ep.state.vkb_midiNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *vkb_midiPitch) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/vkb_midi/%d/pitch",
-		ep.state.vkb_midiNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type vkb_midiNote struct {
-	device *devices.OscDevice
-	state  vkb_midiNoteState
-}
-
-type vkb_midiNoteState struct {
-	vkb_midiNum int64
-	noteNum     int64
-}
-
-func (ep *vkb_midiNote) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/vkb_midi/%d/note/%d",
-		ep.state.vkb_midiNum,
-		ep.state.noteNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *vkb_midiNote) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/vkb_midi/%d/note/%d",
-		ep.state.vkb_midiNum,
-		ep.state.noteNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type vkb_midiPolyaftertouch struct {
-	device *devices.OscDevice
-	state  vkb_midiPolyaftertouchState
-}
-
-type vkb_midiPolyaftertouchState struct {
-	vkb_midiNum       int64
-	polyaftertouchNum int64
-}
-
-func (ep *vkb_midiPolyaftertouch) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/vkb_midi/%d/polyaftertouch/%d",
-		ep.state.vkb_midiNum,
-		ep.state.polyaftertouchNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *vkb_midiPolyaftertouch) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/vkb_midi/%d/polyaftertouch/%d",
-		ep.state.vkb_midiNum,
-		ep.state.polyaftertouchNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type vkb_midiCc struct {
-	device *devices.OscDevice
-	state  vkb_midiCcState
-}
-
-type vkb_midiCcState struct {
-	vkb_midiNum int64
-	ccNum       int64
-}
-
-func (ep *vkb_midiCc) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/vkb_midi/%d/cc/%d",
-		ep.state.vkb_midiNum,
-		ep.state.ccNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *vkb_midiCc) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/vkb_midi/%d/cc/%d",
-		ep.state.vkb_midiNum,
-		ep.state.ccNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type vkb_midiProgram struct {
-	device *devices.OscDevice
-	state  vkb_midiProgramState
-}
-
-type vkb_midiProgramState struct {
-	vkb_midiNum int64
-}
-
-func (ep *vkb_midiProgram) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/vkb_midi/%d/program",
-		ep.state.vkb_midiNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *vkb_midiProgram) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/vkb_midi/%d/program",
-		ep.state.vkb_midiNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type vkb_midiChannelpressure struct {
-	device *devices.OscDevice
-	state  vkb_midiChannelpressureState
-}
-
-type vkb_midiChannelpressureState struct {
-	vkb_midiNum int64
-}
-
-func (ep *vkb_midiChannelpressure) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/vkb_midi/%d/channelpressure",
-		ep.state.vkb_midiNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *vkb_midiChannelpressure) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/vkb_midi/%d/channelpressure",
-		ep.state.vkb_midiNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type reaperconfig struct {
-	device *devices.OscDevice
-	Track  *reaperconfigTrack
-}
-
-type reaperconfigTrack struct {
-	device  *devices.OscDevice
-	Follows *reaperconfigTrackFollows
-}
-
-type reaperconfigTrackFollows struct {
-	device       *devices.OscDevice
-	Reaperconfig *reaperconfigTrackFollowsReaperconfig
-	Device       *reaperconfigTrackFollowsDevice
-}
-
-func (ep *reaperconfigTrackFollows) Bind(callback func(string) error) {
-	addr := "/reaperconfig/track/follows"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *reaperconfigTrackFollows) Set(val string) error {
-	addr := "/reaperconfig/track/follows"
-
-	return ep.device.SetString(addr, val)
-}
-
-type reaperconfigTrackFollowsReaperconfig struct {
-	device *devices.OscDevice
-}
-
-func (ep *reaperconfigTrackFollowsReaperconfig) Bind(callback func(bool) error) {
-	addr := "/reaperconfig/track/follows/reaperconfig"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *reaperconfigTrackFollowsReaperconfig) Set(val bool) error {
-	addr := "/reaperconfig/track/follows/reaperconfig"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type reaperconfigTrackFollowsDevice struct {
-	device *devices.OscDevice
-}
-
-func (ep *reaperconfigTrackFollowsDevice) Bind(callback func(bool) error) {
-	addr := "/reaperconfig/track/follows/device"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *reaperconfigTrackFollowsDevice) Set(val bool) error {
-	addr := "/reaperconfig/track/follows/device"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type bymarker struct {
-	device *devices.OscDevice
-}
-
-func (ep *bymarker) Bind(callback func(bool) error) {
-	addr := "/bymarker"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *bymarker) Set(val bool) error {
-	addr := "/bymarker"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type lastregion struct {
-	device *devices.OscDevice
-	Name   *lastregionName
-	Number *lastregionNumber
-	Time   *lastregionTime
-	Length *lastregionLength
-}
-
-type lastregionName struct {
-	device *devices.OscDevice
-}
-
-func (ep *lastregionName) Bind(callback func(string) error) {
-	addr := "/lastregion/name"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *lastregionName) Set(val string) error {
-	addr := "/lastregion/name"
-
-	return ep.device.SetString(addr, val)
-}
-
-type lastregionNumber struct {
-	device *devices.OscDevice
-	Str    *lastregionNumberStr
-}
-
-type lastregionNumberStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *lastregionNumberStr) Bind(callback func(string) error) {
-	addr := "/lastregion/number/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *lastregionNumberStr) Set(val string) error {
-	addr := "/lastregion/number/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type lastregionTime struct {
-	device *devices.OscDevice
-}
-
-func (ep *lastregionTime) Bind(callback func(float64) error) {
-	addr := "/lastregion/time"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *lastregionTime) Set(val float64) error {
-	addr := "/lastregion/time"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type lastregionLength struct {
-	device *devices.OscDevice
-}
-
-func (ep *lastregionLength) Bind(callback func(float64) error) {
-	addr := "/lastregion/length"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *lastregionLength) Set(val float64) error {
-	addr := "/lastregion/length"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type play struct {
-	device *devices.OscDevice
-}
-
-func (ep *play) Bind(callback func(bool) error) {
-	addr := "/play"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *play) Set(val bool) error {
-	addr := "/play"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type fx struct {
-	device       *devices.OscDevice
-	Last_touched *fxLast_touched
-	Bypass       *fxBypass
-	Openui       *fxOpenui
-	Preset       *fxPreset
-	Presetplus   *fxPresetplus
-	Wetdry       *fxWetdry
-	Name         *fxName
-	Number       *fxNumber
-	Presetminus  *fxPresetminus
-	state        fxState
-}
-
-type fxState struct {
-	fxNum int64
-}
-
-func (fx *fx) Fxparam(fxparamNum int64) *fxFxparam {
-	return &fxFxparam{
-		state: fxFxparamState{
-			fxNum:      fx.state.fxNum,
-			fxparamNum: fxparamNum,
-		},
-		device: fx.device,
-	}
-}
-
-type fxFxparam struct {
-	device *devices.OscDevice
-	Name   *fxFxparamName
-	Value  *fxFxparamValue
-	state  fxFxparamState
-}
-
-type fxFxparamState struct {
-	fxNum      int64
-	fxparamNum int64
-}
-
-type fxFxparamName struct {
-	device *devices.OscDevice
-	state  fxFxparamNameState
-}
-
-type fxFxparamNameState struct {
-	fxNum      int64
-	fxparamNum int64
-}
-
-func (ep *fxFxparamName) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/fxparam/%d/name",
-		ep.state.fxNum,
-		ep.state.fxparamNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxFxparamName) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/fxparam/%d/name",
-		ep.state.fxNum,
-		ep.state.fxparamNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxFxparamValue struct {
-	device *devices.OscDevice
-	Str    *fxFxparamValueStr
-	state  fxFxparamValueState
-}
-
-type fxFxparamValueState struct {
-	fxNum      int64
-	fxparamNum int64
-}
-
-func (ep *fxFxparamValue) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/fxparam/%d/value",
-		ep.state.fxNum,
-		ep.state.fxparamNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxFxparamValue) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/fxparam/%d/value",
-		ep.state.fxNum,
-		ep.state.fxparamNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxFxparamValueStr struct {
-	device *devices.OscDevice
-	state  fxFxparamValueStrState
-}
-
-type fxFxparamValueStrState struct {
-	fxNum      int64
-	fxparamNum int64
-}
-
-func (ep *fxFxparamValueStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/fxparam/%d/value/str",
-		ep.state.fxNum,
-		ep.state.fxparamNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxFxparamValueStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/fxparam/%d/value/str",
-		ep.state.fxNum,
-		ep.state.fxparamNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxLast_touched struct {
-	device *devices.OscDevice
-	Number *fxLast_touchedNumber
-	Track  *fxLast_touchedTrack
-	Name   *fxLast_touchedName
-	state  fxLast_touchedState
-}
-
-type fxLast_touchedState struct {
-	fxNum int64
-}
-
-type fxLast_touchedTrack struct {
-	device *devices.OscDevice
-	Name   *fxLast_touchedTrackName
-	Number *fxLast_touchedTrackNumber
-	state  fxLast_touchedTrackState
-}
-
-type fxLast_touchedTrackState struct {
-	fxNum int64
-}
-
-type fxLast_touchedTrackName struct {
-	device *devices.OscDevice
-	state  fxLast_touchedTrackNameState
-}
-
-type fxLast_touchedTrackNameState struct {
-	fxNum int64
-}
-
-func (ep *fxLast_touchedTrackName) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/last_touched/track/name",
-		ep.state.fxNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxLast_touchedTrackName) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/last_touched/track/name",
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxLast_touchedTrackNumber struct {
-	device *devices.OscDevice
-	Str    *fxLast_touchedTrackNumberStr
-	state  fxLast_touchedTrackNumberState
-}
-
-type fxLast_touchedTrackNumberState struct {
-	fxNum int64
-}
-
-type fxLast_touchedTrackNumberStr struct {
-	device *devices.OscDevice
-	state  fxLast_touchedTrackNumberStrState
-}
-
-type fxLast_touchedTrackNumberStrState struct {
-	fxNum int64
-}
-
-func (ep *fxLast_touchedTrackNumberStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/last_touched/track/number/str",
-		ep.state.fxNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxLast_touchedTrackNumberStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/last_touched/track/number/str",
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxLast_touchedName struct {
-	device *devices.OscDevice
-	state  fxLast_touchedNameState
-}
-
-type fxLast_touchedNameState struct {
-	fxNum int64
-}
-
-func (ep *fxLast_touchedName) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/last_touched/name",
-		ep.state.fxNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxLast_touchedName) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/last_touched/name",
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxLast_touchedNumber struct {
-	device *devices.OscDevice
-	Str    *fxLast_touchedNumberStr
-	state  fxLast_touchedNumberState
-}
-
-type fxLast_touchedNumberState struct {
-	fxNum int64
-}
-
-type fxLast_touchedNumberStr struct {
-	device *devices.OscDevice
-	state  fxLast_touchedNumberStrState
-}
-
-type fxLast_touchedNumberStrState struct {
-	fxNum int64
-}
-
-func (ep *fxLast_touchedNumberStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/last_touched/number/str",
-		ep.state.fxNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxLast_touchedNumberStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/last_touched/number/str",
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxBypass struct {
-	device *devices.OscDevice
-	state  fxBypassState
-}
-
-type fxBypassState struct {
-	fxNum int64
-}
-
-func (ep *fxBypass) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/bypass",
-		ep.state.fxNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *fxBypass) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/bypass",
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type fxOpenui struct {
-	device *devices.OscDevice
-	state  fxOpenuiState
-}
-
-type fxOpenuiState struct {
-	fxNum int64
-}
-
-func (ep *fxOpenui) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/openui",
-		ep.state.fxNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *fxOpenui) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/openui",
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type fxPreset struct {
-	device *devices.OscDevice
-	state  fxPresetState
-}
-
-type fxPresetState struct {
-	fxNum int64
-}
-
-func (ep *fxPreset) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/preset",
-		ep.state.fxNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxPreset) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/preset",
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxPresetplus struct {
-	device *devices.OscDevice
-	state  fxPresetplusState
-}
-
-type fxPresetplusState struct {
-	fxNum int64
-}
-
-func (ep *fxPresetplus) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/presetplus",
-		ep.state.fxNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *fxPresetplus) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/presetplus",
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type fxWetdry struct {
-	device *devices.OscDevice
-	Str    *fxWetdryStr
-	state  fxWetdryState
-}
-
-type fxWetdryState struct {
-	fxNum int64
-}
-
-func (ep *fxWetdry) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/wetdry",
-		ep.state.fxNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxWetdry) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/wetdry",
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxWetdryStr struct {
-	device *devices.OscDevice
-	state  fxWetdryStrState
-}
-
-type fxWetdryStrState struct {
-	fxNum int64
-}
-
-func (ep *fxWetdryStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/wetdry/str",
-		ep.state.fxNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxWetdryStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/wetdry/str",
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxName struct {
-	device *devices.OscDevice
-	state  fxNameState
-}
-
-type fxNameState struct {
-	fxNum int64
-}
-
-func (ep *fxName) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/name",
-		ep.state.fxNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxName) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/name",
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxNumber struct {
-	device *devices.OscDevice
-	Str    *fxNumberStr
-	state  fxNumberState
-}
-
-type fxNumberState struct {
-	fxNum int64
-}
-
-type fxNumberStr struct {
-	device *devices.OscDevice
-	state  fxNumberStrState
-}
-
-type fxNumberStrState struct {
-	fxNum int64
-}
-
-func (ep *fxNumberStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/number/str",
-		ep.state.fxNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxNumberStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/number/str",
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxPresetminus struct {
-	device *devices.OscDevice
-	state  fxPresetminusState
-}
-
-type fxPresetminusState struct {
-	fxNum int64
-}
-
-func (ep *fxPresetminus) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/fx/%d/presetminus",
-		ep.state.fxNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *fxPresetminus) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/fx/%d/presetminus",
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type fxparam struct {
-	device       *devices.OscDevice
-	Name         *fxparamName
-	Value        *fxparamValue
-	Last_touched *fxparamLast_touched
-	state        fxparamState
-}
-
-type fxparamState struct {
-	fxparamNum int64
-}
-
-type fxparamLast_touched struct {
-	device *devices.OscDevice
-	Name   *fxparamLast_touchedName
-	Value  *fxparamLast_touchedValue
-	state  fxparamLast_touchedState
-}
-
-type fxparamLast_touchedState struct {
-	fxparamNum int64
-}
-
-type fxparamLast_touchedName struct {
-	device *devices.OscDevice
-	state  fxparamLast_touchedNameState
-}
-
-type fxparamLast_touchedNameState struct {
-	fxparamNum int64
-}
-
-func (ep *fxparamLast_touchedName) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fxparam/%d/last_touched/name",
-		ep.state.fxparamNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxparamLast_touchedName) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fxparam/%d/last_touched/name",
-		ep.state.fxparamNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxparamLast_touchedValue struct {
-	device *devices.OscDevice
-	Str    *fxparamLast_touchedValueStr
-	state  fxparamLast_touchedValueState
-}
-
-type fxparamLast_touchedValueState struct {
-	fxparamNum int64
-}
-
-func (ep *fxparamLast_touchedValue) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/fxparam/%d/last_touched/value",
-		ep.state.fxparamNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxparamLast_touchedValue) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/fxparam/%d/last_touched/value",
-		ep.state.fxparamNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxparamLast_touchedValueStr struct {
-	device *devices.OscDevice
-	state  fxparamLast_touchedValueStrState
-}
-
-type fxparamLast_touchedValueStrState struct {
-	fxparamNum int64
-}
-
-func (ep *fxparamLast_touchedValueStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fxparam/%d/last_touched/value/str",
-		ep.state.fxparamNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxparamLast_touchedValueStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fxparam/%d/last_touched/value/str",
-		ep.state.fxparamNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxparamName struct {
-	device *devices.OscDevice
-	state  fxparamNameState
-}
-
-type fxparamNameState struct {
-	fxparamNum int64
-}
-
-func (ep *fxparamName) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fxparam/%d/name",
-		ep.state.fxparamNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxparamName) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fxparam/%d/name",
-		ep.state.fxparamNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxparamValue struct {
-	device *devices.OscDevice
-	Str    *fxparamValueStr
-	state  fxparamValueState
-}
-
-type fxparamValueState struct {
-	fxparamNum int64
-}
-
-func (ep *fxparamValue) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/fxparam/%d/value",
-		ep.state.fxparamNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxparamValue) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/fxparam/%d/value",
-		ep.state.fxparamNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxparamValueStr struct {
-	device *devices.OscDevice
-	state  fxparamValueStrState
-}
-
-type fxparamValueStrState struct {
-	fxparamNum int64
-}
-
-func (ep *fxparamValueStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/fxparam/%d/value/str",
-		ep.state.fxparamNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxparamValueStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/fxparam/%d/value/str",
-		ep.state.fxparamNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type zoom struct {
-	device *devices.OscDevice
-	X      *zoomX
-	Y      *zoomY
-}
-
-type zoomX struct {
-	device *devices.OscDevice
-	Minus  *zoomXMinus
-	Plus   *zoomXPlus
-}
-
-func (ep *zoomX) Bind(callback func(float64) error) {
-	addr := "/zoom/x"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *zoomX) Set(val float64) error {
-	addr := "/zoom/x"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type zoomXMinus struct {
-	device *devices.OscDevice
-}
-
-func (ep *zoomXMinus) Bind(callback func(bool) error) {
-	addr := "/zoom/x/minus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *zoomXMinus) Set(val bool) error {
-	addr := "/zoom/x/minus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type zoomXPlus struct {
-	device *devices.OscDevice
-}
-
-func (ep *zoomXPlus) Bind(callback func(bool) error) {
-	addr := "/zoom/x/plus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *zoomXPlus) Set(val bool) error {
-	addr := "/zoom/x/plus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type zoomY struct {
-	device *devices.OscDevice
-	Minus  *zoomYMinus
-	Plus   *zoomYPlus
-}
-
-func (ep *zoomY) Bind(callback func(float64) error) {
-	addr := "/zoom/y"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *zoomY) Set(val float64) error {
-	addr := "/zoom/y"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type zoomYMinus struct {
-	device *devices.OscDevice
-}
-
-func (ep *zoomYMinus) Bind(callback func(bool) error) {
-	addr := "/zoom/y/minus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *zoomYMinus) Set(val bool) error {
-	addr := "/zoom/y/minus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type zoomYPlus struct {
-	device *devices.OscDevice
-}
-
-func (ep *zoomYPlus) Bind(callback func(bool) error) {
-	addr := "/zoom/y/plus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *zoomYPlus) Set(val bool) error {
-	addr := "/zoom/y/plus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type replace struct {
-	device *devices.OscDevice
-}
-
-func (ep *replace) Bind(callback func(bool) error) {
-	addr := "/replace"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *replace) Set(val bool) error {
-	addr := "/replace"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type marker struct {
-	device *devices.OscDevice
-	Name   *markerName
-	Number *markerNumber
-	Time   *markerTime
-	state  markerState
-}
-
-type markerState struct {
-	markerNum int64
-}
-
-func (ep *marker) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/marker/%d",
-		ep.state.markerNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *marker) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/marker/%d",
-		ep.state.markerNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type markerName struct {
-	device *devices.OscDevice
-	state  markerNameState
-}
-
-type markerNameState struct {
-	markerNum int64
-}
-
-func (ep *markerName) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/marker/%d/name",
-		ep.state.markerNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *markerName) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/marker/%d/name",
-		ep.state.markerNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type markerNumber struct {
-	device *devices.OscDevice
-	Str    *markerNumberStr
-	state  markerNumberState
-}
-
-type markerNumberState struct {
-	markerNum int64
-}
-
-type markerNumberStr struct {
-	device *devices.OscDevice
-	state  markerNumberStrState
-}
-
-type markerNumberStrState struct {
-	markerNum int64
-}
-
-func (ep *markerNumberStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/marker/%d/number/str",
-		ep.state.markerNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *markerNumberStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/marker/%d/number/str",
-		ep.state.markerNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type markerTime struct {
-	device *devices.OscDevice
-	state  markerTimeState
-}
-
-type markerTimeState struct {
-	markerNum int64
-}
-
-func (ep *markerTime) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/marker/%d/time",
-		ep.state.markerNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *markerTime) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/marker/%d/time",
-		ep.state.markerNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxinst struct {
-	device      *devices.OscDevice
-	Name        *fxinstName
-	Bypass      *fxinstBypass
-	Openui      *fxinstOpenui
-	Preset      *fxinstPreset
-	Presetminus *fxinstPresetminus
-	Presetplus  *fxinstPresetplus
-}
-
-type fxinstName struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxinstName) Bind(callback func(string) error) {
-	addr := "/fxinst/name"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxinstName) Set(val string) error {
-	addr := "/fxinst/name"
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxinstBypass struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxinstBypass) Bind(callback func(bool) error) {
-	addr := "/fxinst/bypass"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *fxinstBypass) Set(val bool) error {
-	addr := "/fxinst/bypass"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type fxinstOpenui struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxinstOpenui) Bind(callback func(bool) error) {
-	addr := "/fxinst/openui"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *fxinstOpenui) Set(val bool) error {
-	addr := "/fxinst/openui"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type fxinstPreset struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxinstPreset) Bind(callback func(string) error) {
-	addr := "/fxinst/preset"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxinstPreset) Set(val string) error {
-	addr := "/fxinst/preset"
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxinstPresetminus struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxinstPresetminus) Bind(callback func(bool) error) {
-	addr := "/fxinst/presetminus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *fxinstPresetminus) Set(val bool) error {
-	addr := "/fxinst/presetminus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type fxinstPresetplus struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxinstPresetplus) Bind(callback func(bool) error) {
-	addr := "/fxinst/presetplus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *fxinstPresetplus) Set(val bool) error {
-	addr := "/fxinst/presetplus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type midilistaction struct {
-	device *devices.OscDevice
-	state  midilistactionState
-}
-
-type midilistactionState struct {
-	midilistactionNum int64
-}
-
-func (ep *midilistaction) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/midilistaction/%d",
-		ep.state.midilistactionNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *midilistaction) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/midilistaction/%d",
-		ep.state.midilistactionNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type beat struct {
-	device *devices.OscDevice
-	Str    *beatStr
-}
-
-type beatStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *beatStr) Bind(callback func(string) error) {
-	addr := "/beat/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *beatStr) Set(val string) error {
-	addr := "/beat/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type click struct {
-	device *devices.OscDevice
-}
-
-func (ep *click) Bind(callback func(bool) error) {
-	addr := "/click"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *click) Set(val bool) error {
-	addr := "/click"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type record struct {
-	device *devices.OscDevice
-}
-
-func (ep *record) Bind(callback func(bool) error) {
-	addr := "/record"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *record) Set(val bool) error {
-	addr := "/record"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type stop struct {
-	device *devices.OscDevice
-}
-
-func (ep *stop) Bind(callback func(bool) error) {
-	addr := "/stop"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *stop) Set(val bool) error {
-	addr := "/stop"
-
-	return ep.device.SetBool(addr, val)
-}
-
 type track struct {
 	device    *devices.OscDevice
-	Autowrite *trackAutowrite
+	Name      *trackName
 	Number    *trackNumber
 	Mute      *trackMute
 	Solo      *trackSolo
 	Recarm    *trackRecarm
-	Pan2      *trackPan2
-	Fxinst    *trackFxinst
-	Name      *trackName
 	Monitor   *trackMonitor
-	Pan       *trackPan
-	Autoread  *trackAutoread
-	Volume    *trackVolume
-	Autotrim  *trackAutotrim
-	Autotouch *trackAutotouch
-	Fxeq      *trackFxeq
 	Select    *trackSelect
 	Vu        *trackVu
+	Volume    *trackVolume
+	Pan       *trackPan
+	Pan2      *trackPan2
 	Panmode   *trackPanmode
 	Auto      *trackAuto
+	Autotrim  *trackAutotrim
+	Autoread  *trackAutoread
 	Autolatch *trackAutolatch
+	Autotouch *trackAutotouch
+	Autowrite *trackAutowrite
+	Fxeq      *trackFxeq
+	Fxinst    *trackFxinst
 	state     trackState
 }
 
@@ -3803,6 +2730,21 @@ func (track *track) Send(sendNum int64) *trackSend {
 			sendNum:  sendNum,
 		},
 		device: track.device,
+		Name: &trackSendName{
+			device: track.device,
+		},
+		Volume: &trackSendVolume{
+			device: track.device,
+			Str: &trackSendVolumeStr{
+				device: track.device,
+			},
+		},
+		Pan: &trackSendPan{
+			device: track.device,
+			Str: &trackSendPanStr{
+				device: track.device,
+			},
+		},
 	}
 }
 
@@ -3813,16 +2755,21 @@ func (track *track) Recv(recvNum int64) *trackRecv {
 			recvNum:  recvNum,
 		},
 		device: track.device,
-	}
-}
-
-func (track *track) Fxinstparam(fxinstparamNum int64) *trackFxinstparam {
-	return &trackFxinstparam{
-		state: trackFxinstparamState{
-			trackNum:       track.state.trackNum,
-			fxinstparamNum: fxinstparamNum,
+		Name: &trackRecvName{
+			device: track.device,
 		},
-		device: track.device,
+		Volume: &trackRecvVolume{
+			device: track.device,
+			Str: &trackRecvVolumeStr{
+				device: track.device,
+			},
+		},
+		Pan: &trackRecvPan{
+			device: track.device,
+			Str: &trackRecvPanStr{
+				device: track.device,
+			},
+		},
 	}
 }
 
@@ -3833,225 +2780,50 @@ func (track *track) Fx(fxNum int64) *trackFx {
 			fxNum:    fxNum,
 		},
 		device: track.device,
+		Name: &trackFxName{
+			device: track.device,
+		},
+		Number: &trackFxNumber{
+			device: track.device,
+			Str: &trackFxNumberStr{
+				device: track.device,
+			},
+		},
+		Bypass: &trackFxBypass{
+			device: track.device,
+		},
+		Openui: &trackFxOpenui{
+			device: track.device,
+		},
+		Preset: &trackFxPreset{
+			device: track.device,
+		},
+		Presetminus: &trackFxPresetminus{
+			device: track.device,
+		},
+		Presetplus: &trackFxPresetplus{
+			device: track.device,
+		},
+		Wetdry: &trackFxWetdry{
+			device: track.device,
+			Str: &trackFxWetdryStr{
+				device: track.device,
+			},
+		},
 	}
 }
 
-type trackFxinst struct {
-	device      *devices.OscDevice
-	Preset      *trackFxinstPreset
-	Presetminus *trackFxinstPresetminus
-	Presetplus  *trackFxinstPresetplus
-	Name        *trackFxinstName
-	Bypass      *trackFxinstBypass
-	Openui      *trackFxinstOpenui
-	state       trackFxinstState
-}
-
-type trackFxinstState struct {
-	trackNum int64
-}
-
-type trackFxinstPresetplus struct {
-	device *devices.OscDevice
-	state  trackFxinstPresetplusState
-}
-
-type trackFxinstPresetplusState struct {
-	trackNum int64
-}
-
-func (ep *trackFxinstPresetplus) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxinst/presetplus",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackFxinstPresetplus) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxinst/presetplus",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackFxinstName struct {
-	device *devices.OscDevice
-	state  trackFxinstNameState
-}
-
-type trackFxinstNameState struct {
-	trackNum int64
-}
-
-func (ep *trackFxinstName) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxinst/name",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackFxinstName) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxinst/name",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackFxinstBypass struct {
-	device *devices.OscDevice
-	state  trackFxinstBypassState
-}
-
-type trackFxinstBypassState struct {
-	trackNum int64
-}
-
-func (ep *trackFxinstBypass) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxinst/bypass",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackFxinstBypass) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxinst/bypass",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackFxinstOpenui struct {
-	device *devices.OscDevice
-	state  trackFxinstOpenuiState
-}
-
-type trackFxinstOpenuiState struct {
-	trackNum int64
-}
-
-func (ep *trackFxinstOpenui) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxinst/openui",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackFxinstOpenui) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxinst/openui",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackFxinstPreset struct {
-	device *devices.OscDevice
-	state  trackFxinstPresetState
-}
-
-type trackFxinstPresetState struct {
-	trackNum int64
-}
-
-func (ep *trackFxinstPreset) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxinst/preset",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackFxinstPreset) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxinst/preset",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackFxinstPresetminus struct {
-	device *devices.OscDevice
-	state  trackFxinstPresetminusState
-}
-
-type trackFxinstPresetminusState struct {
-	trackNum int64
-}
-
-func (ep *trackFxinstPresetminus) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxinst/presetminus",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackFxinstPresetminus) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxinst/presetminus",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackFxinstparam struct {
-	device *devices.OscDevice
-	Value  *trackFxinstparamValue
-	state  trackFxinstparamState
-}
-
-type trackFxinstparamState struct {
-	trackNum       int64
-	fxinstparamNum int64
-}
-
-type trackFxinstparamValue struct {
-	device *devices.OscDevice
-	state  trackFxinstparamValueState
-}
-
-type trackFxinstparamValueState struct {
-	trackNum       int64
-	fxinstparamNum int64
-}
-
-func (ep *trackFxinstparamValue) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxinstparam/%d/value",
-		ep.state.trackNum,
-		ep.state.fxinstparamNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *trackFxinstparamValue) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxinstparam/%d/value",
-		ep.state.trackNum,
-		ep.state.fxinstparamNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
+func (track *track) Fxinstparam(fxinstparamNum int64) *trackFxinstparam {
+	return &trackFxinstparam{
+		state: trackFxinstparamState{
+			trackNum:       track.state.trackNum,
+			fxinstparamNum: fxinstparamNum,
+		},
+		device: track.device,
+		Value: &trackFxinstparamValue{
+			device: track.device,
+		},
+	}
 }
 
 type trackName struct {
@@ -4081,6 +2853,208 @@ func (ep *trackName) Set(val string) error {
 	return ep.device.SetString(addr, val)
 }
 
+type trackNumber struct {
+	device *devices.OscDevice
+	Str    *trackNumberStr
+	state  trackNumberState
+}
+
+type trackNumberState struct {
+	trackNum int64
+}
+
+type trackNumberStr struct {
+	device *devices.OscDevice
+	state  trackNumberStrState
+}
+
+type trackNumberStrState struct {
+	trackNum int64
+}
+
+func (ep *trackNumberStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/number/str",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackNumberStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/number/str",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackMute struct {
+	device *devices.OscDevice
+	Toggle *trackMuteToggle
+	state  trackMuteState
+}
+
+type trackMuteState struct {
+	trackNum int64
+}
+
+func (ep *trackMute) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/mute",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackMute) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/mute",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackMuteToggle struct {
+	device *devices.OscDevice
+	state  trackMuteToggleState
+}
+
+type trackMuteToggleState struct {
+	trackNum int64
+}
+
+func (ep *trackMuteToggle) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/mute/toggle",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackMuteToggle) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/mute/toggle",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackSolo struct {
+	device *devices.OscDevice
+	Toggle *trackSoloToggle
+	state  trackSoloState
+}
+
+type trackSoloState struct {
+	trackNum int64
+}
+
+func (ep *trackSolo) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/solo",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackSolo) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/solo",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackSoloToggle struct {
+	device *devices.OscDevice
+	state  trackSoloToggleState
+}
+
+type trackSoloToggleState struct {
+	trackNum int64
+}
+
+func (ep *trackSoloToggle) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/solo/toggle",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackSoloToggle) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/solo/toggle",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackRecarm struct {
+	device *devices.OscDevice
+	Toggle *trackRecarmToggle
+	state  trackRecarmState
+}
+
+type trackRecarmState struct {
+	trackNum int64
+}
+
+func (ep *trackRecarm) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/recarm",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackRecarm) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/recarm",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackRecarmToggle struct {
+	device *devices.OscDevice
+	state  trackRecarmToggleState
+}
+
+type trackRecarmToggleState struct {
+	trackNum int64
+}
+
+func (ep *trackRecarmToggle) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/recarm/toggle",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackRecarmToggle) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/recarm/toggle",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
 type trackMonitor struct {
 	device *devices.OscDevice
 	state  trackMonitorState
@@ -4108,467 +3082,111 @@ func (ep *trackMonitor) Set(val int64) error {
 	return ep.device.SetInt(addr, val)
 }
 
-type trackPan struct {
+type trackSelect struct {
 	device *devices.OscDevice
-	Str    *trackPanStr
-	Touch  *trackPanTouch
-	state  trackPanState
+	state  trackSelectState
 }
 
-type trackPanState struct {
+type trackSelectState struct {
 	trackNum int64
 }
 
-func (ep *trackPan) Bind(callback func(float64) error) {
+func (ep *trackSelect) Bind(callback func(bool) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/pan",
+		"/track/%d/select",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackSelect) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/select",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackVu struct {
+	device *devices.OscDevice
+	L      *trackVuL
+	R      *trackVuR
+	state  trackVuState
+}
+
+type trackVuState struct {
+	trackNum int64
+}
+
+func (ep *trackVu) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/vu",
 		ep.state.trackNum,
 	)
 
 	ep.device.BindFloat(addr, callback)
 }
 
-func (ep *trackPan) Set(val float64) error {
+func (ep *trackVu) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/track/%d/pan",
+		"/track/%d/vu",
 		ep.state.trackNum,
 	)
 
 	return ep.device.SetFloat(addr, val)
 }
 
-type trackPanTouch struct {
+type trackVuL struct {
 	device *devices.OscDevice
-	state  trackPanTouchState
+	state  trackVuLState
 }
 
-type trackPanTouchState struct {
+type trackVuLState struct {
 	trackNum int64
 }
 
-func (ep *trackPanTouch) Bind(callback func(bool) error) {
+func (ep *trackVuL) Bind(callback func(float64) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/pan/touch",
+		"/track/%d/vu/L",
 		ep.state.trackNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackPanTouch) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/pan/touch",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackPanStr struct {
-	device *devices.OscDevice
-	state  trackPanStrState
-}
-
-type trackPanStrState struct {
-	trackNum int64
-}
-
-func (ep *trackPanStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/pan/str",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackPanStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/pan/str",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackAutoread struct {
-	device *devices.OscDevice
-	state  trackAutoreadState
-}
-
-type trackAutoreadState struct {
-	trackNum int64
-}
-
-func (ep *trackAutoread) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/autoread",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackAutoread) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/autoread",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackFx struct {
-	device      *devices.OscDevice
-	Name        *trackFxName
-	Number      *trackFxNumber
-	Preset      *trackFxPreset
-	Presetminus *trackFxPresetminus
-	Bypass      *trackFxBypass
-	Openui      *trackFxOpenui
-	Presetplus  *trackFxPresetplus
-	Wetdry      *trackFxWetdry
-	state       trackFxState
-}
-
-type trackFxState struct {
-	trackNum int64
-	fxNum    int64
-}
-
-func (trackFx *trackFx) Fxparam(fxparamNum int64) *trackFxFxparam {
-	return &trackFxFxparam{
-		state: trackFxFxparamState{
-			trackNum:   trackFx.state.trackNum,
-			fxNum:      trackFx.state.fxNum,
-			fxparamNum: fxparamNum,
-		},
-		device: trackFx.device,
-	}
-}
-
-type trackFxBypass struct {
-	device *devices.OscDevice
-	state  trackFxBypassState
-}
-
-type trackFxBypassState struct {
-	trackNum int64
-	fxNum    int64
-}
-
-func (ep *trackFxBypass) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/bypass",
-		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackFxBypass) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/bypass",
-		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackFxOpenui struct {
-	device *devices.OscDevice
-	state  trackFxOpenuiState
-}
-
-type trackFxOpenuiState struct {
-	trackNum int64
-	fxNum    int64
-}
-
-func (ep *trackFxOpenui) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/openui",
-		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackFxOpenui) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/openui",
-		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackFxPresetplus struct {
-	device *devices.OscDevice
-	state  trackFxPresetplusState
-}
-
-type trackFxPresetplusState struct {
-	trackNum int64
-	fxNum    int64
-}
-
-func (ep *trackFxPresetplus) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/presetplus",
-		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackFxPresetplus) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/presetplus",
-		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackFxWetdry struct {
-	device *devices.OscDevice
-	Str    *trackFxWetdryStr
-	state  trackFxWetdryState
-}
-
-type trackFxWetdryState struct {
-	trackNum int64
-	fxNum    int64
-}
-
-func (ep *trackFxWetdry) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/wetdry",
-		ep.state.trackNum,
-		ep.state.fxNum,
 	)
 
 	ep.device.BindFloat(addr, callback)
 }
 
-func (ep *trackFxWetdry) Set(val float64) error {
+func (ep *trackVuL) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/wetdry",
+		"/track/%d/vu/L",
 		ep.state.trackNum,
-		ep.state.fxNum,
 	)
 
 	return ep.device.SetFloat(addr, val)
 }
 
-type trackFxWetdryStr struct {
+type trackVuR struct {
 	device *devices.OscDevice
-	state  trackFxWetdryStrState
+	state  trackVuRState
 }
 
-type trackFxWetdryStrState struct {
+type trackVuRState struct {
 	trackNum int64
-	fxNum    int64
 }
 
-func (ep *trackFxWetdryStr) Bind(callback func(string) error) {
+func (ep *trackVuR) Bind(callback func(float64) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/wetdry/str",
+		"/track/%d/vu/R",
 		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackFxWetdryStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/wetdry/str",
-		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackFxName struct {
-	device *devices.OscDevice
-	state  trackFxNameState
-}
-
-type trackFxNameState struct {
-	trackNum int64
-	fxNum    int64
-}
-
-func (ep *trackFxName) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/name",
-		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackFxName) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/name",
-		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackFxNumber struct {
-	device *devices.OscDevice
-	Str    *trackFxNumberStr
-	state  trackFxNumberState
-}
-
-type trackFxNumberState struct {
-	trackNum int64
-	fxNum    int64
-}
-
-type trackFxNumberStr struct {
-	device *devices.OscDevice
-	state  trackFxNumberStrState
-}
-
-type trackFxNumberStrState struct {
-	trackNum int64
-	fxNum    int64
-}
-
-func (ep *trackFxNumberStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/number/str",
-		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackFxNumberStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/number/str",
-		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackFxPreset struct {
-	device *devices.OscDevice
-	state  trackFxPresetState
-}
-
-type trackFxPresetState struct {
-	trackNum int64
-	fxNum    int64
-}
-
-func (ep *trackFxPreset) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/preset",
-		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackFxPreset) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/preset",
-		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackFxPresetminus struct {
-	device *devices.OscDevice
-	state  trackFxPresetminusState
-}
-
-type trackFxPresetminusState struct {
-	trackNum int64
-	fxNum    int64
-}
-
-func (ep *trackFxPresetminus) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/presetminus",
-		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackFxPresetminus) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/presetminus",
-		ep.state.trackNum,
-		ep.state.fxNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackFxFxparam struct {
-	device *devices.OscDevice
-	Value  *trackFxFxparamValue
-	state  trackFxFxparamState
-}
-
-type trackFxFxparamState struct {
-	trackNum   int64
-	fxNum      int64
-	fxparamNum int64
-}
-
-type trackFxFxparamValue struct {
-	device *devices.OscDevice
-	state  trackFxFxparamValueState
-}
-
-type trackFxFxparamValueState struct {
-	trackNum   int64
-	fxNum      int64
-	fxparamNum int64
-}
-
-func (ep *trackFxFxparamValue) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/fxparam/%d/value",
-		ep.state.trackNum,
-		ep.state.fxNum,
-		ep.state.fxparamNum,
 	)
 
 	ep.device.BindFloat(addr, callback)
 }
 
-func (ep *trackFxFxparamValue) Set(val float64) error {
+func (ep *trackVuR) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/track/%d/fx/%d/fxparam/%d/value",
+		"/track/%d/vu/R",
 		ep.state.trackNum,
-		ep.state.fxNum,
-		ep.state.fxparamNum,
 	)
 
 	return ep.device.SetFloat(addr, val)
@@ -4685,6 +3303,171 @@ func (ep *trackVolumeTouch) Set(val bool) error {
 	return ep.device.SetBool(addr, val)
 }
 
+type trackPan struct {
+	device *devices.OscDevice
+	Str    *trackPanStr
+	Touch  *trackPanTouch
+	state  trackPanState
+}
+
+type trackPanState struct {
+	trackNum int64
+}
+
+func (ep *trackPan) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/pan",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *trackPan) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/track/%d/pan",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type trackPanStr struct {
+	device *devices.OscDevice
+	state  trackPanStrState
+}
+
+type trackPanStrState struct {
+	trackNum int64
+}
+
+func (ep *trackPanStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/pan/str",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackPanStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/pan/str",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackPanTouch struct {
+	device *devices.OscDevice
+	state  trackPanTouchState
+}
+
+type trackPanTouchState struct {
+	trackNum int64
+}
+
+func (ep *trackPanTouch) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/pan/touch",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackPanTouch) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/pan/touch",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackPan2 struct {
+	device *devices.OscDevice
+	Str    *trackPan2Str
+	state  trackPan2State
+}
+
+type trackPan2State struct {
+	trackNum int64
+}
+
+func (ep *trackPan2) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/pan2",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *trackPan2) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/track/%d/pan2",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type trackPan2Str struct {
+	device *devices.OscDevice
+	state  trackPan2StrState
+}
+
+type trackPan2StrState struct {
+	trackNum int64
+}
+
+func (ep *trackPan2Str) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/pan2/str",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackPan2Str) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/pan2/str",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackPanmode struct {
+	device *devices.OscDevice
+	state  trackPanmodeState
+}
+
+type trackPanmodeState struct {
+	trackNum int64
+}
+
+func (ep *trackPanmode) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/panmode",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackPanmode) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/panmode",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
 type trackSend struct {
 	device *devices.OscDevice
 	Name   *trackSendName
@@ -4696,6 +3479,36 @@ type trackSend struct {
 type trackSendState struct {
 	trackNum int64
 	sendNum  int64
+}
+
+type trackSendName struct {
+	device *devices.OscDevice
+	state  trackSendNameState
+}
+
+type trackSendNameState struct {
+	trackNum int64
+	sendNum  int64
+}
+
+func (ep *trackSendName) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/send/%d/name",
+		ep.state.trackNum,
+		ep.state.sendNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackSendName) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/send/%d/name",
+		ep.state.trackNum,
+		ep.state.sendNum,
+	)
+
+	return ep.device.SetString(addr, val)
 }
 
 type trackSendVolume struct {
@@ -4820,31 +3633,193 @@ func (ep *trackSendPanStr) Set(val string) error {
 	return ep.device.SetString(addr, val)
 }
 
-type trackSendName struct {
+type trackRecv struct {
 	device *devices.OscDevice
-	state  trackSendNameState
+	Name   *trackRecvName
+	Volume *trackRecvVolume
+	Pan    *trackRecvPan
+	state  trackRecvState
 }
 
-type trackSendNameState struct {
+type trackRecvState struct {
 	trackNum int64
-	sendNum  int64
+	recvNum  int64
 }
 
-func (ep *trackSendName) Bind(callback func(string) error) {
+type trackRecvName struct {
+	device *devices.OscDevice
+	state  trackRecvNameState
+}
+
+type trackRecvNameState struct {
+	trackNum int64
+	recvNum  int64
+}
+
+func (ep *trackRecvName) Bind(callback func(string) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/send/%d/name",
+		"/track/%d/recv/%d/name",
 		ep.state.trackNum,
-		ep.state.sendNum,
+		ep.state.recvNum,
 	)
 
 	ep.device.BindString(addr, callback)
 }
 
-func (ep *trackSendName) Set(val string) error {
+func (ep *trackRecvName) Set(val string) error {
 	addr := fmt.Sprintf(
-		"/track/%d/send/%d/name",
+		"/track/%d/recv/%d/name",
 		ep.state.trackNum,
-		ep.state.sendNum,
+		ep.state.recvNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackRecvVolume struct {
+	device *devices.OscDevice
+	Str    *trackRecvVolumeStr
+	state  trackRecvVolumeState
+}
+
+type trackRecvVolumeState struct {
+	trackNum int64
+	recvNum  int64
+}
+
+func (ep *trackRecvVolume) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/recv/%d/volume",
+		ep.state.trackNum,
+		ep.state.recvNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *trackRecvVolume) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/track/%d/recv/%d/volume",
+		ep.state.trackNum,
+		ep.state.recvNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type trackRecvVolumeStr struct {
+	device *devices.OscDevice
+	state  trackRecvVolumeStrState
+}
+
+type trackRecvVolumeStrState struct {
+	trackNum int64
+	recvNum  int64
+}
+
+func (ep *trackRecvVolumeStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/recv/%d/volume/str",
+		ep.state.trackNum,
+		ep.state.recvNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackRecvVolumeStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/recv/%d/volume/str",
+		ep.state.trackNum,
+		ep.state.recvNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackRecvPan struct {
+	device *devices.OscDevice
+	Str    *trackRecvPanStr
+	state  trackRecvPanState
+}
+
+type trackRecvPanState struct {
+	trackNum int64
+	recvNum  int64
+}
+
+func (ep *trackRecvPan) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/recv/%d/pan",
+		ep.state.trackNum,
+		ep.state.recvNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *trackRecvPan) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/track/%d/recv/%d/pan",
+		ep.state.trackNum,
+		ep.state.recvNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type trackRecvPanStr struct {
+	device *devices.OscDevice
+	state  trackRecvPanStrState
+}
+
+type trackRecvPanStrState struct {
+	trackNum int64
+	recvNum  int64
+}
+
+func (ep *trackRecvPanStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/recv/%d/pan/str",
+		ep.state.trackNum,
+		ep.state.recvNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackRecvPanStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/recv/%d/pan/str",
+		ep.state.trackNum,
+		ep.state.recvNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackAuto struct {
+	device *devices.OscDevice
+	state  trackAutoState
+}
+
+type trackAutoState struct {
+	trackNum int64
+}
+
+func (ep *trackAuto) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/auto",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackAuto) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/auto",
+		ep.state.trackNum,
 	)
 
 	return ep.device.SetString(addr, val)
@@ -4871,6 +3846,60 @@ func (ep *trackAutotrim) Bind(callback func(bool) error) {
 func (ep *trackAutotrim) Set(val bool) error {
 	addr := fmt.Sprintf(
 		"/track/%d/autotrim",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackAutoread struct {
+	device *devices.OscDevice
+	state  trackAutoreadState
+}
+
+type trackAutoreadState struct {
+	trackNum int64
+}
+
+func (ep *trackAutoread) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/autoread",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackAutoread) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/autoread",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackAutolatch struct {
+	device *devices.OscDevice
+	state  trackAutolatchState
+}
+
+type trackAutolatchState struct {
+	trackNum int64
+}
+
+func (ep *trackAutolatch) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/autolatch",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackAutolatch) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/autolatch",
 		ep.state.trackNum,
 	)
 
@@ -4904,17 +3933,403 @@ func (ep *trackAutotouch) Set(val bool) error {
 	return ep.device.SetBool(addr, val)
 }
 
+type trackAutowrite struct {
+	device *devices.OscDevice
+	state  trackAutowriteState
+}
+
+type trackAutowriteState struct {
+	trackNum int64
+}
+
+func (ep *trackAutowrite) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/autowrite",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackAutowrite) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/autowrite",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackFx struct {
+	device      *devices.OscDevice
+	Name        *trackFxName
+	Number      *trackFxNumber
+	Bypass      *trackFxBypass
+	Openui      *trackFxOpenui
+	Preset      *trackFxPreset
+	Presetminus *trackFxPresetminus
+	Presetplus  *trackFxPresetplus
+	Wetdry      *trackFxWetdry
+	state       trackFxState
+}
+
+type trackFxState struct {
+	trackNum int64
+	fxNum    int64
+}
+
+func (trackFx *trackFx) Fxparam(fxparamNum int64) *trackFxFxparam {
+	return &trackFxFxparam{
+		state: trackFxFxparamState{
+			trackNum:   trackFx.state.trackNum,
+			fxNum:      trackFx.state.fxNum,
+			fxparamNum: fxparamNum,
+		},
+		device: trackFx.device,
+		Value: &trackFxFxparamValue{
+			device: trackFx.device,
+		},
+	}
+}
+
+type trackFxName struct {
+	device *devices.OscDevice
+	state  trackFxNameState
+}
+
+type trackFxNameState struct {
+	trackNum int64
+	fxNum    int64
+}
+
+func (ep *trackFxName) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/name",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackFxName) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/name",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackFxNumber struct {
+	device *devices.OscDevice
+	Str    *trackFxNumberStr
+	state  trackFxNumberState
+}
+
+type trackFxNumberState struct {
+	trackNum int64
+	fxNum    int64
+}
+
+type trackFxNumberStr struct {
+	device *devices.OscDevice
+	state  trackFxNumberStrState
+}
+
+type trackFxNumberStrState struct {
+	trackNum int64
+	fxNum    int64
+}
+
+func (ep *trackFxNumberStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/number/str",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackFxNumberStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/number/str",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackFxBypass struct {
+	device *devices.OscDevice
+	state  trackFxBypassState
+}
+
+type trackFxBypassState struct {
+	trackNum int64
+	fxNum    int64
+}
+
+func (ep *trackFxBypass) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/bypass",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackFxBypass) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/bypass",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackFxOpenui struct {
+	device *devices.OscDevice
+	state  trackFxOpenuiState
+}
+
+type trackFxOpenuiState struct {
+	trackNum int64
+	fxNum    int64
+}
+
+func (ep *trackFxOpenui) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/openui",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackFxOpenui) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/openui",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackFxPreset struct {
+	device *devices.OscDevice
+	state  trackFxPresetState
+}
+
+type trackFxPresetState struct {
+	trackNum int64
+	fxNum    int64
+}
+
+func (ep *trackFxPreset) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/preset",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackFxPreset) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/preset",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackFxPresetminus struct {
+	device *devices.OscDevice
+	state  trackFxPresetminusState
+}
+
+type trackFxPresetminusState struct {
+	trackNum int64
+	fxNum    int64
+}
+
+func (ep *trackFxPresetminus) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/presetminus",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackFxPresetminus) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/presetminus",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackFxPresetplus struct {
+	device *devices.OscDevice
+	state  trackFxPresetplusState
+}
+
+type trackFxPresetplusState struct {
+	trackNum int64
+	fxNum    int64
+}
+
+func (ep *trackFxPresetplus) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/presetplus",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackFxPresetplus) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/presetplus",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackFxWetdry struct {
+	device *devices.OscDevice
+	Str    *trackFxWetdryStr
+	state  trackFxWetdryState
+}
+
+type trackFxWetdryState struct {
+	trackNum int64
+	fxNum    int64
+}
+
+func (ep *trackFxWetdry) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/wetdry",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *trackFxWetdry) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/wetdry",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type trackFxWetdryStr struct {
+	device *devices.OscDevice
+	state  trackFxWetdryStrState
+}
+
+type trackFxWetdryStrState struct {
+	trackNum int64
+	fxNum    int64
+}
+
+func (ep *trackFxWetdryStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/wetdry/str",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackFxWetdryStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/wetdry/str",
+		ep.state.trackNum,
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackFxFxparam struct {
+	device *devices.OscDevice
+	Value  *trackFxFxparamValue
+	state  trackFxFxparamState
+}
+
+type trackFxFxparamState struct {
+	trackNum   int64
+	fxNum      int64
+	fxparamNum int64
+}
+
+type trackFxFxparamValue struct {
+	device *devices.OscDevice
+	state  trackFxFxparamValueState
+}
+
+type trackFxFxparamValueState struct {
+	trackNum   int64
+	fxNum      int64
+	fxparamNum int64
+}
+
+func (ep *trackFxFxparamValue) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/fxparam/%d/value",
+		ep.state.trackNum,
+		ep.state.fxNum,
+		ep.state.fxparamNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *trackFxFxparamValue) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fx/%d/fxparam/%d/value",
+		ep.state.trackNum,
+		ep.state.fxNum,
+		ep.state.fxparamNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
 type trackFxeq struct {
 	device      *devices.OscDevice
 	Bypass      *trackFxeqBypass
 	Openui      *trackFxeqOpenui
 	Preset      *trackFxeqPreset
 	Presetminus *trackFxeqPresetminus
+	Presetplus  *trackFxeqPresetplus
 	Gain        *trackFxeqGain
 	Wetdry      *trackFxeqWetdry
-	Loshelf     *trackFxeqLoshelf
-	Presetplus  *trackFxeqPresetplus
 	Hipass      *trackFxeqHipass
+	Loshelf     *trackFxeqLoshelf
 	Notch       *trackFxeqNotch
 	Hishelf     *trackFxeqHishelf
 	Lopass      *trackFxeqLopass
@@ -4932,445 +4347,34 @@ func (trackFxeq *trackFxeq) Band(bandNum int64) *trackFxeqBand {
 			bandNum:  bandNum,
 		},
 		device: trackFxeq.device,
+		Freq: &trackFxeqBandFreq{
+			device: trackFxeq.device,
+			Hz: &trackFxeqBandFreqHz{
+				device: trackFxeq.device,
+			},
+			Str: &trackFxeqBandFreqStr{
+				device: trackFxeq.device,
+			},
+		},
+		Gain: &trackFxeqBandGain{
+			device: trackFxeq.device,
+			Db: &trackFxeqBandGainDb{
+				device: trackFxeq.device,
+			},
+			Str: &trackFxeqBandGainStr{
+				device: trackFxeq.device,
+			},
+		},
+		Q: &trackFxeqBandQ{
+			device: trackFxeq.device,
+			Oct: &trackFxeqBandQOct{
+				device: trackFxeq.device,
+			},
+			Str: &trackFxeqBandQStr{
+				device: trackFxeq.device,
+			},
+		},
 	}
-}
-
-type trackFxeqHishelf struct {
-	device *devices.OscDevice
-	Freq   *trackFxeqHishelfFreq
-	Gain   *trackFxeqHishelfGain
-	Q      *trackFxeqHishelfQ
-	state  trackFxeqHishelfState
-}
-
-type trackFxeqHishelfState struct {
-	trackNum int64
-}
-
-type trackFxeqHishelfFreq struct {
-	device *devices.OscDevice
-	Hz     *trackFxeqHishelfFreqHz
-	Str    *trackFxeqHishelfFreqStr
-	state  trackFxeqHishelfFreqState
-}
-
-type trackFxeqHishelfFreqState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqHishelfFreq) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/freq",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *trackFxeqHishelfFreq) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/freq",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type trackFxeqHishelfFreqHz struct {
-	device *devices.OscDevice
-	state  trackFxeqHishelfFreqHzState
-}
-
-type trackFxeqHishelfFreqHzState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqHishelfFreqHz) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/freq/hz",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *trackFxeqHishelfFreqHz) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/freq/hz",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type trackFxeqHishelfFreqStr struct {
-	device *devices.OscDevice
-	state  trackFxeqHishelfFreqStrState
-}
-
-type trackFxeqHishelfFreqStrState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqHishelfFreqStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/freq/str",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackFxeqHishelfFreqStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/freq/str",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackFxeqHishelfGain struct {
-	device *devices.OscDevice
-	Db     *trackFxeqHishelfGainDb
-	Str    *trackFxeqHishelfGainStr
-	state  trackFxeqHishelfGainState
-}
-
-type trackFxeqHishelfGainState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqHishelfGain) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/gain",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *trackFxeqHishelfGain) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/gain",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type trackFxeqHishelfGainDb struct {
-	device *devices.OscDevice
-	state  trackFxeqHishelfGainDbState
-}
-
-type trackFxeqHishelfGainDbState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqHishelfGainDb) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/gain/db",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *trackFxeqHishelfGainDb) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/gain/db",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type trackFxeqHishelfGainStr struct {
-	device *devices.OscDevice
-	state  trackFxeqHishelfGainStrState
-}
-
-type trackFxeqHishelfGainStrState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqHishelfGainStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/gain/str",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackFxeqHishelfGainStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/gain/str",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackFxeqHishelfQ struct {
-	device *devices.OscDevice
-	Oct    *trackFxeqHishelfQOct
-	Str    *trackFxeqHishelfQStr
-	state  trackFxeqHishelfQState
-}
-
-type trackFxeqHishelfQState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqHishelfQ) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/q",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *trackFxeqHishelfQ) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/q",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type trackFxeqHishelfQOct struct {
-	device *devices.OscDevice
-	state  trackFxeqHishelfQOctState
-}
-
-type trackFxeqHishelfQOctState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqHishelfQOct) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/q/oct",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *trackFxeqHishelfQOct) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/q/oct",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type trackFxeqHishelfQStr struct {
-	device *devices.OscDevice
-	state  trackFxeqHishelfQStrState
-}
-
-type trackFxeqHishelfQStrState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqHishelfQStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/q/str",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackFxeqHishelfQStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hishelf/q/str",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackFxeqLopass struct {
-	device *devices.OscDevice
-	Freq   *trackFxeqLopassFreq
-	Q      *trackFxeqLopassQ
-	state  trackFxeqLopassState
-}
-
-type trackFxeqLopassState struct {
-	trackNum int64
-}
-
-type trackFxeqLopassFreq struct {
-	device *devices.OscDevice
-	Hz     *trackFxeqLopassFreqHz
-	Str    *trackFxeqLopassFreqStr
-	state  trackFxeqLopassFreqState
-}
-
-type trackFxeqLopassFreqState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqLopassFreq) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/lopass/freq",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *trackFxeqLopassFreq) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/lopass/freq",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type trackFxeqLopassFreqHz struct {
-	device *devices.OscDevice
-	state  trackFxeqLopassFreqHzState
-}
-
-type trackFxeqLopassFreqHzState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqLopassFreqHz) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/lopass/freq/hz",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *trackFxeqLopassFreqHz) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/lopass/freq/hz",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type trackFxeqLopassFreqStr struct {
-	device *devices.OscDevice
-	state  trackFxeqLopassFreqStrState
-}
-
-type trackFxeqLopassFreqStrState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqLopassFreqStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/lopass/freq/str",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackFxeqLopassFreqStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/lopass/freq/str",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackFxeqLopassQ struct {
-	device *devices.OscDevice
-	Oct    *trackFxeqLopassQOct
-	Str    *trackFxeqLopassQStr
-	state  trackFxeqLopassQState
-}
-
-type trackFxeqLopassQState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqLopassQ) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/lopass/q",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *trackFxeqLopassQ) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/lopass/q",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type trackFxeqLopassQOct struct {
-	device *devices.OscDevice
-	state  trackFxeqLopassQOctState
-}
-
-type trackFxeqLopassQOctState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqLopassQOct) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/lopass/q/oct",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *trackFxeqLopassQOct) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/lopass/q/oct",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type trackFxeqLopassQStr struct {
-	device *devices.OscDevice
-	state  trackFxeqLopassQStrState
-}
-
-type trackFxeqLopassQStrState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqLopassQStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/lopass/q/str",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackFxeqLopassQStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/lopass/q/str",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetString(addr, val)
 }
 
 type trackFxeqBypass struct {
@@ -5481,6 +4485,33 @@ func (ep *trackFxeqPresetminus) Set(val string) error {
 	return ep.device.SetString(addr, val)
 }
 
+type trackFxeqPresetplus struct {
+	device *devices.OscDevice
+	state  trackFxeqPresetplusState
+}
+
+type trackFxeqPresetplusState struct {
+	trackNum int64
+}
+
+func (ep *trackFxeqPresetplus) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/presetplus",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackFxeqPresetplus) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/presetplus",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
 type trackFxeqGain struct {
 	device *devices.OscDevice
 	Db     *trackFxeqGainDb
@@ -5585,6 +4616,183 @@ func (ep *trackFxeqWetdryStr) Bind(callback func(string) error) {
 func (ep *trackFxeqWetdryStr) Set(val string) error {
 	addr := fmt.Sprintf(
 		"/track/%d/fxeq/wetdry/str",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackFxeqHipass struct {
+	device *devices.OscDevice
+	Freq   *trackFxeqHipassFreq
+	Q      *trackFxeqHipassQ
+	state  trackFxeqHipassState
+}
+
+type trackFxeqHipassState struct {
+	trackNum int64
+}
+
+type trackFxeqHipassFreq struct {
+	device *devices.OscDevice
+	Hz     *trackFxeqHipassFreqHz
+	Str    *trackFxeqHipassFreqStr
+	state  trackFxeqHipassFreqState
+}
+
+type trackFxeqHipassFreqState struct {
+	trackNum int64
+}
+
+func (ep *trackFxeqHipassFreq) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/hipass/freq",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *trackFxeqHipassFreq) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/hipass/freq",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type trackFxeqHipassFreqHz struct {
+	device *devices.OscDevice
+	state  trackFxeqHipassFreqHzState
+}
+
+type trackFxeqHipassFreqHzState struct {
+	trackNum int64
+}
+
+func (ep *trackFxeqHipassFreqHz) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/hipass/freq/hz",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *trackFxeqHipassFreqHz) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/hipass/freq/hz",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type trackFxeqHipassFreqStr struct {
+	device *devices.OscDevice
+	state  trackFxeqHipassFreqStrState
+}
+
+type trackFxeqHipassFreqStrState struct {
+	trackNum int64
+}
+
+func (ep *trackFxeqHipassFreqStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/hipass/freq/str",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackFxeqHipassFreqStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/hipass/freq/str",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackFxeqHipassQ struct {
+	device *devices.OscDevice
+	Oct    *trackFxeqHipassQOct
+	Str    *trackFxeqHipassQStr
+	state  trackFxeqHipassQState
+}
+
+type trackFxeqHipassQState struct {
+	trackNum int64
+}
+
+func (ep *trackFxeqHipassQ) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/hipass/q",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *trackFxeqHipassQ) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/hipass/q",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type trackFxeqHipassQOct struct {
+	device *devices.OscDevice
+	state  trackFxeqHipassQOctState
+}
+
+type trackFxeqHipassQOctState struct {
+	trackNum int64
+}
+
+func (ep *trackFxeqHipassQOct) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/hipass/q/oct",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *trackFxeqHipassQOct) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/hipass/q/oct",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type trackFxeqHipassQStr struct {
+	device *devices.OscDevice
+	state  trackFxeqHipassQStrState
+}
+
+type trackFxeqHipassQStrState struct {
+	trackNum int64
+}
+
+func (ep *trackFxeqHipassQStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/hipass/q/str",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackFxeqHipassQStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/hipass/q/str",
 		ep.state.trackNum,
 	)
 
@@ -6141,210 +5349,6 @@ func (ep *trackFxeqBandQStr) Set(val string) error {
 	return ep.device.SetString(addr, val)
 }
 
-type trackFxeqPresetplus struct {
-	device *devices.OscDevice
-	state  trackFxeqPresetplusState
-}
-
-type trackFxeqPresetplusState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqPresetplus) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/presetplus",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackFxeqPresetplus) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/presetplus",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackFxeqHipass struct {
-	device *devices.OscDevice
-	Freq   *trackFxeqHipassFreq
-	Q      *trackFxeqHipassQ
-	state  trackFxeqHipassState
-}
-
-type trackFxeqHipassState struct {
-	trackNum int64
-}
-
-type trackFxeqHipassFreq struct {
-	device *devices.OscDevice
-	Hz     *trackFxeqHipassFreqHz
-	Str    *trackFxeqHipassFreqStr
-	state  trackFxeqHipassFreqState
-}
-
-type trackFxeqHipassFreqState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqHipassFreq) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hipass/freq",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *trackFxeqHipassFreq) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hipass/freq",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type trackFxeqHipassFreqHz struct {
-	device *devices.OscDevice
-	state  trackFxeqHipassFreqHzState
-}
-
-type trackFxeqHipassFreqHzState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqHipassFreqHz) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hipass/freq/hz",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *trackFxeqHipassFreqHz) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hipass/freq/hz",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type trackFxeqHipassFreqStr struct {
-	device *devices.OscDevice
-	state  trackFxeqHipassFreqStrState
-}
-
-type trackFxeqHipassFreqStrState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqHipassFreqStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hipass/freq/str",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackFxeqHipassFreqStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hipass/freq/str",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackFxeqHipassQ struct {
-	device *devices.OscDevice
-	Oct    *trackFxeqHipassQOct
-	Str    *trackFxeqHipassQStr
-	state  trackFxeqHipassQState
-}
-
-type trackFxeqHipassQState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqHipassQ) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hipass/q",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *trackFxeqHipassQ) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hipass/q",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type trackFxeqHipassQOct struct {
-	device *devices.OscDevice
-	state  trackFxeqHipassQOctState
-}
-
-type trackFxeqHipassQOctState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqHipassQOct) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hipass/q/oct",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *trackFxeqHipassQOct) Set(val float64) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hipass/q/oct",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type trackFxeqHipassQStr struct {
-	device *devices.OscDevice
-	state  trackFxeqHipassQStrState
-}
-
-type trackFxeqHipassQStrState struct {
-	trackNum int64
-}
-
-func (ep *trackFxeqHipassQStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hipass/q/str",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackFxeqHipassQStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/fxeq/hipass/q/str",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
 type trackFxeqNotch struct {
 	device *devices.OscDevice
 	Freq   *trackFxeqNotchFreq
@@ -6606,641 +5610,1389 @@ func (ep *trackFxeqNotchQStr) Set(val string) error {
 	return ep.device.SetString(addr, val)
 }
 
-type trackSelect struct {
+type trackFxeqHishelf struct {
 	device *devices.OscDevice
-	state  trackSelectState
+	Freq   *trackFxeqHishelfFreq
+	Gain   *trackFxeqHishelfGain
+	Q      *trackFxeqHishelfQ
+	state  trackFxeqHishelfState
 }
 
-type trackSelectState struct {
+type trackFxeqHishelfState struct {
 	trackNum int64
 }
 
-func (ep *trackSelect) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/select",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackSelect) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/select",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackVu struct {
+type trackFxeqHishelfFreq struct {
 	device *devices.OscDevice
-	L      *trackVuL
-	R      *trackVuR
-	state  trackVuState
+	Hz     *trackFxeqHishelfFreqHz
+	Str    *trackFxeqHishelfFreqStr
+	state  trackFxeqHishelfFreqState
 }
 
-type trackVuState struct {
+type trackFxeqHishelfFreqState struct {
 	trackNum int64
 }
 
-func (ep *trackVu) Bind(callback func(float64) error) {
+func (ep *trackFxeqHishelfFreq) Bind(callback func(float64) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/vu",
+		"/track/%d/fxeq/hishelf/freq",
 		ep.state.trackNum,
 	)
 
 	ep.device.BindFloat(addr, callback)
 }
 
-func (ep *trackVu) Set(val float64) error {
+func (ep *trackFxeqHishelfFreq) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/track/%d/vu",
+		"/track/%d/fxeq/hishelf/freq",
 		ep.state.trackNum,
 	)
 
 	return ep.device.SetFloat(addr, val)
 }
 
-type trackVuL struct {
+type trackFxeqHishelfFreqHz struct {
 	device *devices.OscDevice
-	state  trackVuLState
+	state  trackFxeqHishelfFreqHzState
 }
 
-type trackVuLState struct {
+type trackFxeqHishelfFreqHzState struct {
 	trackNum int64
 }
 
-func (ep *trackVuL) Bind(callback func(float64) error) {
+func (ep *trackFxeqHishelfFreqHz) Bind(callback func(float64) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/vu/L",
+		"/track/%d/fxeq/hishelf/freq/hz",
 		ep.state.trackNum,
 	)
 
 	ep.device.BindFloat(addr, callback)
 }
 
-func (ep *trackVuL) Set(val float64) error {
+func (ep *trackFxeqHishelfFreqHz) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/track/%d/vu/L",
+		"/track/%d/fxeq/hishelf/freq/hz",
 		ep.state.trackNum,
 	)
 
 	return ep.device.SetFloat(addr, val)
 }
 
-type trackVuR struct {
+type trackFxeqHishelfFreqStr struct {
 	device *devices.OscDevice
-	state  trackVuRState
+	state  trackFxeqHishelfFreqStrState
 }
 
-type trackVuRState struct {
+type trackFxeqHishelfFreqStrState struct {
 	trackNum int64
 }
 
-func (ep *trackVuR) Bind(callback func(float64) error) {
+func (ep *trackFxeqHishelfFreqStr) Bind(callback func(string) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/vu/R",
+		"/track/%d/fxeq/hishelf/freq/str",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackFxeqHishelfFreqStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/hishelf/freq/str",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackFxeqHishelfGain struct {
+	device *devices.OscDevice
+	Db     *trackFxeqHishelfGainDb
+	Str    *trackFxeqHishelfGainStr
+	state  trackFxeqHishelfGainState
+}
+
+type trackFxeqHishelfGainState struct {
+	trackNum int64
+}
+
+func (ep *trackFxeqHishelfGain) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/hishelf/gain",
 		ep.state.trackNum,
 	)
 
 	ep.device.BindFloat(addr, callback)
 }
 
-func (ep *trackVuR) Set(val float64) error {
+func (ep *trackFxeqHishelfGain) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/track/%d/vu/R",
+		"/track/%d/fxeq/hishelf/gain",
 		ep.state.trackNum,
 	)
 
 	return ep.device.SetFloat(addr, val)
 }
 
-type trackPanmode struct {
+type trackFxeqHishelfGainDb struct {
 	device *devices.OscDevice
-	state  trackPanmodeState
+	state  trackFxeqHishelfGainDbState
 }
 
-type trackPanmodeState struct {
+type trackFxeqHishelfGainDbState struct {
 	trackNum int64
 }
 
-func (ep *trackPanmode) Bind(callback func(string) error) {
+func (ep *trackFxeqHishelfGainDb) Bind(callback func(float64) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/panmode",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackPanmode) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/panmode",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackAuto struct {
-	device *devices.OscDevice
-	state  trackAutoState
-}
-
-type trackAutoState struct {
-	trackNum int64
-}
-
-func (ep *trackAuto) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/auto",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackAuto) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/auto",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackAutolatch struct {
-	device *devices.OscDevice
-	state  trackAutolatchState
-}
-
-type trackAutolatchState struct {
-	trackNum int64
-}
-
-func (ep *trackAutolatch) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/autolatch",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackAutolatch) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/autolatch",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackAutowrite struct {
-	device *devices.OscDevice
-	state  trackAutowriteState
-}
-
-type trackAutowriteState struct {
-	trackNum int64
-}
-
-func (ep *trackAutowrite) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/autowrite",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackAutowrite) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/autowrite",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackNumber struct {
-	device *devices.OscDevice
-	Str    *trackNumberStr
-	state  trackNumberState
-}
-
-type trackNumberState struct {
-	trackNum int64
-}
-
-type trackNumberStr struct {
-	device *devices.OscDevice
-	state  trackNumberStrState
-}
-
-type trackNumberStrState struct {
-	trackNum int64
-}
-
-func (ep *trackNumberStr) Bind(callback func(string) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/number/str",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackNumberStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/number/str",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackMute struct {
-	device *devices.OscDevice
-	Toggle *trackMuteToggle
-	state  trackMuteState
-}
-
-type trackMuteState struct {
-	trackNum int64
-}
-
-func (ep *trackMute) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/mute",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackMute) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/mute",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackMuteToggle struct {
-	device *devices.OscDevice
-	state  trackMuteToggleState
-}
-
-type trackMuteToggleState struct {
-	trackNum int64
-}
-
-func (ep *trackMuteToggle) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/mute/toggle",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackMuteToggle) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/mute/toggle",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackSolo struct {
-	device *devices.OscDevice
-	Toggle *trackSoloToggle
-	state  trackSoloState
-}
-
-type trackSoloState struct {
-	trackNum int64
-}
-
-func (ep *trackSolo) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/solo",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackSolo) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/solo",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackSoloToggle struct {
-	device *devices.OscDevice
-	state  trackSoloToggleState
-}
-
-type trackSoloToggleState struct {
-	trackNum int64
-}
-
-func (ep *trackSoloToggle) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/solo/toggle",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackSoloToggle) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/solo/toggle",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackRecarm struct {
-	device *devices.OscDevice
-	Toggle *trackRecarmToggle
-	state  trackRecarmState
-}
-
-type trackRecarmState struct {
-	trackNum int64
-}
-
-func (ep *trackRecarm) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/recarm",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackRecarm) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/recarm",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackRecarmToggle struct {
-	device *devices.OscDevice
-	state  trackRecarmToggleState
-}
-
-type trackRecarmToggleState struct {
-	trackNum int64
-}
-
-func (ep *trackRecarmToggle) Bind(callback func(bool) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/recarm/toggle",
-		ep.state.trackNum,
-	)
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *trackRecarmToggle) Set(val bool) error {
-	addr := fmt.Sprintf(
-		"/track/%d/recarm/toggle",
-		ep.state.trackNum,
-	)
-
-	return ep.device.SetBool(addr, val)
-}
-
-type trackPan2 struct {
-	device *devices.OscDevice
-	Str    *trackPan2Str
-	state  trackPan2State
-}
-
-type trackPan2State struct {
-	trackNum int64
-}
-
-func (ep *trackPan2) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/pan2",
+		"/track/%d/fxeq/hishelf/gain/db",
 		ep.state.trackNum,
 	)
 
 	ep.device.BindFloat(addr, callback)
 }
 
-func (ep *trackPan2) Set(val float64) error {
+func (ep *trackFxeqHishelfGainDb) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/track/%d/pan2",
+		"/track/%d/fxeq/hishelf/gain/db",
 		ep.state.trackNum,
 	)
 
 	return ep.device.SetFloat(addr, val)
 }
 
-type trackPan2Str struct {
+type trackFxeqHishelfGainStr struct {
 	device *devices.OscDevice
-	state  trackPan2StrState
+	state  trackFxeqHishelfGainStrState
 }
 
-type trackPan2StrState struct {
+type trackFxeqHishelfGainStrState struct {
 	trackNum int64
 }
 
-func (ep *trackPan2Str) Bind(callback func(string) error) {
+func (ep *trackFxeqHishelfGainStr) Bind(callback func(string) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/pan2/str",
+		"/track/%d/fxeq/hishelf/gain/str",
 		ep.state.trackNum,
 	)
 
 	ep.device.BindString(addr, callback)
 }
 
-func (ep *trackPan2Str) Set(val string) error {
+func (ep *trackFxeqHishelfGainStr) Set(val string) error {
 	addr := fmt.Sprintf(
-		"/track/%d/pan2/str",
+		"/track/%d/fxeq/hishelf/gain/str",
 		ep.state.trackNum,
 	)
 
 	return ep.device.SetString(addr, val)
 }
 
-type trackRecv struct {
+type trackFxeqHishelfQ struct {
 	device *devices.OscDevice
-	Name   *trackRecvName
-	Volume *trackRecvVolume
-	Pan    *trackRecvPan
-	state  trackRecvState
+	Oct    *trackFxeqHishelfQOct
+	Str    *trackFxeqHishelfQStr
+	state  trackFxeqHishelfQState
 }
 
-type trackRecvState struct {
+type trackFxeqHishelfQState struct {
 	trackNum int64
-	recvNum  int64
 }
 
-type trackRecvName struct {
-	device *devices.OscDevice
-	state  trackRecvNameState
-}
-
-type trackRecvNameState struct {
-	trackNum int64
-	recvNum  int64
-}
-
-func (ep *trackRecvName) Bind(callback func(string) error) {
+func (ep *trackFxeqHishelfQ) Bind(callback func(float64) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/recv/%d/name",
+		"/track/%d/fxeq/hishelf/q",
 		ep.state.trackNum,
-		ep.state.recvNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackRecvName) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/recv/%d/name",
-		ep.state.trackNum,
-		ep.state.recvNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackRecvVolume struct {
-	device *devices.OscDevice
-	Str    *trackRecvVolumeStr
-	state  trackRecvVolumeState
-}
-
-type trackRecvVolumeState struct {
-	trackNum int64
-	recvNum  int64
-}
-
-func (ep *trackRecvVolume) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/recv/%d/volume",
-		ep.state.trackNum,
-		ep.state.recvNum,
 	)
 
 	ep.device.BindFloat(addr, callback)
 }
 
-func (ep *trackRecvVolume) Set(val float64) error {
+func (ep *trackFxeqHishelfQ) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/track/%d/recv/%d/volume",
+		"/track/%d/fxeq/hishelf/q",
 		ep.state.trackNum,
-		ep.state.recvNum,
 	)
 
 	return ep.device.SetFloat(addr, val)
 }
 
-type trackRecvVolumeStr struct {
+type trackFxeqHishelfQOct struct {
 	device *devices.OscDevice
-	state  trackRecvVolumeStrState
+	state  trackFxeqHishelfQOctState
 }
 
-type trackRecvVolumeStrState struct {
+type trackFxeqHishelfQOctState struct {
 	trackNum int64
-	recvNum  int64
 }
 
-func (ep *trackRecvVolumeStr) Bind(callback func(string) error) {
+func (ep *trackFxeqHishelfQOct) Bind(callback func(float64) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/recv/%d/volume/str",
+		"/track/%d/fxeq/hishelf/q/oct",
 		ep.state.trackNum,
-		ep.state.recvNum,
-	)
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *trackRecvVolumeStr) Set(val string) error {
-	addr := fmt.Sprintf(
-		"/track/%d/recv/%d/volume/str",
-		ep.state.trackNum,
-		ep.state.recvNum,
-	)
-
-	return ep.device.SetString(addr, val)
-}
-
-type trackRecvPan struct {
-	device *devices.OscDevice
-	Str    *trackRecvPanStr
-	state  trackRecvPanState
-}
-
-type trackRecvPanState struct {
-	trackNum int64
-	recvNum  int64
-}
-
-func (ep *trackRecvPan) Bind(callback func(float64) error) {
-	addr := fmt.Sprintf(
-		"/track/%d/recv/%d/pan",
-		ep.state.trackNum,
-		ep.state.recvNum,
 	)
 
 	ep.device.BindFloat(addr, callback)
 }
 
-func (ep *trackRecvPan) Set(val float64) error {
+func (ep *trackFxeqHishelfQOct) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/track/%d/recv/%d/pan",
+		"/track/%d/fxeq/hishelf/q/oct",
 		ep.state.trackNum,
-		ep.state.recvNum,
 	)
 
 	return ep.device.SetFloat(addr, val)
 }
 
-type trackRecvPanStr struct {
+type trackFxeqHishelfQStr struct {
 	device *devices.OscDevice
-	state  trackRecvPanStrState
+	state  trackFxeqHishelfQStrState
 }
 
-type trackRecvPanStrState struct {
+type trackFxeqHishelfQStrState struct {
 	trackNum int64
-	recvNum  int64
 }
 
-func (ep *trackRecvPanStr) Bind(callback func(string) error) {
+func (ep *trackFxeqHishelfQStr) Bind(callback func(string) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/recv/%d/pan/str",
+		"/track/%d/fxeq/hishelf/q/str",
 		ep.state.trackNum,
-		ep.state.recvNum,
 	)
 
 	ep.device.BindString(addr, callback)
 }
 
-func (ep *trackRecvPanStr) Set(val string) error {
+func (ep *trackFxeqHishelfQStr) Set(val string) error {
 	addr := fmt.Sprintf(
-		"/track/%d/recv/%d/pan/str",
+		"/track/%d/fxeq/hishelf/q/str",
 		ep.state.trackNum,
-		ep.state.recvNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackFxeqLopass struct {
+	device *devices.OscDevice
+	Freq   *trackFxeqLopassFreq
+	Q      *trackFxeqLopassQ
+	state  trackFxeqLopassState
+}
+
+type trackFxeqLopassState struct {
+	trackNum int64
+}
+
+type trackFxeqLopassFreq struct {
+	device *devices.OscDevice
+	Hz     *trackFxeqLopassFreqHz
+	Str    *trackFxeqLopassFreqStr
+	state  trackFxeqLopassFreqState
+}
+
+type trackFxeqLopassFreqState struct {
+	trackNum int64
+}
+
+func (ep *trackFxeqLopassFreq) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/lopass/freq",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *trackFxeqLopassFreq) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/lopass/freq",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type trackFxeqLopassFreqHz struct {
+	device *devices.OscDevice
+	state  trackFxeqLopassFreqHzState
+}
+
+type trackFxeqLopassFreqHzState struct {
+	trackNum int64
+}
+
+func (ep *trackFxeqLopassFreqHz) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/lopass/freq/hz",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *trackFxeqLopassFreqHz) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/lopass/freq/hz",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type trackFxeqLopassFreqStr struct {
+	device *devices.OscDevice
+	state  trackFxeqLopassFreqStrState
+}
+
+type trackFxeqLopassFreqStrState struct {
+	trackNum int64
+}
+
+func (ep *trackFxeqLopassFreqStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/lopass/freq/str",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackFxeqLopassFreqStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/lopass/freq/str",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackFxeqLopassQ struct {
+	device *devices.OscDevice
+	Oct    *trackFxeqLopassQOct
+	Str    *trackFxeqLopassQStr
+	state  trackFxeqLopassQState
+}
+
+type trackFxeqLopassQState struct {
+	trackNum int64
+}
+
+func (ep *trackFxeqLopassQ) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/lopass/q",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *trackFxeqLopassQ) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/lopass/q",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type trackFxeqLopassQOct struct {
+	device *devices.OscDevice
+	state  trackFxeqLopassQOctState
+}
+
+type trackFxeqLopassQOctState struct {
+	trackNum int64
+}
+
+func (ep *trackFxeqLopassQOct) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/lopass/q/oct",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *trackFxeqLopassQOct) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/lopass/q/oct",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type trackFxeqLopassQStr struct {
+	device *devices.OscDevice
+	state  trackFxeqLopassQStrState
+}
+
+type trackFxeqLopassQStrState struct {
+	trackNum int64
+}
+
+func (ep *trackFxeqLopassQStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/lopass/q/str",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackFxeqLopassQStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxeq/lopass/q/str",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackFxinst struct {
+	device      *devices.OscDevice
+	Name        *trackFxinstName
+	Bypass      *trackFxinstBypass
+	Openui      *trackFxinstOpenui
+	Preset      *trackFxinstPreset
+	Presetminus *trackFxinstPresetminus
+	Presetplus  *trackFxinstPresetplus
+	state       trackFxinstState
+}
+
+type trackFxinstState struct {
+	trackNum int64
+}
+
+type trackFxinstName struct {
+	device *devices.OscDevice
+	state  trackFxinstNameState
+}
+
+type trackFxinstNameState struct {
+	trackNum int64
+}
+
+func (ep *trackFxinstName) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxinst/name",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackFxinstName) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxinst/name",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackFxinstBypass struct {
+	device *devices.OscDevice
+	state  trackFxinstBypassState
+}
+
+type trackFxinstBypassState struct {
+	trackNum int64
+}
+
+func (ep *trackFxinstBypass) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxinst/bypass",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackFxinstBypass) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxinst/bypass",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackFxinstOpenui struct {
+	device *devices.OscDevice
+	state  trackFxinstOpenuiState
+}
+
+type trackFxinstOpenuiState struct {
+	trackNum int64
+}
+
+func (ep *trackFxinstOpenui) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxinst/openui",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackFxinstOpenui) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxinst/openui",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackFxinstPreset struct {
+	device *devices.OscDevice
+	state  trackFxinstPresetState
+}
+
+type trackFxinstPresetState struct {
+	trackNum int64
+}
+
+func (ep *trackFxinstPreset) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxinst/preset",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackFxinstPreset) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxinst/preset",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type trackFxinstPresetminus struct {
+	device *devices.OscDevice
+	state  trackFxinstPresetminusState
+}
+
+type trackFxinstPresetminusState struct {
+	trackNum int64
+}
+
+func (ep *trackFxinstPresetminus) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxinst/presetminus",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackFxinstPresetminus) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxinst/presetminus",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackFxinstPresetplus struct {
+	device *devices.OscDevice
+	state  trackFxinstPresetplusState
+}
+
+type trackFxinstPresetplusState struct {
+	trackNum int64
+}
+
+func (ep *trackFxinstPresetplus) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxinst/presetplus",
+		ep.state.trackNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *trackFxinstPresetplus) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxinst/presetplus",
+		ep.state.trackNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type trackFxinstparam struct {
+	device *devices.OscDevice
+	Value  *trackFxinstparamValue
+	state  trackFxinstparamState
+}
+
+type trackFxinstparamState struct {
+	trackNum       int64
+	fxinstparamNum int64
+}
+
+type trackFxinstparamValue struct {
+	device *devices.OscDevice
+	state  trackFxinstparamValueState
+}
+
+type trackFxinstparamValueState struct {
+	trackNum       int64
+	fxinstparamNum int64
+}
+
+func (ep *trackFxinstparamValue) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/fxinstparam/%d/value",
+		ep.state.trackNum,
+		ep.state.fxinstparamNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *trackFxinstparamValue) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/track/%d/fxinstparam/%d/value",
+		ep.state.trackNum,
+		ep.state.fxinstparamNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type fx struct {
+	device       *devices.OscDevice
+	Name         *fxName
+	Number       *fxNumber
+	Bypass       *fxBypass
+	Openui       *fxOpenui
+	Preset       *fxPreset
+	Presetminus  *fxPresetminus
+	Presetplus   *fxPresetplus
+	Wetdry       *fxWetdry
+	Last_touched *fxLast_touched
+	state        fxState
+}
+
+type fxState struct {
+	fxNum int64
+}
+
+func (fx *fx) Fxparam(fxparamNum int64) *fxFxparam {
+	return &fxFxparam{
+		state: fxFxparamState{
+			fxNum:      fx.state.fxNum,
+			fxparamNum: fxparamNum,
+		},
+		device: fx.device,
+		Name: &fxFxparamName{
+			device: fx.device,
+		},
+		Value: &fxFxparamValue{
+			device: fx.device,
+			Str: &fxFxparamValueStr{
+				device: fx.device,
+			},
+		},
+	}
+}
+
+type fxName struct {
+	device *devices.OscDevice
+	state  fxNameState
+}
+
+type fxNameState struct {
+	fxNum int64
+}
+
+func (ep *fxName) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/name",
+		ep.state.fxNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxName) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/name",
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type fxNumber struct {
+	device *devices.OscDevice
+	Str    *fxNumberStr
+	state  fxNumberState
+}
+
+type fxNumberState struct {
+	fxNum int64
+}
+
+type fxNumberStr struct {
+	device *devices.OscDevice
+	state  fxNumberStrState
+}
+
+type fxNumberStrState struct {
+	fxNum int64
+}
+
+func (ep *fxNumberStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/number/str",
+		ep.state.fxNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxNumberStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/number/str",
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type fxBypass struct {
+	device *devices.OscDevice
+	state  fxBypassState
+}
+
+type fxBypassState struct {
+	fxNum int64
+}
+
+func (ep *fxBypass) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/bypass",
+		ep.state.fxNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *fxBypass) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/bypass",
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type fxOpenui struct {
+	device *devices.OscDevice
+	state  fxOpenuiState
+}
+
+type fxOpenuiState struct {
+	fxNum int64
+}
+
+func (ep *fxOpenui) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/openui",
+		ep.state.fxNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *fxOpenui) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/openui",
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type fxPreset struct {
+	device *devices.OscDevice
+	state  fxPresetState
+}
+
+type fxPresetState struct {
+	fxNum int64
+}
+
+func (ep *fxPreset) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/preset",
+		ep.state.fxNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxPreset) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/preset",
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type fxPresetminus struct {
+	device *devices.OscDevice
+	state  fxPresetminusState
+}
+
+type fxPresetminusState struct {
+	fxNum int64
+}
+
+func (ep *fxPresetminus) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/presetminus",
+		ep.state.fxNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *fxPresetminus) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/presetminus",
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type fxPresetplus struct {
+	device *devices.OscDevice
+	state  fxPresetplusState
+}
+
+type fxPresetplusState struct {
+	fxNum int64
+}
+
+func (ep *fxPresetplus) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/presetplus",
+		ep.state.fxNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *fxPresetplus) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/presetplus",
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type fxFxparam struct {
+	device *devices.OscDevice
+	Name   *fxFxparamName
+	Value  *fxFxparamValue
+	state  fxFxparamState
+}
+
+type fxFxparamState struct {
+	fxNum      int64
+	fxparamNum int64
+}
+
+type fxFxparamName struct {
+	device *devices.OscDevice
+	state  fxFxparamNameState
+}
+
+type fxFxparamNameState struct {
+	fxNum      int64
+	fxparamNum int64
+}
+
+func (ep *fxFxparamName) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/fxparam/%d/name",
+		ep.state.fxNum,
+		ep.state.fxparamNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxFxparamName) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/fxparam/%d/name",
+		ep.state.fxNum,
+		ep.state.fxparamNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type fxFxparamValue struct {
+	device *devices.OscDevice
+	Str    *fxFxparamValueStr
+	state  fxFxparamValueState
+}
+
+type fxFxparamValueState struct {
+	fxNum      int64
+	fxparamNum int64
+}
+
+func (ep *fxFxparamValue) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/fxparam/%d/value",
+		ep.state.fxNum,
+		ep.state.fxparamNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxFxparamValue) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/fxparam/%d/value",
+		ep.state.fxNum,
+		ep.state.fxparamNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxFxparamValueStr struct {
+	device *devices.OscDevice
+	state  fxFxparamValueStrState
+}
+
+type fxFxparamValueStrState struct {
+	fxNum      int64
+	fxparamNum int64
+}
+
+func (ep *fxFxparamValueStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/fxparam/%d/value/str",
+		ep.state.fxNum,
+		ep.state.fxparamNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxFxparamValueStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/fxparam/%d/value/str",
+		ep.state.fxNum,
+		ep.state.fxparamNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type fxWetdry struct {
+	device *devices.OscDevice
+	Str    *fxWetdryStr
+	state  fxWetdryState
+}
+
+type fxWetdryState struct {
+	fxNum int64
+}
+
+func (ep *fxWetdry) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/wetdry",
+		ep.state.fxNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxWetdry) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/wetdry",
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxWetdryStr struct {
+	device *devices.OscDevice
+	state  fxWetdryStrState
+}
+
+type fxWetdryStrState struct {
+	fxNum int64
+}
+
+func (ep *fxWetdryStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/wetdry/str",
+		ep.state.fxNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxWetdryStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/wetdry/str",
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type fxLast_touched struct {
+	device *devices.OscDevice
+	Track  *fxLast_touchedTrack
+	Name   *fxLast_touchedName
+	Number *fxLast_touchedNumber
+	state  fxLast_touchedState
+}
+
+type fxLast_touchedState struct {
+	fxNum int64
+}
+
+type fxLast_touchedTrack struct {
+	device *devices.OscDevice
+	Name   *fxLast_touchedTrackName
+	Number *fxLast_touchedTrackNumber
+	state  fxLast_touchedTrackState
+}
+
+type fxLast_touchedTrackState struct {
+	fxNum int64
+}
+
+type fxLast_touchedTrackName struct {
+	device *devices.OscDevice
+	state  fxLast_touchedTrackNameState
+}
+
+type fxLast_touchedTrackNameState struct {
+	fxNum int64
+}
+
+func (ep *fxLast_touchedTrackName) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/last_touched/track/name",
+		ep.state.fxNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxLast_touchedTrackName) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/last_touched/track/name",
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type fxLast_touchedTrackNumber struct {
+	device *devices.OscDevice
+	Str    *fxLast_touchedTrackNumberStr
+	state  fxLast_touchedTrackNumberState
+}
+
+type fxLast_touchedTrackNumberState struct {
+	fxNum int64
+}
+
+type fxLast_touchedTrackNumberStr struct {
+	device *devices.OscDevice
+	state  fxLast_touchedTrackNumberStrState
+}
+
+type fxLast_touchedTrackNumberStrState struct {
+	fxNum int64
+}
+
+func (ep *fxLast_touchedTrackNumberStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/last_touched/track/number/str",
+		ep.state.fxNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxLast_touchedTrackNumberStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/last_touched/track/number/str",
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type fxLast_touchedName struct {
+	device *devices.OscDevice
+	state  fxLast_touchedNameState
+}
+
+type fxLast_touchedNameState struct {
+	fxNum int64
+}
+
+func (ep *fxLast_touchedName) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/last_touched/name",
+		ep.state.fxNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxLast_touchedName) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/last_touched/name",
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type fxLast_touchedNumber struct {
+	device *devices.OscDevice
+	Str    *fxLast_touchedNumberStr
+	state  fxLast_touchedNumberState
+}
+
+type fxLast_touchedNumberState struct {
+	fxNum int64
+}
+
+type fxLast_touchedNumberStr struct {
+	device *devices.OscDevice
+	state  fxLast_touchedNumberStrState
+}
+
+type fxLast_touchedNumberStrState struct {
+	fxNum int64
+}
+
+func (ep *fxLast_touchedNumberStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/fx/%d/last_touched/number/str",
+		ep.state.fxNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxLast_touchedNumberStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/fx/%d/last_touched/number/str",
+		ep.state.fxNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type fxparam struct {
+	device       *devices.OscDevice
+	Name         *fxparamName
+	Value        *fxparamValue
+	Last_touched *fxparamLast_touched
+	state        fxparamState
+}
+
+type fxparamState struct {
+	fxparamNum int64
+}
+
+type fxparamName struct {
+	device *devices.OscDevice
+	state  fxparamNameState
+}
+
+type fxparamNameState struct {
+	fxparamNum int64
+}
+
+func (ep *fxparamName) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/fxparam/%d/name",
+		ep.state.fxparamNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxparamName) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/fxparam/%d/name",
+		ep.state.fxparamNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type fxparamValue struct {
+	device *devices.OscDevice
+	Str    *fxparamValueStr
+	state  fxparamValueState
+}
+
+type fxparamValueState struct {
+	fxparamNum int64
+}
+
+func (ep *fxparamValue) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/fxparam/%d/value",
+		ep.state.fxparamNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxparamValue) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/fxparam/%d/value",
+		ep.state.fxparamNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxparamValueStr struct {
+	device *devices.OscDevice
+	state  fxparamValueStrState
+}
+
+type fxparamValueStrState struct {
+	fxparamNum int64
+}
+
+func (ep *fxparamValueStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/fxparam/%d/value/str",
+		ep.state.fxparamNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxparamValueStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/fxparam/%d/value/str",
+		ep.state.fxparamNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type fxparamLast_touched struct {
+	device *devices.OscDevice
+	Name   *fxparamLast_touchedName
+	Value  *fxparamLast_touchedValue
+	state  fxparamLast_touchedState
+}
+
+type fxparamLast_touchedState struct {
+	fxparamNum int64
+}
+
+type fxparamLast_touchedName struct {
+	device *devices.OscDevice
+	state  fxparamLast_touchedNameState
+}
+
+type fxparamLast_touchedNameState struct {
+	fxparamNum int64
+}
+
+func (ep *fxparamLast_touchedName) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/fxparam/%d/last_touched/name",
+		ep.state.fxparamNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxparamLast_touchedName) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/fxparam/%d/last_touched/name",
+		ep.state.fxparamNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type fxparamLast_touchedValue struct {
+	device *devices.OscDevice
+	Str    *fxparamLast_touchedValueStr
+	state  fxparamLast_touchedValueState
+}
+
+type fxparamLast_touchedValueState struct {
+	fxparamNum int64
+}
+
+func (ep *fxparamLast_touchedValue) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/fxparam/%d/last_touched/value",
+		ep.state.fxparamNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxparamLast_touchedValue) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/fxparam/%d/last_touched/value",
+		ep.state.fxparamNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxparamLast_touchedValueStr struct {
+	device *devices.OscDevice
+	state  fxparamLast_touchedValueStrState
+}
+
+type fxparamLast_touchedValueStrState struct {
+	fxparamNum int64
+}
+
+func (ep *fxparamLast_touchedValueStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/fxparam/%d/last_touched/value/str",
+		ep.state.fxparamNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxparamLast_touchedValueStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/fxparam/%d/last_touched/value/str",
+		ep.state.fxparamNum,
 	)
 
 	return ep.device.SetString(addr, val)
@@ -7248,18 +7000,18 @@ func (ep *trackRecvPanStr) Set(val string) error {
 
 type fxeq struct {
 	device      *devices.OscDevice
-	Lopass      *fxeqLopass
+	Bypass      *fxeqBypass
 	Openui      *fxeqOpenui
 	Preset      *fxeqPreset
 	Presetminus *fxeqPresetminus
 	Presetplus  *fxeqPresetplus
 	Gain        *fxeqGain
 	Wetdry      *fxeqWetdry
+	Hipass      *fxeqHipass
 	Loshelf     *fxeqLoshelf
 	Notch       *fxeqNotch
-	Bypass      *fxeqBypass
-	Hipass      *fxeqHipass
 	Hishelf     *fxeqHishelf
+	Lopass      *fxeqLopass
 }
 
 func (fxeq *fxeq) Band(bandNum int64) *fxeqBand {
@@ -7268,7 +7020,96 @@ func (fxeq *fxeq) Band(bandNum int64) *fxeqBand {
 			bandNum: bandNum,
 		},
 		device: fxeq.device,
+		Str: &fxeqBandStr{
+			device: fxeq.device,
+		},
+		Bypass: &fxeqBandBypass{
+			device: fxeq.device,
+		},
+		Freq: &fxeqBandFreq{
+			device: fxeq.device,
+			Hz: &fxeqBandFreqHz{
+				device: fxeq.device,
+			},
+			Str: &fxeqBandFreqStr{
+				device: fxeq.device,
+			},
+		},
+		Gain: &fxeqBandGain{
+			device: fxeq.device,
+			Db: &fxeqBandGainDb{
+				device: fxeq.device,
+			},
+			Str: &fxeqBandGainStr{
+				device: fxeq.device,
+			},
+		},
+		Q: &fxeqBandQ{
+			device: fxeq.device,
+			Oct: &fxeqBandQOct{
+				device: fxeq.device,
+			},
+			Str: &fxeqBandQStr{
+				device: fxeq.device,
+			},
+		},
 	}
+}
+
+type fxeqBypass struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqBypass) Bind(callback func(bool) error) {
+	addr := "/fxeq/bypass"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *fxeqBypass) Set(val bool) error {
+	addr := "/fxeq/bypass"
+	return ep.device.SetBool(addr, val)
+}
+
+type fxeqOpenui struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqOpenui) Bind(callback func(bool) error) {
+	addr := "/fxeq/openui"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *fxeqOpenui) Set(val bool) error {
+	addr := "/fxeq/openui"
+	return ep.device.SetBool(addr, val)
+}
+
+type fxeqPreset struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqPreset) Bind(callback func(string) error) {
+	addr := "/fxeq/preset"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxeqPreset) Set(val string) error {
+	addr := "/fxeq/preset"
+	return ep.device.SetString(addr, val)
+}
+
+type fxeqPresetminus struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqPresetminus) Bind(callback func(string) error) {
+	addr := "/fxeq/presetminus"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxeqPresetminus) Set(val string) error {
+	addr := "/fxeq/presetminus"
+	return ep.device.SetString(addr, val)
 }
 
 type fxeqPresetplus struct {
@@ -7277,13 +7118,11 @@ type fxeqPresetplus struct {
 
 func (ep *fxeqPresetplus) Bind(callback func(string) error) {
 	addr := "/fxeq/presetplus"
-
 	ep.device.BindString(addr, callback)
 }
 
 func (ep *fxeqPresetplus) Set(val string) error {
 	addr := "/fxeq/presetplus"
-
 	return ep.device.SetString(addr, val)
 }
 
@@ -7295,13 +7134,11 @@ type fxeqGain struct {
 
 func (ep *fxeqGain) Bind(callback func(float64) error) {
 	addr := "/fxeq/gain"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *fxeqGain) Set(val float64) error {
 	addr := "/fxeq/gain"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -7311,13 +7148,11 @@ type fxeqGainDb struct {
 
 func (ep *fxeqGainDb) Bind(callback func(float64) error) {
 	addr := "/fxeq/gain/db"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *fxeqGainDb) Set(val float64) error {
 	addr := "/fxeq/gain/db"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -7327,13 +7162,11 @@ type fxeqGainStr struct {
 
 func (ep *fxeqGainStr) Bind(callback func(string) error) {
 	addr := "/fxeq/gain/str"
-
 	ep.device.BindString(addr, callback)
 }
 
 func (ep *fxeqGainStr) Set(val string) error {
 	addr := "/fxeq/gain/str"
-
 	return ep.device.SetString(addr, val)
 }
 
@@ -7344,13 +7177,11 @@ type fxeqWetdry struct {
 
 func (ep *fxeqWetdry) Bind(callback func(float64) error) {
 	addr := "/fxeq/wetdry"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *fxeqWetdry) Set(val float64) error {
 	addr := "/fxeq/wetdry"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -7360,420 +7191,20 @@ type fxeqWetdryStr struct {
 
 func (ep *fxeqWetdryStr) Bind(callback func(string) error) {
 	addr := "/fxeq/wetdry/str"
-
 	ep.device.BindString(addr, callback)
 }
 
 func (ep *fxeqWetdryStr) Set(val string) error {
 	addr := "/fxeq/wetdry/str"
-
 	return ep.device.SetString(addr, val)
-}
-
-type fxeqLoshelf struct {
-	device *devices.OscDevice
-	Q      *fxeqLoshelfQ
-	Str    *fxeqLoshelfStr
-	Bypass *fxeqLoshelfBypass
-	Freq   *fxeqLoshelfFreq
-	Gain   *fxeqLoshelfGain
-}
-
-type fxeqLoshelfStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqLoshelfStr) Bind(callback func(string) error) {
-	addr := "/fxeq/loshelf/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxeqLoshelfStr) Set(val string) error {
-	addr := "/fxeq/loshelf/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxeqLoshelfBypass struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqLoshelfBypass) Bind(callback func(bool) error) {
-	addr := "/fxeq/loshelf/bypass"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *fxeqLoshelfBypass) Set(val bool) error {
-	addr := "/fxeq/loshelf/bypass"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type fxeqLoshelfFreq struct {
-	device *devices.OscDevice
-	Hz     *fxeqLoshelfFreqHz
-	Str    *fxeqLoshelfFreqStr
-}
-
-func (ep *fxeqLoshelfFreq) Bind(callback func(float64) error) {
-	addr := "/fxeq/loshelf/freq"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxeqLoshelfFreq) Set(val float64) error {
-	addr := "/fxeq/loshelf/freq"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxeqLoshelfFreqStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqLoshelfFreqStr) Bind(callback func(string) error) {
-	addr := "/fxeq/loshelf/freq/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxeqLoshelfFreqStr) Set(val string) error {
-	addr := "/fxeq/loshelf/freq/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxeqLoshelfFreqHz struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqLoshelfFreqHz) Bind(callback func(float64) error) {
-	addr := "/fxeq/loshelf/freq/hz"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxeqLoshelfFreqHz) Set(val float64) error {
-	addr := "/fxeq/loshelf/freq/hz"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxeqLoshelfGain struct {
-	device *devices.OscDevice
-	Db     *fxeqLoshelfGainDb
-	Str    *fxeqLoshelfGainStr
-}
-
-func (ep *fxeqLoshelfGain) Bind(callback func(float64) error) {
-	addr := "/fxeq/loshelf/gain"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxeqLoshelfGain) Set(val float64) error {
-	addr := "/fxeq/loshelf/gain"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxeqLoshelfGainStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqLoshelfGainStr) Bind(callback func(string) error) {
-	addr := "/fxeq/loshelf/gain/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxeqLoshelfGainStr) Set(val string) error {
-	addr := "/fxeq/loshelf/gain/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxeqLoshelfGainDb struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqLoshelfGainDb) Bind(callback func(float64) error) {
-	addr := "/fxeq/loshelf/gain/db"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxeqLoshelfGainDb) Set(val float64) error {
-	addr := "/fxeq/loshelf/gain/db"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxeqLoshelfQ struct {
-	device *devices.OscDevice
-	Oct    *fxeqLoshelfQOct
-	Str    *fxeqLoshelfQStr
-}
-
-func (ep *fxeqLoshelfQ) Bind(callback func(float64) error) {
-	addr := "/fxeq/loshelf/q"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxeqLoshelfQ) Set(val float64) error {
-	addr := "/fxeq/loshelf/q"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxeqLoshelfQOct struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqLoshelfQOct) Bind(callback func(float64) error) {
-	addr := "/fxeq/loshelf/q/oct"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxeqLoshelfQOct) Set(val float64) error {
-	addr := "/fxeq/loshelf/q/oct"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxeqLoshelfQStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqLoshelfQStr) Bind(callback func(string) error) {
-	addr := "/fxeq/loshelf/q/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxeqLoshelfQStr) Set(val string) error {
-	addr := "/fxeq/loshelf/q/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxeqNotch struct {
-	device *devices.OscDevice
-	Gain   *fxeqNotchGain
-	Q      *fxeqNotchQ
-	Str    *fxeqNotchStr
-	Bypass *fxeqNotchBypass
-	Freq   *fxeqNotchFreq
-}
-
-type fxeqNotchStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqNotchStr) Bind(callback func(string) error) {
-	addr := "/fxeq/notch/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxeqNotchStr) Set(val string) error {
-	addr := "/fxeq/notch/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxeqNotchBypass struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqNotchBypass) Bind(callback func(bool) error) {
-	addr := "/fxeq/notch/bypass"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *fxeqNotchBypass) Set(val bool) error {
-	addr := "/fxeq/notch/bypass"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type fxeqNotchFreq struct {
-	device *devices.OscDevice
-	Hz     *fxeqNotchFreqHz
-	Str    *fxeqNotchFreqStr
-}
-
-func (ep *fxeqNotchFreq) Bind(callback func(float64) error) {
-	addr := "/fxeq/notch/freq"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxeqNotchFreq) Set(val float64) error {
-	addr := "/fxeq/notch/freq"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxeqNotchFreqHz struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqNotchFreqHz) Bind(callback func(float64) error) {
-	addr := "/fxeq/notch/freq/hz"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxeqNotchFreqHz) Set(val float64) error {
-	addr := "/fxeq/notch/freq/hz"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxeqNotchFreqStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqNotchFreqStr) Bind(callback func(string) error) {
-	addr := "/fxeq/notch/freq/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxeqNotchFreqStr) Set(val string) error {
-	addr := "/fxeq/notch/freq/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxeqNotchGain struct {
-	device *devices.OscDevice
-	Db     *fxeqNotchGainDb
-	Str    *fxeqNotchGainStr
-}
-
-func (ep *fxeqNotchGain) Bind(callback func(float64) error) {
-	addr := "/fxeq/notch/gain"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxeqNotchGain) Set(val float64) error {
-	addr := "/fxeq/notch/gain"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxeqNotchGainDb struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqNotchGainDb) Bind(callback func(float64) error) {
-	addr := "/fxeq/notch/gain/db"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxeqNotchGainDb) Set(val float64) error {
-	addr := "/fxeq/notch/gain/db"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxeqNotchGainStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqNotchGainStr) Bind(callback func(string) error) {
-	addr := "/fxeq/notch/gain/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxeqNotchGainStr) Set(val string) error {
-	addr := "/fxeq/notch/gain/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxeqNotchQ struct {
-	device *devices.OscDevice
-	Str    *fxeqNotchQStr
-	Oct    *fxeqNotchQOct
-}
-
-func (ep *fxeqNotchQ) Bind(callback func(float64) error) {
-	addr := "/fxeq/notch/q"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxeqNotchQ) Set(val float64) error {
-	addr := "/fxeq/notch/q"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxeqNotchQOct struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqNotchQOct) Bind(callback func(float64) error) {
-	addr := "/fxeq/notch/q/oct"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxeqNotchQOct) Set(val float64) error {
-	addr := "/fxeq/notch/q/oct"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxeqNotchQStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqNotchQStr) Bind(callback func(string) error) {
-	addr := "/fxeq/notch/q/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxeqNotchQStr) Set(val string) error {
-	addr := "/fxeq/notch/q/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxeqBypass struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqBypass) Bind(callback func(bool) error) {
-	addr := "/fxeq/bypass"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *fxeqBypass) Set(val bool) error {
-	addr := "/fxeq/bypass"
-
-	return ep.device.SetBool(addr, val)
 }
 
 type fxeqHipass struct {
 	device *devices.OscDevice
-	Freq   *fxeqHipassFreq
-	Q      *fxeqHipassQ
 	Str    *fxeqHipassStr
 	Bypass *fxeqHipassBypass
+	Freq   *fxeqHipassFreq
+	Q      *fxeqHipassQ
 }
 
 type fxeqHipassStr struct {
@@ -7782,13 +7213,11 @@ type fxeqHipassStr struct {
 
 func (ep *fxeqHipassStr) Bind(callback func(string) error) {
 	addr := "/fxeq/hipass/str"
-
 	ep.device.BindString(addr, callback)
 }
 
 func (ep *fxeqHipassStr) Set(val string) error {
 	addr := "/fxeq/hipass/str"
-
 	return ep.device.SetString(addr, val)
 }
 
@@ -7798,13 +7227,11 @@ type fxeqHipassBypass struct {
 
 func (ep *fxeqHipassBypass) Bind(callback func(bool) error) {
 	addr := "/fxeq/hipass/bypass"
-
 	ep.device.BindBool(addr, callback)
 }
 
 func (ep *fxeqHipassBypass) Set(val bool) error {
 	addr := "/fxeq/hipass/bypass"
-
 	return ep.device.SetBool(addr, val)
 }
 
@@ -7816,13 +7243,11 @@ type fxeqHipassFreq struct {
 
 func (ep *fxeqHipassFreq) Bind(callback func(float64) error) {
 	addr := "/fxeq/hipass/freq"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *fxeqHipassFreq) Set(val float64) error {
 	addr := "/fxeq/hipass/freq"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -7832,13 +7257,11 @@ type fxeqHipassFreqHz struct {
 
 func (ep *fxeqHipassFreqHz) Bind(callback func(float64) error) {
 	addr := "/fxeq/hipass/freq/hz"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *fxeqHipassFreqHz) Set(val float64) error {
 	addr := "/fxeq/hipass/freq/hz"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -7848,13 +7271,11 @@ type fxeqHipassFreqStr struct {
 
 func (ep *fxeqHipassFreqStr) Bind(callback func(string) error) {
 	addr := "/fxeq/hipass/freq/str"
-
 	ep.device.BindString(addr, callback)
 }
 
 func (ep *fxeqHipassFreqStr) Set(val string) error {
 	addr := "/fxeq/hipass/freq/str"
-
 	return ep.device.SetString(addr, val)
 }
 
@@ -7866,13 +7287,11 @@ type fxeqHipassQ struct {
 
 func (ep *fxeqHipassQ) Bind(callback func(float64) error) {
 	addr := "/fxeq/hipass/q"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *fxeqHipassQ) Set(val float64) error {
 	addr := "/fxeq/hipass/q"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -7882,13 +7301,11 @@ type fxeqHipassQOct struct {
 
 func (ep *fxeqHipassQOct) Bind(callback func(float64) error) {
 	addr := "/fxeq/hipass/q/oct"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *fxeqHipassQOct) Set(val float64) error {
 	addr := "/fxeq/hipass/q/oct"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -7898,23 +7315,190 @@ type fxeqHipassQStr struct {
 
 func (ep *fxeqHipassQStr) Bind(callback func(string) error) {
 	addr := "/fxeq/hipass/q/str"
-
 	ep.device.BindString(addr, callback)
 }
 
 func (ep *fxeqHipassQStr) Set(val string) error {
 	addr := "/fxeq/hipass/q/str"
+	return ep.device.SetString(addr, val)
+}
 
+type fxeqLoshelf struct {
+	device *devices.OscDevice
+	Str    *fxeqLoshelfStr
+	Bypass *fxeqLoshelfBypass
+	Freq   *fxeqLoshelfFreq
+	Gain   *fxeqLoshelfGain
+	Q      *fxeqLoshelfQ
+}
+
+type fxeqLoshelfStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqLoshelfStr) Bind(callback func(string) error) {
+	addr := "/fxeq/loshelf/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxeqLoshelfStr) Set(val string) error {
+	addr := "/fxeq/loshelf/str"
+	return ep.device.SetString(addr, val)
+}
+
+type fxeqLoshelfBypass struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqLoshelfBypass) Bind(callback func(bool) error) {
+	addr := "/fxeq/loshelf/bypass"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *fxeqLoshelfBypass) Set(val bool) error {
+	addr := "/fxeq/loshelf/bypass"
+	return ep.device.SetBool(addr, val)
+}
+
+type fxeqLoshelfFreq struct {
+	device *devices.OscDevice
+	Hz     *fxeqLoshelfFreqHz
+	Str    *fxeqLoshelfFreqStr
+}
+
+func (ep *fxeqLoshelfFreq) Bind(callback func(float64) error) {
+	addr := "/fxeq/loshelf/freq"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxeqLoshelfFreq) Set(val float64) error {
+	addr := "/fxeq/loshelf/freq"
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxeqLoshelfFreqHz struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqLoshelfFreqHz) Bind(callback func(float64) error) {
+	addr := "/fxeq/loshelf/freq/hz"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxeqLoshelfFreqHz) Set(val float64) error {
+	addr := "/fxeq/loshelf/freq/hz"
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxeqLoshelfFreqStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqLoshelfFreqStr) Bind(callback func(string) error) {
+	addr := "/fxeq/loshelf/freq/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxeqLoshelfFreqStr) Set(val string) error {
+	addr := "/fxeq/loshelf/freq/str"
+	return ep.device.SetString(addr, val)
+}
+
+type fxeqLoshelfGain struct {
+	device *devices.OscDevice
+	Db     *fxeqLoshelfGainDb
+	Str    *fxeqLoshelfGainStr
+}
+
+func (ep *fxeqLoshelfGain) Bind(callback func(float64) error) {
+	addr := "/fxeq/loshelf/gain"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxeqLoshelfGain) Set(val float64) error {
+	addr := "/fxeq/loshelf/gain"
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxeqLoshelfGainDb struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqLoshelfGainDb) Bind(callback func(float64) error) {
+	addr := "/fxeq/loshelf/gain/db"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxeqLoshelfGainDb) Set(val float64) error {
+	addr := "/fxeq/loshelf/gain/db"
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxeqLoshelfGainStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqLoshelfGainStr) Bind(callback func(string) error) {
+	addr := "/fxeq/loshelf/gain/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxeqLoshelfGainStr) Set(val string) error {
+	addr := "/fxeq/loshelf/gain/str"
+	return ep.device.SetString(addr, val)
+}
+
+type fxeqLoshelfQ struct {
+	device *devices.OscDevice
+	Oct    *fxeqLoshelfQOct
+	Str    *fxeqLoshelfQStr
+}
+
+func (ep *fxeqLoshelfQ) Bind(callback func(float64) error) {
+	addr := "/fxeq/loshelf/q"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxeqLoshelfQ) Set(val float64) error {
+	addr := "/fxeq/loshelf/q"
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxeqLoshelfQOct struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqLoshelfQOct) Bind(callback func(float64) error) {
+	addr := "/fxeq/loshelf/q/oct"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxeqLoshelfQOct) Set(val float64) error {
+	addr := "/fxeq/loshelf/q/oct"
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxeqLoshelfQStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqLoshelfQStr) Bind(callback func(string) error) {
+	addr := "/fxeq/loshelf/q/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxeqLoshelfQStr) Set(val string) error {
+	addr := "/fxeq/loshelf/q/str"
 	return ep.device.SetString(addr, val)
 }
 
 type fxeqBand struct {
 	device *devices.OscDevice
+	Str    *fxeqBandStr
 	Bypass *fxeqBandBypass
 	Freq   *fxeqBandFreq
 	Gain   *fxeqBandGain
 	Q      *fxeqBandQ
-	Str    *fxeqBandStr
 	state  fxeqBandState
 }
 
@@ -8225,13 +7809,196 @@ func (ep *fxeqBandQStr) Set(val string) error {
 	return ep.device.SetString(addr, val)
 }
 
+type fxeqNotch struct {
+	device *devices.OscDevice
+	Str    *fxeqNotchStr
+	Bypass *fxeqNotchBypass
+	Freq   *fxeqNotchFreq
+	Gain   *fxeqNotchGain
+	Q      *fxeqNotchQ
+}
+
+type fxeqNotchStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqNotchStr) Bind(callback func(string) error) {
+	addr := "/fxeq/notch/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxeqNotchStr) Set(val string) error {
+	addr := "/fxeq/notch/str"
+	return ep.device.SetString(addr, val)
+}
+
+type fxeqNotchBypass struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqNotchBypass) Bind(callback func(bool) error) {
+	addr := "/fxeq/notch/bypass"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *fxeqNotchBypass) Set(val bool) error {
+	addr := "/fxeq/notch/bypass"
+	return ep.device.SetBool(addr, val)
+}
+
+type fxeqNotchFreq struct {
+	device *devices.OscDevice
+	Hz     *fxeqNotchFreqHz
+	Str    *fxeqNotchFreqStr
+}
+
+func (ep *fxeqNotchFreq) Bind(callback func(float64) error) {
+	addr := "/fxeq/notch/freq"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxeqNotchFreq) Set(val float64) error {
+	addr := "/fxeq/notch/freq"
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxeqNotchFreqHz struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqNotchFreqHz) Bind(callback func(float64) error) {
+	addr := "/fxeq/notch/freq/hz"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxeqNotchFreqHz) Set(val float64) error {
+	addr := "/fxeq/notch/freq/hz"
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxeqNotchFreqStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqNotchFreqStr) Bind(callback func(string) error) {
+	addr := "/fxeq/notch/freq/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxeqNotchFreqStr) Set(val string) error {
+	addr := "/fxeq/notch/freq/str"
+	return ep.device.SetString(addr, val)
+}
+
+type fxeqNotchGain struct {
+	device *devices.OscDevice
+	Db     *fxeqNotchGainDb
+	Str    *fxeqNotchGainStr
+}
+
+func (ep *fxeqNotchGain) Bind(callback func(float64) error) {
+	addr := "/fxeq/notch/gain"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxeqNotchGain) Set(val float64) error {
+	addr := "/fxeq/notch/gain"
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxeqNotchGainDb struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqNotchGainDb) Bind(callback func(float64) error) {
+	addr := "/fxeq/notch/gain/db"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxeqNotchGainDb) Set(val float64) error {
+	addr := "/fxeq/notch/gain/db"
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxeqNotchGainStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqNotchGainStr) Bind(callback func(string) error) {
+	addr := "/fxeq/notch/gain/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxeqNotchGainStr) Set(val string) error {
+	addr := "/fxeq/notch/gain/str"
+	return ep.device.SetString(addr, val)
+}
+
+type fxeqNotchQ struct {
+	device *devices.OscDevice
+	Oct    *fxeqNotchQOct
+	Str    *fxeqNotchQStr
+}
+
+func (ep *fxeqNotchQ) Bind(callback func(float64) error) {
+	addr := "/fxeq/notch/q"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxeqNotchQ) Set(val float64) error {
+	addr := "/fxeq/notch/q"
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxeqNotchQOct struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqNotchQOct) Bind(callback func(float64) error) {
+	addr := "/fxeq/notch/q/oct"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxeqNotchQOct) Set(val float64) error {
+	addr := "/fxeq/notch/q/oct"
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxeqNotchQStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqNotchQStr) Bind(callback func(string) error) {
+	addr := "/fxeq/notch/q/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxeqNotchQStr) Set(val string) error {
+	addr := "/fxeq/notch/q/str"
+	return ep.device.SetString(addr, val)
+}
+
 type fxeqHishelf struct {
 	device *devices.OscDevice
-	Gain   *fxeqHishelfGain
-	Q      *fxeqHishelfQ
 	Str    *fxeqHishelfStr
 	Bypass *fxeqHishelfBypass
 	Freq   *fxeqHishelfFreq
+	Gain   *fxeqHishelfGain
+	Q      *fxeqHishelfQ
+}
+
+type fxeqHishelfStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *fxeqHishelfStr) Bind(callback func(string) error) {
+	addr := "/fxeq/hishelf/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxeqHishelfStr) Set(val string) error {
+	addr := "/fxeq/hishelf/str"
+	return ep.device.SetString(addr, val)
 }
 
 type fxeqHishelfBypass struct {
@@ -8240,13 +8007,11 @@ type fxeqHishelfBypass struct {
 
 func (ep *fxeqHishelfBypass) Bind(callback func(bool) error) {
 	addr := "/fxeq/hishelf/bypass"
-
 	ep.device.BindBool(addr, callback)
 }
 
 func (ep *fxeqHishelfBypass) Set(val bool) error {
 	addr := "/fxeq/hishelf/bypass"
-
 	return ep.device.SetBool(addr, val)
 }
 
@@ -8258,13 +8023,11 @@ type fxeqHishelfFreq struct {
 
 func (ep *fxeqHishelfFreq) Bind(callback func(float64) error) {
 	addr := "/fxeq/hishelf/freq"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *fxeqHishelfFreq) Set(val float64) error {
 	addr := "/fxeq/hishelf/freq"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -8274,13 +8037,11 @@ type fxeqHishelfFreqHz struct {
 
 func (ep *fxeqHishelfFreqHz) Bind(callback func(float64) error) {
 	addr := "/fxeq/hishelf/freq/hz"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *fxeqHishelfFreqHz) Set(val float64) error {
 	addr := "/fxeq/hishelf/freq/hz"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -8290,13 +8051,11 @@ type fxeqHishelfFreqStr struct {
 
 func (ep *fxeqHishelfFreqStr) Bind(callback func(string) error) {
 	addr := "/fxeq/hishelf/freq/str"
-
 	ep.device.BindString(addr, callback)
 }
 
 func (ep *fxeqHishelfFreqStr) Set(val string) error {
 	addr := "/fxeq/hishelf/freq/str"
-
 	return ep.device.SetString(addr, val)
 }
 
@@ -8308,13 +8067,11 @@ type fxeqHishelfGain struct {
 
 func (ep *fxeqHishelfGain) Bind(callback func(float64) error) {
 	addr := "/fxeq/hishelf/gain"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *fxeqHishelfGain) Set(val float64) error {
 	addr := "/fxeq/hishelf/gain"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -8324,13 +8081,11 @@ type fxeqHishelfGainSb struct {
 
 func (ep *fxeqHishelfGainSb) Bind(callback func(float64) error) {
 	addr := "/fxeq/hishelf/gain/sb"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *fxeqHishelfGainSb) Set(val float64) error {
 	addr := "/fxeq/hishelf/gain/sb"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -8340,13 +8095,11 @@ type fxeqHishelfGainStr struct {
 
 func (ep *fxeqHishelfGainStr) Bind(callback func(string) error) {
 	addr := "/fxeq/hishelf/gain/str"
-
 	ep.device.BindString(addr, callback)
 }
 
 func (ep *fxeqHishelfGainStr) Set(val string) error {
 	addr := "/fxeq/hishelf/gain/str"
-
 	return ep.device.SetString(addr, val)
 }
 
@@ -8358,13 +8111,11 @@ type fxeqHishelfQ struct {
 
 func (ep *fxeqHishelfQ) Bind(callback func(float64) error) {
 	addr := "/fxeq/hishelf/q"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *fxeqHishelfQ) Set(val float64) error {
 	addr := "/fxeq/hishelf/q"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -8374,13 +8125,11 @@ type fxeqHishelfQOct struct {
 
 func (ep *fxeqHishelfQOct) Bind(callback func(float64) error) {
 	addr := "/fxeq/hishelf/q/oct"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *fxeqHishelfQOct) Set(val float64) error {
 	addr := "/fxeq/hishelf/q/oct"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -8390,88 +8139,20 @@ type fxeqHishelfQStr struct {
 
 func (ep *fxeqHishelfQStr) Bind(callback func(string) error) {
 	addr := "/fxeq/hishelf/q/str"
-
 	ep.device.BindString(addr, callback)
 }
 
 func (ep *fxeqHishelfQStr) Set(val string) error {
 	addr := "/fxeq/hishelf/q/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type fxeqHishelfStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqHishelfStr) Bind(callback func(string) error) {
-	addr := "/fxeq/hishelf/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxeqHishelfStr) Set(val string) error {
-	addr := "/fxeq/hishelf/str"
-
 	return ep.device.SetString(addr, val)
 }
 
 type fxeqLopass struct {
 	device *devices.OscDevice
+	Str    *fxeqLopassStr
 	Bypass *fxeqLopassBypass
 	Freq   *fxeqLopassFreq
 	Q      *fxeqLopassQ
-	Str    *fxeqLopassStr
-}
-
-type fxeqLopassQ struct {
-	device *devices.OscDevice
-	Oct    *fxeqLopassQOct
-	Str    *fxeqLopassQStr
-}
-
-func (ep *fxeqLopassQ) Bind(callback func(float64) error) {
-	addr := "/fxeq/lopass/q"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxeqLopassQ) Set(val float64) error {
-	addr := "/fxeq/lopass/q"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxeqLopassQOct struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqLopassQOct) Bind(callback func(float64) error) {
-	addr := "/fxeq/lopass/q/oct"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *fxeqLopassQOct) Set(val float64) error {
-	addr := "/fxeq/lopass/q/oct"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type fxeqLopassQStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *fxeqLopassQStr) Bind(callback func(string) error) {
-	addr := "/fxeq/lopass/q/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *fxeqLopassQStr) Set(val string) error {
-	addr := "/fxeq/lopass/q/str"
-
-	return ep.device.SetString(addr, val)
 }
 
 type fxeqLopassStr struct {
@@ -8480,13 +8161,11 @@ type fxeqLopassStr struct {
 
 func (ep *fxeqLopassStr) Bind(callback func(string) error) {
 	addr := "/fxeq/lopass/str"
-
 	ep.device.BindString(addr, callback)
 }
 
 func (ep *fxeqLopassStr) Set(val string) error {
 	addr := "/fxeq/lopass/str"
-
 	return ep.device.SetString(addr, val)
 }
 
@@ -8496,13 +8175,11 @@ type fxeqLopassBypass struct {
 
 func (ep *fxeqLopassBypass) Bind(callback func(bool) error) {
 	addr := "/fxeq/lopass/bypass"
-
 	ep.device.BindBool(addr, callback)
 }
 
 func (ep *fxeqLopassBypass) Set(val bool) error {
 	addr := "/fxeq/lopass/bypass"
-
 	return ep.device.SetBool(addr, val)
 }
 
@@ -8514,13 +8191,11 @@ type fxeqLopassFreq struct {
 
 func (ep *fxeqLopassFreq) Bind(callback func(float64) error) {
 	addr := "/fxeq/lopass/freq"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *fxeqLopassFreq) Set(val float64) error {
 	addr := "/fxeq/lopass/freq"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -8530,13 +8205,11 @@ type fxeqLopassFreqHz struct {
 
 func (ep *fxeqLopassFreqHz) Bind(callback func(float64) error) {
 	addr := "/fxeq/lopass/freq/hz"
-
 	ep.device.BindFloat(addr, callback)
 }
 
 func (ep *fxeqLopassFreqHz) Set(val float64) error {
 	addr := "/fxeq/lopass/freq/hz"
-
 	return ep.device.SetFloat(addr, val)
 }
 
@@ -8546,537 +8219,1700 @@ type fxeqLopassFreqStr struct {
 
 func (ep *fxeqLopassFreqStr) Bind(callback func(string) error) {
 	addr := "/fxeq/lopass/freq/str"
-
 	ep.device.BindString(addr, callback)
 }
 
 func (ep *fxeqLopassFreqStr) Set(val string) error {
 	addr := "/fxeq/lopass/freq/str"
-
 	return ep.device.SetString(addr, val)
 }
 
-type fxeqOpenui struct {
+type fxeqLopassQ struct {
+	device *devices.OscDevice
+	Oct    *fxeqLopassQOct
+	Str    *fxeqLopassQStr
+}
+
+func (ep *fxeqLopassQ) Bind(callback func(float64) error) {
+	addr := "/fxeq/lopass/q"
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *fxeqLopassQ) Set(val float64) error {
+	addr := "/fxeq/lopass/q"
+	return ep.device.SetFloat(addr, val)
+}
+
+type fxeqLopassQOct struct {
 	device *devices.OscDevice
 }
 
-func (ep *fxeqOpenui) Bind(callback func(bool) error) {
-	addr := "/fxeq/openui"
-
-	ep.device.BindBool(addr, callback)
+func (ep *fxeqLopassQOct) Bind(callback func(float64) error) {
+	addr := "/fxeq/lopass/q/oct"
+	ep.device.BindFloat(addr, callback)
 }
 
-func (ep *fxeqOpenui) Set(val bool) error {
-	addr := "/fxeq/openui"
-
-	return ep.device.SetBool(addr, val)
+func (ep *fxeqLopassQOct) Set(val float64) error {
+	addr := "/fxeq/lopass/q/oct"
+	return ep.device.SetFloat(addr, val)
 }
 
-type fxeqPreset struct {
+type fxeqLopassQStr struct {
 	device *devices.OscDevice
 }
 
-func (ep *fxeqPreset) Bind(callback func(string) error) {
-	addr := "/fxeq/preset"
-
+func (ep *fxeqLopassQStr) Bind(callback func(string) error) {
+	addr := "/fxeq/lopass/q/str"
 	ep.device.BindString(addr, callback)
 }
 
-func (ep *fxeqPreset) Set(val string) error {
-	addr := "/fxeq/preset"
-
+func (ep *fxeqLopassQStr) Set(val string) error {
+	addr := "/fxeq/lopass/q/str"
 	return ep.device.SetString(addr, val)
 }
 
-type fxeqPresetminus struct {
+type fxinst struct {
+	device      *devices.OscDevice
+	Name        *fxinstName
+	Bypass      *fxinstBypass
+	Openui      *fxinstOpenui
+	Preset      *fxinstPreset
+	Presetminus *fxinstPresetminus
+	Presetplus  *fxinstPresetplus
+}
+
+type fxinstName struct {
 	device *devices.OscDevice
 }
 
-func (ep *fxeqPresetminus) Bind(callback func(string) error) {
-	addr := "/fxeq/presetminus"
-
+func (ep *fxinstName) Bind(callback func(string) error) {
+	addr := "/fxinst/name"
 	ep.device.BindString(addr, callback)
 }
 
-func (ep *fxeqPresetminus) Set(val string) error {
-	addr := "/fxeq/presetminus"
-
+func (ep *fxinstName) Set(val string) error {
+	addr := "/fxinst/name"
 	return ep.device.SetString(addr, val)
 }
 
-type editloop struct {
+type fxinstBypass struct {
 	device *devices.OscDevice
 }
 
-func (ep *editloop) Bind(callback func(bool) error) {
-	addr := "/editloop"
-
+func (ep *fxinstBypass) Bind(callback func(bool) error) {
+	addr := "/fxinst/bypass"
 	ep.device.BindBool(addr, callback)
 }
 
-func (ep *editloop) Set(val bool) error {
-	addr := "/editloop"
-
+func (ep *fxinstBypass) Set(val bool) error {
+	addr := "/fxinst/bypass"
 	return ep.device.SetBool(addr, val)
 }
 
-type scroll struct {
-	device *devices.OscDevice
-	X      *scrollX
-	Y      *scrollY
-}
-
-type scrollY struct {
-	device *devices.OscDevice
-	Minus  *scrollYMinus
-	Plus   *scrollYPlus
-}
-
-func (ep *scrollY) Bind(callback func(float64) error) {
-	addr := "/scroll/y"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *scrollY) Set(val float64) error {
-	addr := "/scroll/y"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type scrollYMinus struct {
+type fxinstOpenui struct {
 	device *devices.OscDevice
 }
 
-func (ep *scrollYMinus) Bind(callback func(bool) error) {
-	addr := "/scroll/y/minus"
-
+func (ep *fxinstOpenui) Bind(callback func(bool) error) {
+	addr := "/fxinst/openui"
 	ep.device.BindBool(addr, callback)
 }
 
-func (ep *scrollYMinus) Set(val bool) error {
-	addr := "/scroll/y/minus"
-
+func (ep *fxinstOpenui) Set(val bool) error {
+	addr := "/fxinst/openui"
 	return ep.device.SetBool(addr, val)
 }
 
-type scrollYPlus struct {
+type fxinstPreset struct {
 	device *devices.OscDevice
 }
 
-func (ep *scrollYPlus) Bind(callback func(bool) error) {
-	addr := "/scroll/y/plus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *scrollYPlus) Set(val bool) error {
-	addr := "/scroll/y/plus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type scrollX struct {
-	device *devices.OscDevice
-	Minus  *scrollXMinus
-	Plus   *scrollXPlus
-}
-
-func (ep *scrollX) Bind(callback func(float64) error) {
-	addr := "/scroll/x"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *scrollX) Set(val float64) error {
-	addr := "/scroll/x"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type scrollXMinus struct {
-	device *devices.OscDevice
-}
-
-func (ep *scrollXMinus) Bind(callback func(bool) error) {
-	addr := "/scroll/x/minus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *scrollXMinus) Set(val bool) error {
-	addr := "/scroll/x/minus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type scrollXPlus struct {
-	device *devices.OscDevice
-}
-
-func (ep *scrollXPlus) Bind(callback func(bool) error) {
-	addr := "/scroll/x/plus"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *scrollXPlus) Set(val bool) error {
-	addr := "/scroll/x/plus"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type time struct {
-	device *devices.OscDevice
-	Str    *timeStr
-}
-
-func (ep *time) Bind(callback func(float64) error) {
-	addr := "/time"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *time) Set(val float64) error {
-	addr := "/time"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type timeStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *timeStr) Bind(callback func(string) error) {
-	addr := "/time/str"
-
+func (ep *fxinstPreset) Bind(callback func(string) error) {
+	addr := "/fxinst/preset"
 	ep.device.BindString(addr, callback)
 }
 
-func (ep *timeStr) Set(val string) error {
-	addr := "/time/str"
-
+func (ep *fxinstPreset) Set(val string) error {
+	addr := "/fxinst/preset"
 	return ep.device.SetString(addr, val)
 }
 
-type samples struct {
-	device *devices.OscDevice
-	Str    *samplesStr
-}
-
-func (ep *samples) Bind(callback func(float64) error) {
-	addr := "/samples"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *samples) Set(val float64) error {
-	addr := "/samples"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type samplesStr struct {
+type fxinstPresetminus struct {
 	device *devices.OscDevice
 }
 
-func (ep *samplesStr) Bind(callback func(string) error) {
-	addr := "/samples/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *samplesStr) Set(val string) error {
-	addr := "/samples/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type frames struct {
-	device *devices.OscDevice
-	Str    *framesStr
-}
-
-type framesStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *framesStr) Bind(callback func(string) error) {
-	addr := "/frames/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *framesStr) Set(val string) error {
-	addr := "/frames/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type repeat struct {
-	device *devices.OscDevice
-}
-
-func (ep *repeat) Bind(callback func(bool) error) {
-	addr := "/repeat"
-
+func (ep *fxinstPresetminus) Bind(callback func(bool) error) {
+	addr := "/fxinst/presetminus"
 	ep.device.BindBool(addr, callback)
 }
 
-func (ep *repeat) Set(val bool) error {
-	addr := "/repeat"
-
+func (ep *fxinstPresetminus) Set(val bool) error {
+	addr := "/fxinst/presetminus"
 	return ep.device.SetBool(addr, val)
 }
 
-type anysolo struct {
+type fxinstPresetplus struct {
 	device *devices.OscDevice
 }
 
-func (ep *anysolo) Bind(callback func(bool) error) {
-	addr := "/anysolo"
-
+func (ep *fxinstPresetplus) Bind(callback func(bool) error) {
+	addr := "/fxinst/presetplus"
 	ep.device.BindBool(addr, callback)
 }
 
-func (ep *anysolo) Set(val bool) error {
-	addr := "/anysolo"
-
+func (ep *fxinstPresetplus) Set(val bool) error {
+	addr := "/fxinst/presetplus"
 	return ep.device.SetBool(addr, val)
 }
 
-type forward struct {
+type fxinstparam struct {
 	device *devices.OscDevice
+	Name   *fxinstparamName
+	Value  *fxinstparamValue
+	state  fxinstparamState
 }
 
-func (ep *forward) Bind(callback func(bool) error) {
-	addr := "/forward"
-
-	ep.device.BindBool(addr, callback)
+type fxinstparamState struct {
+	fxinstparamNum int64
 }
 
-func (ep *forward) Set(val bool) error {
-	addr := "/forward"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type autorecarm struct {
+type fxinstparamName struct {
 	device *devices.OscDevice
+	state  fxinstparamNameState
 }
 
-func (ep *autorecarm) Bind(callback func(bool) error) {
-	addr := "/autorecarm"
-
-	ep.device.BindBool(addr, callback)
+type fxinstparamNameState struct {
+	fxinstparamNum int64
 }
 
-func (ep *autorecarm) Set(val bool) error {
-	addr := "/autorecarm"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type soloreset struct {
-	device *devices.OscDevice
-}
-
-func (ep *soloreset) Bind(callback func(bool) error) {
-	addr := "/soloreset"
-
-	ep.device.BindBool(addr, callback)
-}
-
-func (ep *soloreset) Set(val bool) error {
-	addr := "/soloreset"
-
-	return ep.device.SetBool(addr, val)
-}
-
-type tempo struct {
-	device *devices.OscDevice
-	Raw    *tempoRaw
-	Rotary *tempoRotary
-	Str    *tempoStr
-}
-
-func (ep *tempo) Bind(callback func(float64) error) {
-	addr := "/tempo"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *tempo) Set(val float64) error {
-	addr := "/tempo"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type tempoRaw struct {
-	device *devices.OscDevice
-}
-
-func (ep *tempoRaw) Bind(callback func(float64) error) {
-	addr := "/tempo/raw"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *tempoRaw) Set(val float64) error {
-	addr := "/tempo/raw"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type tempoRotary struct {
-	device *devices.OscDevice
-}
-
-func (ep *tempoRotary) Bind(callback func(float64) error) {
-	addr := "/tempo/rotary"
-
-	ep.device.BindFloat(addr, callback)
-}
-
-func (ep *tempoRotary) Set(val float64) error {
-	addr := "/tempo/rotary"
-
-	return ep.device.SetFloat(addr, val)
-}
-
-type tempoStr struct {
-	device *devices.OscDevice
-}
-
-func (ep *tempoStr) Bind(callback func(string) error) {
-	addr := "/tempo/str"
-
-	ep.device.BindString(addr, callback)
-}
-
-func (ep *tempoStr) Set(val string) error {
-	addr := "/tempo/str"
-
-	return ep.device.SetString(addr, val)
-}
-
-type region_id struct {
-	device *devices.OscDevice
-	Name   *region_idName
-	Time   *region_idTime
-	Length *region_idLength
-	Number *region_idNumber
-	state  region_idState
-}
-
-type region_idState struct {
-	region_idNum int64
-}
-
-type region_idName struct {
-	device *devices.OscDevice
-	state  region_idNameState
-}
-
-type region_idNameState struct {
-	region_idNum int64
-}
-
-func (ep *region_idName) Bind(callback func(string) error) {
+func (ep *fxinstparamName) Bind(callback func(string) error) {
 	addr := fmt.Sprintf(
-		"/region_id/%d/name",
-		ep.state.region_idNum,
+		"/fxinstparam/%d/name",
+		ep.state.fxinstparamNum,
 	)
 
 	ep.device.BindString(addr, callback)
 }
 
-func (ep *region_idName) Set(val string) error {
+func (ep *fxinstparamName) Set(val string) error {
 	addr := fmt.Sprintf(
-		"/region_id/%d/name",
-		ep.state.region_idNum,
+		"/fxinstparam/%d/name",
+		ep.state.fxinstparamNum,
 	)
 
 	return ep.device.SetString(addr, val)
 }
 
-type region_idTime struct {
+type fxinstparamValue struct {
 	device *devices.OscDevice
-	state  region_idTimeState
+	Str    *fxinstparamValueStr
+	state  fxinstparamValueState
 }
 
-type region_idTimeState struct {
-	region_idNum int64
+type fxinstparamValueState struct {
+	fxinstparamNum int64
 }
 
-func (ep *region_idTime) Bind(callback func(float64) error) {
+func (ep *fxinstparamValue) Bind(callback func(float64) error) {
 	addr := fmt.Sprintf(
-		"/region_id/%d/time",
-		ep.state.region_idNum,
+		"/fxinstparam/%d/value",
+		ep.state.fxinstparamNum,
 	)
 
 	ep.device.BindFloat(addr, callback)
 }
 
-func (ep *region_idTime) Set(val float64) error {
+func (ep *fxinstparamValue) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/region_id/%d/time",
-		ep.state.region_idNum,
+		"/fxinstparam/%d/value",
+		ep.state.fxinstparamNum,
 	)
 
 	return ep.device.SetFloat(addr, val)
 }
 
-type region_idLength struct {
+type fxinstparamValueStr struct {
 	device *devices.OscDevice
-	state  region_idLengthState
+	state  fxinstparamValueStrState
 }
 
-type region_idLengthState struct {
-	region_idNum int64
+type fxinstparamValueStrState struct {
+	fxinstparamNum int64
 }
 
-func (ep *region_idLength) Bind(callback func(float64) error) {
+func (ep *fxinstparamValueStr) Bind(callback func(string) error) {
 	addr := fmt.Sprintf(
-		"/region_id/%d/length",
-		ep.state.region_idNum,
+		"/fxinstparam/%d/value/str",
+		ep.state.fxinstparamNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *fxinstparamValueStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/fxinstparam/%d/value/str",
+		ep.state.fxinstparamNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type vkb_midi struct {
+	device          *devices.OscDevice
+	Program         *vkb_midiProgram
+	Channelpressure *vkb_midiChannelpressure
+	Pitch           *vkb_midiPitch
+	state           vkb_midiState
+}
+
+type vkb_midiState struct {
+	vkb_midiNum int64
+}
+
+func (vkb_midi *vkb_midi) Note(noteNum int64) *vkb_midiNote {
+	return &vkb_midiNote{
+		state: vkb_midiNoteState{
+			vkb_midiNum: vkb_midi.state.vkb_midiNum,
+			noteNum:     noteNum,
+		},
+		device: vkb_midi.device,
+	}
+}
+
+func (vkb_midi *vkb_midi) Polyaftertouch(polyaftertouchNum int64) *vkb_midiPolyaftertouch {
+	return &vkb_midiPolyaftertouch{
+		state: vkb_midiPolyaftertouchState{
+			vkb_midiNum:       vkb_midi.state.vkb_midiNum,
+			polyaftertouchNum: polyaftertouchNum,
+		},
+		device: vkb_midi.device,
+	}
+}
+
+func (vkb_midi *vkb_midi) Cc(ccNum int64) *vkb_midiCc {
+	return &vkb_midiCc{
+		state: vkb_midiCcState{
+			vkb_midiNum: vkb_midi.state.vkb_midiNum,
+			ccNum:       ccNum,
+		},
+		device: vkb_midi.device,
+	}
+}
+
+type vkb_midiNote struct {
+	device *devices.OscDevice
+	state  vkb_midiNoteState
+}
+
+type vkb_midiNoteState struct {
+	vkb_midiNum int64
+	noteNum     int64
+}
+
+func (ep *vkb_midiNote) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/vkb_midi/%d/note/%d",
+		ep.state.vkb_midiNum,
+		ep.state.noteNum,
 	)
 
 	ep.device.BindFloat(addr, callback)
 }
 
-func (ep *region_idLength) Set(val float64) error {
+func (ep *vkb_midiNote) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/region_id/%d/length",
-		ep.state.region_idNum,
+		"/vkb_midi/%d/note/%d",
+		ep.state.vkb_midiNum,
+		ep.state.noteNum,
 	)
 
 	return ep.device.SetFloat(addr, val)
 }
 
-type region_idNumber struct {
+type vkb_midiPolyaftertouch struct {
 	device *devices.OscDevice
-	state  region_idNumberState
+	state  vkb_midiPolyaftertouchState
 }
 
-type region_idNumberState struct {
-	region_idNum int64
+type vkb_midiPolyaftertouchState struct {
+	vkb_midiNum       int64
+	polyaftertouchNum int64
 }
 
-func (ep *region_idNumber) Bind(callback func(int64) error) {
+func (ep *vkb_midiPolyaftertouch) Bind(callback func(float64) error) {
 	addr := fmt.Sprintf(
-		"/region_id/%d/number",
-		ep.state.region_idNum,
+		"/vkb_midi/%d/polyaftertouch/%d",
+		ep.state.vkb_midiNum,
+		ep.state.polyaftertouchNum,
 	)
 
-	ep.device.BindInt(addr, callback)
+	ep.device.BindFloat(addr, callback)
 }
 
-func (ep *region_idNumber) Set(val int64) error {
+func (ep *vkb_midiPolyaftertouch) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/region_id/%d/number",
-		ep.state.region_idNum,
+		"/vkb_midi/%d/polyaftertouch/%d",
+		ep.state.vkb_midiNum,
+		ep.state.polyaftertouchNum,
 	)
 
-	return ep.device.SetInt(addr, val)
+	return ep.device.SetFloat(addr, val)
+}
+
+type vkb_midiCc struct {
+	device *devices.OscDevice
+	state  vkb_midiCcState
+}
+
+type vkb_midiCcState struct {
+	vkb_midiNum int64
+	ccNum       int64
+}
+
+func (ep *vkb_midiCc) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/vkb_midi/%d/cc/%d",
+		ep.state.vkb_midiNum,
+		ep.state.ccNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *vkb_midiCc) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/vkb_midi/%d/cc/%d",
+		ep.state.vkb_midiNum,
+		ep.state.ccNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type vkb_midiProgram struct {
+	device *devices.OscDevice
+	state  vkb_midiProgramState
+}
+
+type vkb_midiProgramState struct {
+	vkb_midiNum int64
+}
+
+func (ep *vkb_midiProgram) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/vkb_midi/%d/program",
+		ep.state.vkb_midiNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *vkb_midiProgram) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/vkb_midi/%d/program",
+		ep.state.vkb_midiNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type vkb_midiChannelpressure struct {
+	device *devices.OscDevice
+	state  vkb_midiChannelpressureState
+}
+
+type vkb_midiChannelpressureState struct {
+	vkb_midiNum int64
+}
+
+func (ep *vkb_midiChannelpressure) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/vkb_midi/%d/channelpressure",
+		ep.state.vkb_midiNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *vkb_midiChannelpressure) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/vkb_midi/%d/channelpressure",
+		ep.state.vkb_midiNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type vkb_midiPitch struct {
+	device *devices.OscDevice
+	state  vkb_midiPitchState
+}
+
+type vkb_midiPitchState struct {
+	vkb_midiNum int64
+}
+
+func (ep *vkb_midiPitch) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/vkb_midi/%d/pitch",
+		ep.state.vkb_midiNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *vkb_midiPitch) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/vkb_midi/%d/pitch",
+		ep.state.vkb_midiNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type action struct {
+	device *devices.OscDevice
+	Str    *actionStr
+	Cc     *actionCc
+	state  actionState
+}
+
+type actionState struct {
+	actionNum int64
+}
+
+func (ep *action) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/action/%d",
+		ep.state.actionNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *action) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/action/%d",
+		ep.state.actionNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type actionStr struct {
+	device *devices.OscDevice
+	state  actionStrState
+}
+
+type actionStrState struct {
+	actionNum int64
+}
+
+func (ep *actionStr) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/action/%d/str",
+		ep.state.actionNum,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *actionStr) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/action/%d/str",
+		ep.state.actionNum,
+	)
+
+	return ep.device.SetString(addr, val)
+}
+
+type actionCc struct {
+	device   *devices.OscDevice
+	Soft     *actionCcSoft
+	Relative *actionCcRelative
+	state    actionCcState
+}
+
+type actionCcState struct {
+	actionNum int64
+}
+
+func (ep *actionCc) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/action/%d/cc",
+		ep.state.actionNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *actionCc) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/action/%d/cc",
+		ep.state.actionNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type actionCcSoft struct {
+	device *devices.OscDevice
+	state  actionCcSoftState
+}
+
+type actionCcSoftState struct {
+	actionNum int64
+}
+
+func (ep *actionCcSoft) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/action/%d/cc/soft",
+		ep.state.actionNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *actionCcSoft) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/action/%d/cc/soft",
+		ep.state.actionNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type actionCcRelative struct {
+	device *devices.OscDevice
+	state  actionCcRelativeState
+}
+
+type actionCcRelativeState struct {
+	actionNum int64
+}
+
+func (ep *actionCcRelative) Bind(callback func(float64) error) {
+	addr := fmt.Sprintf(
+		"/action/%d/cc/relative",
+		ep.state.actionNum,
+	)
+
+	ep.device.BindFloat(addr, callback)
+}
+
+func (ep *actionCcRelative) Set(val float64) error {
+	addr := fmt.Sprintf(
+		"/action/%d/cc/relative",
+		ep.state.actionNum,
+	)
+
+	return ep.device.SetFloat(addr, val)
+}
+
+type midiaction struct {
+	device *devices.OscDevice
+	state  midiactionState
+}
+
+type midiactionState struct {
+	midiactionNum int64
+}
+
+func (ep *midiaction) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/midiaction/%d",
+		ep.state.midiactionNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *midiaction) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/midiaction/%d",
+		ep.state.midiactionNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type midilistaction struct {
+	device *devices.OscDevice
+	state  midilistactionState
+}
+
+type midilistactionState struct {
+	midilistactionNum int64
+}
+
+func (ep *midilistaction) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/midilistaction/%d",
+		ep.state.midilistactionNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *midilistaction) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/midilistaction/%d",
+		ep.state.midilistactionNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type device struct {
+	device      *devices.OscDevice
+	Track       *deviceTrack
+	Send        *deviceSend
+	Receive     *deviceReceive
+	Fx          *deviceFx
+	Fxparam     *deviceFxparam
+	Fxinstparam *deviceFxinstparam
+	Marker      *deviceMarker
+	Region      *deviceRegion
+}
+
+type deviceTrack struct {
+	device  *devices.OscDevice
+	Follows *deviceTrackFollows
+	Bank    *deviceTrackBank
+	Minus   *deviceTrackMinus
+	Plus    *deviceTrackPlus
+}
+
+func (deviceTrack *deviceTrack) Count(countNum int64) *deviceTrackCount {
+	return &deviceTrackCount{
+		state: deviceTrackCountState{
+			countNum: countNum,
+		},
+		device: deviceTrack.device,
+	}
+}
+
+func (deviceTrack *deviceTrack) Select(selectNum int64) *deviceTrackSelect {
+	return &deviceTrackSelect{
+		state: deviceTrackSelectState{
+			selectNum: selectNum,
+		},
+		device: deviceTrack.device,
+	}
+}
+
+type deviceTrackCount struct {
+	device *devices.OscDevice
+	state  deviceTrackCountState
+}
+
+type deviceTrackCountState struct {
+	countNum int64
+}
+
+func (ep *deviceTrackCount) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/device/track/count/%d",
+		ep.state.countNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceTrackCount) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/device/track/count/%d",
+		ep.state.countNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceTrackFollows struct {
+	device       *devices.OscDevice
+	Device       *deviceTrackFollowsDevice
+	Last_touched *deviceTrackFollowsLast_touched
+}
+
+func (ep *deviceTrackFollows) Bind(callback func(string) error) {
+	addr := "/device/track/follows"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *deviceTrackFollows) Set(val string) error {
+	addr := "/device/track/follows"
+	return ep.device.SetString(addr, val)
+}
+
+type deviceTrackFollowsDevice struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceTrackFollowsDevice) Bind(callback func(bool) error) {
+	addr := "/device/track/follows/device"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceTrackFollowsDevice) Set(val bool) error {
+	addr := "/device/track/follows/device"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceTrackFollowsLast_touched struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceTrackFollowsLast_touched) Bind(callback func(bool) error) {
+	addr := "/device/track/follows/last_touched"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceTrackFollowsLast_touched) Set(val bool) error {
+	addr := "/device/track/follows/last_touched"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceTrackBank struct {
+	device  *devices.OscDevice
+	Follows *deviceTrackBankFollows
+	Minus   *deviceTrackBankMinus
+	Plus    *deviceTrackBankPlus
+}
+
+func (deviceTrackBank *deviceTrackBank) Select(selectNum int64) *deviceTrackBankSelect {
+	return &deviceTrackBankSelect{
+		state: deviceTrackBankSelectState{
+			selectNum: selectNum,
+		},
+		device: deviceTrackBank.device,
+	}
+}
+
+type deviceTrackBankFollows struct {
+	device *devices.OscDevice
+	Device *deviceTrackBankFollowsDevice
+	Mixer  *deviceTrackBankFollowsMixer
+}
+
+func (ep *deviceTrackBankFollows) Bind(callback func(string) error) {
+	addr := "/device/track/bank/follows"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *deviceTrackBankFollows) Set(val string) error {
+	addr := "/device/track/bank/follows"
+	return ep.device.SetString(addr, val)
+}
+
+type deviceTrackBankFollowsDevice struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceTrackBankFollowsDevice) Bind(callback func(bool) error) {
+	addr := "/device/track/bank/follows/device"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceTrackBankFollowsDevice) Set(val bool) error {
+	addr := "/device/track/bank/follows/device"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceTrackBankFollowsMixer struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceTrackBankFollowsMixer) Bind(callback func(bool) error) {
+	addr := "/device/track/bank/follows/mixer"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceTrackBankFollowsMixer) Set(val bool) error {
+	addr := "/device/track/bank/follows/mixer"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceTrackBankSelect struct {
+	device *devices.OscDevice
+	state  deviceTrackBankSelectState
+}
+
+type deviceTrackBankSelectState struct {
+	selectNum int64
+}
+
+func (ep *deviceTrackBankSelect) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/device/track/bank/select/%d",
+		ep.state.selectNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceTrackBankSelect) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/device/track/bank/select/%d",
+		ep.state.selectNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceTrackBankMinus struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceTrackBankMinus) Bind(callback func(bool) error) {
+	addr := "/device/track/bank/minus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceTrackBankMinus) Set(val bool) error {
+	addr := "/device/track/bank/minus"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceTrackBankPlus struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceTrackBankPlus) Bind(callback func(bool) error) {
+	addr := "/device/track/bank/plus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceTrackBankPlus) Set(val bool) error {
+	addr := "/device/track/bank/plus"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceTrackSelect struct {
+	device *devices.OscDevice
+	state  deviceTrackSelectState
+}
+
+type deviceTrackSelectState struct {
+	selectNum int64
+}
+
+func (ep *deviceTrackSelect) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/device/track/select/%d",
+		ep.state.selectNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceTrackSelect) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/device/track/select/%d",
+		ep.state.selectNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceTrackMinus struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceTrackMinus) Bind(callback func(bool) error) {
+	addr := "/device/track/minus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceTrackMinus) Set(val bool) error {
+	addr := "/device/track/minus"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceTrackPlus struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceTrackPlus) Bind(callback func(bool) error) {
+	addr := "/device/track/plus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceTrackPlus) Set(val bool) error {
+	addr := "/device/track/plus"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceSend struct {
+	device *devices.OscDevice
+}
+
+func (deviceSend *deviceSend) Count(countNum int64) *deviceSendCount {
+	return &deviceSendCount{
+		state: deviceSendCountState{
+			countNum: countNum,
+		},
+		device: deviceSend.device,
+	}
+}
+
+type deviceSendCount struct {
+	device *devices.OscDevice
+	state  deviceSendCountState
+}
+
+type deviceSendCountState struct {
+	countNum int64
+}
+
+func (ep *deviceSendCount) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/device/send/count/%d",
+		ep.state.countNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceSendCount) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/device/send/count/%d",
+		ep.state.countNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceReceive struct {
+	device *devices.OscDevice
+}
+
+func (deviceReceive *deviceReceive) Count(countNum int64) *deviceReceiveCount {
+	return &deviceReceiveCount{
+		state: deviceReceiveCountState{
+			countNum: countNum,
+		},
+		device: deviceReceive.device,
+	}
+}
+
+type deviceReceiveCount struct {
+	device *devices.OscDevice
+	state  deviceReceiveCountState
+}
+
+type deviceReceiveCountState struct {
+	countNum int64
+}
+
+func (ep *deviceReceiveCount) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/device/receive/count/%d",
+		ep.state.countNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceReceiveCount) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/device/receive/count/%d",
+		ep.state.countNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceFx struct {
+	device  *devices.OscDevice
+	Follows *deviceFxFollows
+	Minus   *deviceFxMinus
+	Plus    *deviceFxPlus
+}
+
+func (deviceFx *deviceFx) Count(countNum int64) *deviceFxCount {
+	return &deviceFxCount{
+		state: deviceFxCountState{
+			countNum: countNum,
+		},
+		device: deviceFx.device,
+	}
+}
+
+func (deviceFx *deviceFx) Select(selectNum int64) *deviceFxSelect {
+	return &deviceFxSelect{
+		state: deviceFxSelectState{
+			selectNum: selectNum,
+		},
+		device: deviceFx.device,
+	}
+}
+
+type deviceFxCount struct {
+	device *devices.OscDevice
+	state  deviceFxCountState
+}
+
+type deviceFxCountState struct {
+	countNum int64
+}
+
+func (ep *deviceFxCount) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/device/fx/count/%d",
+		ep.state.countNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceFxCount) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/device/fx/count/%d",
+		ep.state.countNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceFxFollows struct {
+	device       *devices.OscDevice
+	Device       *deviceFxFollowsDevice
+	Last_touched *deviceFxFollowsLast_touched
+	Focused      *deviceFxFollowsFocused
+}
+
+func (ep *deviceFxFollows) Bind(callback func(string) error) {
+	addr := "/device/fx/follows"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *deviceFxFollows) Set(val string) error {
+	addr := "/device/fx/follows"
+	return ep.device.SetString(addr, val)
+}
+
+type deviceFxFollowsDevice struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceFxFollowsDevice) Bind(callback func(bool) error) {
+	addr := "/device/fx/follows/device"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceFxFollowsDevice) Set(val bool) error {
+	addr := "/device/fx/follows/device"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceFxFollowsLast_touched struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceFxFollowsLast_touched) Bind(callback func(bool) error) {
+	addr := "/device/fx/follows/last_touched"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceFxFollowsLast_touched) Set(val bool) error {
+	addr := "/device/fx/follows/last_touched"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceFxFollowsFocused struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceFxFollowsFocused) Bind(callback func(bool) error) {
+	addr := "/device/fx/follows/focused"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceFxFollowsFocused) Set(val bool) error {
+	addr := "/device/fx/follows/focused"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceFxSelect struct {
+	device *devices.OscDevice
+	state  deviceFxSelectState
+}
+
+type deviceFxSelectState struct {
+	selectNum int64
+}
+
+func (ep *deviceFxSelect) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/device/fx/select/%d",
+		ep.state.selectNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceFxSelect) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/device/fx/select/%d",
+		ep.state.selectNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceFxMinus struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceFxMinus) Bind(callback func(bool) error) {
+	addr := "/device/fx/minus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceFxMinus) Set(val bool) error {
+	addr := "/device/fx/minus"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceFxPlus struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceFxPlus) Bind(callback func(bool) error) {
+	addr := "/device/fx/plus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceFxPlus) Set(val bool) error {
+	addr := "/device/fx/plus"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceFxparam struct {
+	device *devices.OscDevice
+	Bank   *deviceFxparamBank
+}
+
+func (deviceFxparam *deviceFxparam) Count(countNum int64) *deviceFxparamCount {
+	return &deviceFxparamCount{
+		state: deviceFxparamCountState{
+			countNum: countNum,
+		},
+		device: deviceFxparam.device,
+	}
+}
+
+type deviceFxparamCount struct {
+	device *devices.OscDevice
+	state  deviceFxparamCountState
+}
+
+type deviceFxparamCountState struct {
+	countNum int64
+}
+
+func (ep *deviceFxparamCount) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/device/fxparam/count/%d",
+		ep.state.countNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceFxparamCount) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/device/fxparam/count/%d",
+		ep.state.countNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceFxparamBank struct {
+	device *devices.OscDevice
+	Str    *deviceFxparamBankStr
+	Minus  *deviceFxparamBankMinus
+	Plus   *deviceFxparamBankPlus
+}
+
+func (deviceFxparamBank *deviceFxparamBank) Select(selectNum int64) *deviceFxparamBankSelect {
+	return &deviceFxparamBankSelect{
+		state: deviceFxparamBankSelectState{
+			selectNum: selectNum,
+		},
+		device: deviceFxparamBank.device,
+	}
+}
+
+type deviceFxparamBankSelect struct {
+	device *devices.OscDevice
+	state  deviceFxparamBankSelectState
+}
+
+type deviceFxparamBankSelectState struct {
+	selectNum int64
+}
+
+func (ep *deviceFxparamBankSelect) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/device/fxparam/bank/select/%d",
+		ep.state.selectNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceFxparamBankSelect) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/device/fxparam/bank/select/%d",
+		ep.state.selectNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceFxparamBankStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceFxparamBankStr) Bind(callback func(string) error) {
+	addr := "/device/fxparam/bank/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *deviceFxparamBankStr) Set(val string) error {
+	addr := "/device/fxparam/bank/str"
+	return ep.device.SetString(addr, val)
+}
+
+type deviceFxparamBankMinus struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceFxparamBankMinus) Bind(callback func(bool) error) {
+	addr := "/device/fxparam/bank/minus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceFxparamBankMinus) Set(val bool) error {
+	addr := "/device/fxparam/bank/minus"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceFxparamBankPlus struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceFxparamBankPlus) Bind(callback func(bool) error) {
+	addr := "/device/fxparam/bank/plus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceFxparamBankPlus) Set(val bool) error {
+	addr := "/device/fxparam/bank/plus"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceFxinstparam struct {
+	device *devices.OscDevice
+	Bank   *deviceFxinstparamBank
+}
+
+func (deviceFxinstparam *deviceFxinstparam) Count(countNum int64) *deviceFxinstparamCount {
+	return &deviceFxinstparamCount{
+		state: deviceFxinstparamCountState{
+			countNum: countNum,
+		},
+		device: deviceFxinstparam.device,
+	}
+}
+
+type deviceFxinstparamCount struct {
+	device *devices.OscDevice
+	state  deviceFxinstparamCountState
+}
+
+type deviceFxinstparamCountState struct {
+	countNum int64
+}
+
+func (ep *deviceFxinstparamCount) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/device/fxinstparam/count/%d",
+		ep.state.countNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceFxinstparamCount) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/device/fxinstparam/count/%d",
+		ep.state.countNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceFxinstparamBank struct {
+	device *devices.OscDevice
+	Str    *deviceFxinstparamBankStr
+	Minus  *deviceFxinstparamBankMinus
+	Plus   *deviceFxinstparamBankPlus
+}
+
+func (deviceFxinstparamBank *deviceFxinstparamBank) Select(selectNum int64) *deviceFxinstparamBankSelect {
+	return &deviceFxinstparamBankSelect{
+		state: deviceFxinstparamBankSelectState{
+			selectNum: selectNum,
+		},
+		device: deviceFxinstparamBank.device,
+	}
+}
+
+type deviceFxinstparamBankSelect struct {
+	device *devices.OscDevice
+	state  deviceFxinstparamBankSelectState
+}
+
+type deviceFxinstparamBankSelectState struct {
+	selectNum int64
+}
+
+func (ep *deviceFxinstparamBankSelect) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/device/fxinstparam/bank/select/%d",
+		ep.state.selectNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceFxinstparamBankSelect) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/device/fxinstparam/bank/select/%d",
+		ep.state.selectNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceFxinstparamBankStr struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceFxinstparamBankStr) Bind(callback func(string) error) {
+	addr := "/device/fxinstparam/bank/str"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *deviceFxinstparamBankStr) Set(val string) error {
+	addr := "/device/fxinstparam/bank/str"
+	return ep.device.SetString(addr, val)
+}
+
+type deviceFxinstparamBankMinus struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceFxinstparamBankMinus) Bind(callback func(bool) error) {
+	addr := "/device/fxinstparam/bank/minus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceFxinstparamBankMinus) Set(val bool) error {
+	addr := "/device/fxinstparam/bank/minus"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceFxinstparamBankPlus struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceFxinstparamBankPlus) Bind(callback func(bool) error) {
+	addr := "/device/fxinstparam/bank/plus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceFxinstparamBankPlus) Set(val bool) error {
+	addr := "/device/fxinstparam/bank/plus"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceMarker struct {
+	device *devices.OscDevice
+	Bank   *deviceMarkerBank
+}
+
+func (deviceMarker *deviceMarker) Count(countNum int64) *deviceMarkerCount {
+	return &deviceMarkerCount{
+		state: deviceMarkerCountState{
+			countNum: countNum,
+		},
+		device: deviceMarker.device,
+	}
+}
+
+type deviceMarkerCount struct {
+	device *devices.OscDevice
+	state  deviceMarkerCountState
+}
+
+type deviceMarkerCountState struct {
+	countNum int64
+}
+
+func (ep *deviceMarkerCount) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/device/marker/count/%d",
+		ep.state.countNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceMarkerCount) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/device/marker/count/%d",
+		ep.state.countNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceMarkerBank struct {
+	device *devices.OscDevice
+	Minus  *deviceMarkerBankMinus
+	Plus   *deviceMarkerBankPlus
+}
+
+func (deviceMarkerBank *deviceMarkerBank) Select(selectNum int64) *deviceMarkerBankSelect {
+	return &deviceMarkerBankSelect{
+		state: deviceMarkerBankSelectState{
+			selectNum: selectNum,
+		},
+		device: deviceMarkerBank.device,
+	}
+}
+
+type deviceMarkerBankSelect struct {
+	device *devices.OscDevice
+	state  deviceMarkerBankSelectState
+}
+
+type deviceMarkerBankSelectState struct {
+	selectNum int64
+}
+
+func (ep *deviceMarkerBankSelect) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/device/marker/bank/select/%d",
+		ep.state.selectNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceMarkerBankSelect) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/device/marker/bank/select/%d",
+		ep.state.selectNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceMarkerBankMinus struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceMarkerBankMinus) Bind(callback func(bool) error) {
+	addr := "/device/marker/bank/minus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceMarkerBankMinus) Set(val bool) error {
+	addr := "/device/marker/bank/minus"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceMarkerBankPlus struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceMarkerBankPlus) Bind(callback func(bool) error) {
+	addr := "/device/marker/bank/plus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceMarkerBankPlus) Set(val bool) error {
+	addr := "/device/marker/bank/plus"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceRegion struct {
+	device *devices.OscDevice
+	Bank   *deviceRegionBank
+}
+
+func (deviceRegion *deviceRegion) Count(countNum int64) *deviceRegionCount {
+	return &deviceRegionCount{
+		state: deviceRegionCountState{
+			countNum: countNum,
+		},
+		device: deviceRegion.device,
+	}
+}
+
+type deviceRegionCount struct {
+	device *devices.OscDevice
+	state  deviceRegionCountState
+}
+
+type deviceRegionCountState struct {
+	countNum int64
+}
+
+func (ep *deviceRegionCount) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/device/region/count/%d",
+		ep.state.countNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceRegionCount) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/device/region/count/%d",
+		ep.state.countNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceRegionBank struct {
+	device *devices.OscDevice
+	Minus  *deviceRegionBankMinus
+	Plus   *deviceRegionBankPlus
+}
+
+func (deviceRegionBank *deviceRegionBank) Select(selectNum int64) *deviceRegionBankSelect {
+	return &deviceRegionBankSelect{
+		state: deviceRegionBankSelectState{
+			selectNum: selectNum,
+		},
+		device: deviceRegionBank.device,
+	}
+}
+
+type deviceRegionBankSelect struct {
+	device *devices.OscDevice
+	state  deviceRegionBankSelectState
+}
+
+type deviceRegionBankSelectState struct {
+	selectNum int64
+}
+
+func (ep *deviceRegionBankSelect) Bind(callback func(bool) error) {
+	addr := fmt.Sprintf(
+		"/device/region/bank/select/%d",
+		ep.state.selectNum,
+	)
+
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceRegionBankSelect) Set(val bool) error {
+	addr := fmt.Sprintf(
+		"/device/region/bank/select/%d",
+		ep.state.selectNum,
+	)
+
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceRegionBankMinus struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceRegionBankMinus) Bind(callback func(bool) error) {
+	addr := "/device/region/bank/minus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceRegionBankMinus) Set(val bool) error {
+	addr := "/device/region/bank/minus"
+	return ep.device.SetBool(addr, val)
+}
+
+type deviceRegionBankPlus struct {
+	device *devices.OscDevice
+}
+
+func (ep *deviceRegionBankPlus) Bind(callback func(bool) error) {
+	addr := "/device/region/bank/plus"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *deviceRegionBankPlus) Set(val bool) error {
+	addr := "/device/region/bank/plus"
+	return ep.device.SetBool(addr, val)
+}
+
+type reaperconfig struct {
+	device *devices.OscDevice
+	Track  *reaperconfigTrack
+}
+
+type reaperconfigTrack struct {
+	device  *devices.OscDevice
+	Follows *reaperconfigTrackFollows
+}
+
+type reaperconfigTrackFollows struct {
+	device       *devices.OscDevice
+	Reaperconfig *reaperconfigTrackFollowsReaperconfig
+	Device       *reaperconfigTrackFollowsDevice
+}
+
+func (ep *reaperconfigTrackFollows) Bind(callback func(string) error) {
+	addr := "/reaperconfig/track/follows"
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *reaperconfigTrackFollows) Set(val string) error {
+	addr := "/reaperconfig/track/follows"
+	return ep.device.SetString(addr, val)
+}
+
+type reaperconfigTrackFollowsReaperconfig struct {
+	device *devices.OscDevice
+}
+
+func (ep *reaperconfigTrackFollowsReaperconfig) Bind(callback func(bool) error) {
+	addr := "/reaperconfig/track/follows/reaperconfig"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *reaperconfigTrackFollowsReaperconfig) Set(val bool) error {
+	addr := "/reaperconfig/track/follows/reaperconfig"
+	return ep.device.SetBool(addr, val)
+}
+
+type reaperconfigTrackFollowsDevice struct {
+	device *devices.OscDevice
+}
+
+func (ep *reaperconfigTrackFollowsDevice) Bind(callback func(bool) error) {
+	addr := "/reaperconfig/track/follows/device"
+	ep.device.BindBool(addr, callback)
+}
+
+func (ep *reaperconfigTrackFollowsDevice) Set(val bool) error {
+	addr := "/reaperconfig/track/follows/device"
+	return ep.device.SetBool(addr, val)
 }
