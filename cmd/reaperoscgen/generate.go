@@ -3,31 +3,53 @@ package main
 import (
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 )
 
-func generateInitializationTopLevel(n *Field, w io.Writer) {
-	if n.TypeNode.Qualifier != nil {
-		return
+func getAllParentStateFields(n *Node, fields ...Qualifier) []Qualifier {
+	if fields == nil {
+		fields = []Qualifier{}
 	}
-	fmt.Fprintf(w, "		%s: &%s{\n", n.Name, n.TypeNode.Name)
-	fmt.Fprintf(w, "			device: dev,\n")
-	for _, child := range n.TypeNode.Fields {
-		generateInitializationTopLevel(child, w)
+	if n.Parent == nil || n.Qualifier == nil {
+		slices.Reverse(fields)
+		return fields
 	}
-	fmt.Fprintf(w, "		},\n")
+	return getAllParentStateFields(n.Parent, append(fields, *n.Qualifier)...)
 }
 
-func generateInitializationGetter(recvName string, n *Field, w io.Writer) {
+func generateInitializationTopLevel(n *Field, w io.Writer, depth int) {
 	if n.TypeNode.Qualifier != nil {
 		return
 	}
-	fmt.Fprintf(w, "		%s: &%s{\n", n.Name, n.TypeNode.Name)
-	fmt.Fprintf(w, "			device: %s.device,\n", recvName)
+	indent := strings.Repeat("\t", depth+2)
+	fmt.Fprintf(w, "		%s%s: &%s{\n", indent, n.Name, n.TypeNode.Name)
+	fmt.Fprintf(w, "			%sdevice: dev,\n", indent)
 	for _, child := range n.TypeNode.Fields {
-		generateInitializationGetter(recvName, child, w)
+		generateInitializationTopLevel(child, w, depth+1)
 	}
-	fmt.Fprintf(w, "		},\n")
+	fmt.Fprintf(w, "		%s},\n", indent)
+}
+
+// TODO: need to initialize the state struct here too, and update with state values from parent
+func generateInitializationGetter(recvName string, n *Field, w io.Writer, depth int) {
+	indent := strings.Repeat("\t", depth)
+	fmt.Fprintf(w, "		%s%s: &%s{\n", indent, n.Name, n.TypeNode.Name)
+	fmt.Fprintf(w, "			%sdevice: %s.device,\n", indent, recvName)
+	if n.TypeNode.Qualifier != nil {
+		fmt.Fprintf(w, "			%sstate: %s{\n", indent, n.TypeNode.Name+"State")
+		for _, stateField := range getAllParentStateFields(n.TypeNode) {
+			fmt.Fprintf(w, "			%s%s: %s.state.%s,\n", indent, stateField.ParamName, n.TypeNode.Parent.Name, stateField.ParamName)
+		}
+		fmt.Fprintf(w, "			%s%s: %s,\n", indent, n.TypeNode.Qualifier.ParamName, n.TypeNode.Qualifier.ParamName)
+		fmt.Fprintf(w, "			%s},", indent)
+	}
+	for _, field := range n.TypeNode.Fields {
+		if field.TypeNode.Qualifier == nil {
+			generateInitializationGetter(recvName, field, w, depth+1)
+		}
+	}
+	fmt.Fprintf(w, "		%s},\n", indent)
 }
 
 func generateRootStruct(n *Node, w io.Writer) {
@@ -49,12 +71,12 @@ func generateRootStruct(n *Node, w io.Writer) {
 	fmt.Fprintf(w, "        device: dev,\n")
 	// Initialize child structs that are not behind a qualified getter
 	for _, child := range n.Fields {
-		generateInitializationTopLevel(child, w)
+		generateInitializationTopLevel(child, w, 0)
 	}
 	fmt.Fprintf(w, "    }\n")
 	fmt.Fprintf(w, "}\n\n")
 
-	fmt.Fprintf(w, "func (ep *Reaper) OscDispatcher() *osc.StandardDispatcher{\n")
+	fmt.Fprintf(w, "func (ep *Reaper) OscDispatcher() devices.Dispatcher{\n")
 	fmt.Fprintf(w, "    return ep.device.Dispatcher\n")
 	fmt.Fprintf(w, "}\n\n")
 
@@ -137,7 +159,9 @@ func generateQualifiedGetter(n *Node, field *Field, w io.Writer) {
 	// Copy device pointer if your struct has it
 	fmt.Fprintf(w, "		device: %s.device,\n", recvName)
 	for _, field := range field.TypeNode.Fields {
-		generateInitializationGetter(recvName, field, w)
+		if field.TypeNode.Qualifier == nil {
+			generateInitializationGetter(recvName, field, w, 0)
+		}
 	}
 	fmt.Fprintf(w, "	}\n")
 	fmt.Fprintf(w, "}\n\n")
