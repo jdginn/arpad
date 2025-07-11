@@ -7,10 +7,15 @@ import (
 	"github.com/hypebeast/go-osc/osc"
 )
 
+type Dispatcher interface {
+	osc.Dispatcher
+	AddMsgHandler(string, func(*osc.Message)) error
+}
+
 type OscDevice struct {
 	Client     *osc.Client
 	Server     *osc.Server
-	Dispatcher *osc.StandardDispatcher
+	Dispatcher Dispatcher
 
 	clientIP   string
 	clientPort int
@@ -18,10 +23,10 @@ type OscDevice struct {
 	serverPort int
 }
 
-func NewOscDevice(clientIp string, clientPort int, serverIp string, serverPort int) *OscDevice {
+func NewOscDevice(clientIp string, clientPort int, serverIp string, serverPort int, dispatcher Dispatcher) *OscDevice {
 	return &OscDevice{
 		Client:     osc.NewClient(clientIp, clientPort),
-		Dispatcher: osc.NewStandardDispatcher(),
+		Dispatcher: dispatcher,
 		clientIP:   clientIp,
 		clientPort: clientPort,
 		serverIP:   serverIp,
