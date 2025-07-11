@@ -2,7 +2,6 @@ package layers
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"strconv"
 
@@ -44,28 +43,24 @@ type TrackManager struct {
 func (t *TrackManager) listenForNewTracks(reaper *reaper.Reaper) {
 	// Find and populate our collection of track states
 	if err := reaper.OscDispatcher().AddMsgHandler("/track/@/*", func(m *osc.Message) {
-		fmt.Printf("Found a new track!\n")
-		fmt.Println(m.Arguments)
 		// TODO: this seems a bit brittle
 		idx, err := strconv.ParseInt(m.Arguments[1].(string), 10, 64)
 		if err != nil {
-			panic(err)
+			return
 		}
 		if _, exists := get(t.tracks, func(track *TrackData) bool {
 			return track.reaperIdx == idx
 		}); !exists {
-			fmt.Printf("Got a new track %d\n", idx)
 			newTrack := NewTrackData(
 				t.x,
 				idx,
 			)
-			fmt.Printf("track.idx.vol: %+v\n", reaper.Track(idx))
 			link(reaper.Track(idx).Volume.Db, newTrack.Volume)
 			link(reaper.Track(idx).Pan, newTrack.Pan)
 			link(reaper.Track(idx).Mute, newTrack.Mute)
 			link(reaper.Track(idx).Solo, newTrack.Solo)
 			link(reaper.Track(idx).Recarm, newTrack.Rec)
-			// OnTransition(MIX, newTrack.TransitionMix)
+			t.tracks = append(t.tracks, newTrack)
 		}
 	}); err != nil {
 		panic(err)
@@ -131,7 +126,6 @@ func NewTrackData(x *xtouchlib.XTouchDefault, reaperIdx int64) *TrackData {
 type trackDataVolume struct{ *TrackData }
 
 func (v *trackDataVolume) Set(val float64) error {
-	fmt.Printf("Track[%d] volume: %f\n", v.reaperIdx, val)
 	v.volume = val
 	v.x.Channels[v.surfaceIdx].Fader.Set(normFloatToInt(val))
 	return nil
