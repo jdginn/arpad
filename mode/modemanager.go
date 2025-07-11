@@ -90,18 +90,10 @@ func Stateful[T any](mode Mode, s setable[T]) setable[T] {
 	return &statefulSetable[T]{mode: mode, target: s}
 }
 
-func OnTransition(callback func()) (errs error) {
+func OnTransition(mode Mode, callback func() error) {
 	reg.mu.Lock()
 	defer reg.mu.Unlock()
-	for _, e := range reg.callbacks {
-		if reg.currMode|e.mode != 0 {
-			err := e.callback()
-			if err != nil {
-				errs = errors.Join(errs, err)
-			}
-		}
-	}
-	return errs
+	reg.callbacks = append(reg.callbacks, callbackEvent{mode: mode, callback: callback})
 }
 
 func Bind[A any](mode Mode, binder bindable[A], callback func(A) error) {
