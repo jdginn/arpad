@@ -24,10 +24,10 @@ func lowercase(s string) string {
 type Node struct {
 	pathSegment string // path segment name
 	Name        string
-	Qualifier   *Qualifier  // nil if not a wildcard, else describes param
-	Fields      []*Field    // next path segments
-	Endpoint    *Endpoint   // non-nil if this node is a leaf
-	Parent      *Node       // for upward traversal (optional)
+	Qualifier   *Qualifier // nil if not a wildcard, else describes wildcard param
+	Fields      []*Field
+	Endpoint    *Endpoint // non-nil if this node is a leaf
+	Parent      *Node
 	StateFields []Qualifier // for codegen
 	PathElement string
 }
