@@ -32,14 +32,10 @@ type Fader struct {
 	ChannelNo uint8
 }
 
-// Bind specifies the callback to run when this fader is moved.
-//
-// NOTE: the nil first argument is to satisfy the dev.Binding interface
 func (f *Fader) Bind(callback func(int16) error) {
 	f.d.PitchBend(uint8(f.ChannelNo)).Bind(callback)
 }
 
-// SetFaderAbsolute moves this fader to a value between 0 and max(int16).
 func (f *Fader) Set(val int16) error {
 	return f.d.PitchBend(uint8(f.ChannelNo)).Set(val)
 }
@@ -178,7 +174,7 @@ func (x *XTouch) Run() {
 	x.base.Run()
 }
 
-// NewFader returns a new fader on the gien channel.
+// NewFader returns a new fader on the given channel.
 //
 // NewFader accepts an optional, variadic list of callbacks to run when the fader is moved.
 func (x *XTouch) NewFader(channelNo uint8) *Fader {
@@ -206,15 +202,15 @@ func (x *XTouch) NewEncoder(channelNo uint8, id uint8) *Encoder {
 	return enc
 }
 
-func (x *XTouch) NewScribble(channel uint8) Scribble {
-	return Scribble{
+func (x *XTouch) NewScribble(channel uint8) *Scribble {
+	return &Scribble{
 		x.base,
 		channel,
 	}
 }
 
-func (x *XTouch) NewMeter(channel uint8) Meter {
-	return Meter{
+func (x *XTouch) NewMeter(channel uint8) *Meter {
+	return &Meter{
 		x.base,
 		channel,
 	}
@@ -226,12 +222,12 @@ type channelStrip struct {
 	// TODO: Encoder
 	Encoder       *Encoder
 	EncoderButton *Button
-	Scribble      Scribble
+	Scribble      *Scribble
 	Rec           *ToggleButton
 	Solo          *ToggleButton
 	Mute          *ToggleButton
 	Select        *Button
-	Meter         Meter
+	Meter         *Meter
 	Fader         *Fader
 	// TODO: 7Seg
 	// TODO: JogWheel
@@ -239,8 +235,9 @@ type channelStrip struct {
 
 // NewChannelStrip returns a new channelStrip corresponding to the given index into a
 // bank of channelStrips. For typical devices, id will be between 0 and 7.
-func (x *XTouch) NewChannelStrip(id uint8) channelStrip {
-	return channelStrip{
+func (x *XTouch) NewChannelStrip(id uint8) *channelStrip {
+	fmt.Printf("New channel strip with itd %d\n", id)
+	return &channelStrip{
 		Encoder:       x.NewEncoder(0, id+32),
 		EncoderButton: x.NewButton(0, id+16),
 		Scribble:      x.NewScribble(id + 20),
@@ -262,8 +259,8 @@ type EncoderAssign struct {
 	INST         *Button
 }
 
-func (x *XTouch) NewEncoderAssign() EncoderAssign {
-	return EncoderAssign{
+func (x *XTouch) NewEncoderAssign() *EncoderAssign {
+	return &EncoderAssign{
 		TRACK:        x.NewButton(0, 40),
 		PAN_SURROUND: x.NewButton(0, 42),
 		EQ:           x.NewButton(0, 44),
@@ -285,8 +282,8 @@ type View struct {
 	USER         *Button
 }
 
-func (x XTouch) NewView() View {
-	return View{
+func (x *XTouch) NewView() *View {
+	return &View{
 		GLOBAL:       x.NewButton(0, 51),
 		MIDI:         x.NewButton(0, 62),
 		INPUTS:       x.NewButton(0, 63),
@@ -310,8 +307,8 @@ type Function struct {
 	F8 *Button
 }
 
-func (x XTouch) NewFunction() Function {
-	return Function{
+func (x *XTouch) NewFunction() *Function {
+	return &Function{
 		F1: x.NewButton(0, 54),
 		F2: x.NewButton(0, 55),
 		F3: x.NewButton(0, 56),
@@ -330,8 +327,8 @@ type Modify struct {
 	ALT     *Button
 }
 
-func (x XTouch) NewModify() Modify {
-	return Modify{
+func (x *XTouch) NewModify() *Modify {
+	return &Modify{
 		SHIFT:   x.NewButton(0, 70),
 		OPTION:  x.NewButton(0, 71),
 		CONTROL: x.NewButton(0, 72),
@@ -348,8 +345,8 @@ type Automation struct {
 	GROUP    *Button
 }
 
-func (x XTouch) NewAutomation() Automation {
-	return Automation{
+func (x *XTouch) NewAutomation() *Automation {
+	return &Automation{
 		READ_OFF: x.NewButton(0, 74),
 		WRITE:    x.NewButton(0, 75),
 		TRIM:     x.NewButton(0, 76),
@@ -366,8 +363,8 @@ type Utility struct {
 	ENTER  *Button
 }
 
-func (x XTouch) NewUtility() Utility {
-	return Utility{
+func (x *XTouch) NewUtility() *Utility {
+	return &Utility{
 		SAVE:   x.NewButton(0, 80),
 		UNDO:   x.NewButton(0, 81),
 		CANCEL: x.NewButton(0, 82),
@@ -390,8 +387,8 @@ type Transport struct {
 	RECORD  *Button
 }
 
-func (x *XTouch) NewTransport() Transport {
-	return Transport{
+func (x *XTouch) NewTransport() *Transport {
+	return &Transport{
 		Marker:  x.NewButton(0, 84),
 		Nudge:   x.NewButton(0, 85),
 		Cycle:   x.NewToggleButton(0, 86),
@@ -414,8 +411,8 @@ type Page struct {
 	CHANNEL_R *Button
 }
 
-func (x *XTouch) NewPage() Page {
-	return Page{
+func (x *XTouch) NewPage() *Page {
+	return &Page{
 		BANK_L:    x.NewButton(0, 46),
 		BANK_R:    x.NewButton(0, 47),
 		CHANNEL_L: x.NewButton(0, 48),
@@ -432,8 +429,8 @@ type Navigation struct {
 	SCRUB *Button
 }
 
-func (x *XTouch) NewNavigation() Navigation {
-	return Navigation{
+func (x *XTouch) NewNavigation() *Navigation {
+	return &Navigation{
 		UP:    x.NewButton(0, 96),
 		DOWN:  x.NewButton(0, 97),
 		LEFT:  x.NewButton(0, 98),
@@ -445,24 +442,24 @@ func (x *XTouch) NewNavigation() Navigation {
 
 // XTouchDefault represents a Behringer XTouch DAW control surface.
 type XTouchDefault struct {
-	XTouch
+	*XTouch
 
-	Channels      []channelStrip
-	EncoderAssign EncoderAssign
-	View          View
-	Function      Function
-	Modify        Modify
-	Automation    Automation
-	Utility       Utility
-	Transport     Transport
-	Page          Page
-	Navigation    Navigation
+	Channels      []*channelStrip
+	EncoderAssign *EncoderAssign
+	View          *View
+	Function      *Function
+	Modify        *Modify
+	Automation    *Automation
+	Utility       *Utility
+	Transport     *Transport
+	Page          *Page
+	Navigation    *Navigation
 }
 
 // New returns a properly initialized XTouchDefault struct.
 func New(d *dev.MidiDevice) *XTouchDefault {
 	x := &XTouchDefault{
-		XTouch: XTouch{
+		XTouch: &XTouch{
 			base:            d,
 			handshakeActive: false,
 			lastResponse:    time.Time{},
@@ -486,14 +483,14 @@ func New(d *dev.MidiDevice) *XTouchDefault {
 
 // XTouchExtender represents a Behringer XTouchExtender DAW control surface.
 type XTouchExtender struct {
-	XTouch
+	*XTouch
 
-	Channels []channelStrip
+	Channels []*channelStrip
 }
 
-func NewExtender(d *dev.MidiDevice) XTouchExtender {
-	x := XTouchExtender{
-		XTouch: XTouch{
+func NewExtender(d *dev.MidiDevice) *XTouchExtender {
+	x := &XTouchExtender{
+		XTouch: &XTouch{
 			base:            d,
 			handshakeActive: false,
 			lastResponse:    time.Time{},
