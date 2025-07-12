@@ -53,7 +53,7 @@ func (o *OscDevice) Run() error {
 }
 
 func (o *OscDevice) SetInt(key string, val int64) error {
-	return o.Client.Send(osc.NewMessage(key, val))
+	return o.Client.Send(osc.NewMessage(key, int32(val)))
 }
 
 func (o *OscDevice) SetFloat(key string, val float64) error {
