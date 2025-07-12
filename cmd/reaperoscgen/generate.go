@@ -7,17 +7,7 @@ import (
 	"strings"
 )
 
-func getAllParentStateFields(n *Node, fields ...Qualifier) []Qualifier {
-	if fields == nil {
-		fields = []Qualifier{}
-	}
-	if n.Parent == nil || n.Qualifier == nil {
-		slices.Reverse(fields)
-		return fields
-	}
-	return getAllParentStateFields(n.Parent, append(fields, *n.Qualifier)...)
-}
-
+// TODO: this indentation is very ugly but for now it works
 func generateInitializationTopLevel(n *Field, w io.Writer, depth int) {
 	if n.TypeNode.Qualifier != nil {
 		return
@@ -31,22 +21,46 @@ func generateInitializationTopLevel(n *Field, w io.Writer, depth int) {
 	fmt.Fprintf(w, "		%s},\n", indent)
 }
 
-// TODO: need to initialize the state struct here too, and update with state values from parent
-func generateInitializationGetter(recvName string, n *Field, w io.Writer, depth int) {
+type qn struct {
+	n *Node
+	q Qualifier
+}
+
+func getAllParentStateFields(n *Node, fields ...qn) []qn {
+	if fields == nil {
+		fields = []qn{}
+	}
+	if n.Qualifier != nil {
+		return append(fields, qn{n, *n.Qualifier})
+	}
+	if n.Parent == nil {
+		slices.Reverse(fields)
+		return fields
+	}
+	fmt.Printf("n.parent: %v\n", n.Parent)
+	return getAllParentStateFields(n.Parent, fields...)
+}
+
+// TODO: this indentation is very ugly but for now it works
+func generateInitializationGetter(receiver *Node, n *Field, w io.Writer, depth int) {
 	indent := strings.Repeat("\t", depth)
 	fmt.Fprintf(w, "		%s%s: &%s{\n", indent, n.Name, n.TypeNode.Name)
-	fmt.Fprintf(w, "			%sdevice: %s.device,\n", indent, recvName)
-	if n.TypeNode.Qualifier != nil {
-		fmt.Fprintf(w, "			%sstate: %s{\n", indent, n.TypeNode.Name+"State")
-		for _, stateField := range getAllParentStateFields(n.TypeNode) {
-			fmt.Fprintf(w, "			%s%s: %s.state.%s,\n", indent, stateField.ParamName, n.TypeNode.Parent.Name, stateField.ParamName)
+	fmt.Fprintf(w, "			%sdevice: %s.device,\n", indent, lowercase(receiver.Name))
+	fmt.Printf("%s hasQual %v\n", n.TypeNode.Name, (n.TypeNode.Qualifier != nil))
+	fmt.Fprintf(w, "			%sstate: %s{\n", indent, n.TypeNode.Name+"State")
+	if n.TypeNode.Parent != nil {
+		for _, stateField := range getAllParentStateFields(n.TypeNode.Parent) {
+			if stateField.n.Parent == receiver {
+				fmt.Fprintf(w, "			%s%s: %s,\n", indent, stateField.q.ParamName, stateField.q.ParamName)
+			} else {
+				fmt.Fprintf(w, "			%s%s: %s.state.%s,\n", indent, stateField.q.ParamName, n.TypeNode.Parent.Name, stateField.q.ParamName)
+			}
 		}
-		fmt.Fprintf(w, "			%s%s: %s,\n", indent, n.TypeNode.Qualifier.ParamName, n.TypeNode.Qualifier.ParamName)
-		fmt.Fprintf(w, "			%s},", indent)
 	}
+	fmt.Fprintf(w, "			%s},", indent)
 	for _, field := range n.TypeNode.Fields {
 		if field.TypeNode.Qualifier == nil {
-			generateInitializationGetter(recvName, field, w, depth+1)
+			generateInitializationGetter(receiver, field, w, depth+1)
 		}
 	}
 	fmt.Fprintf(w, "		%s},\n", indent)
@@ -160,7 +174,7 @@ func generateQualifiedGetter(n *Node, field *Field, w io.Writer) {
 	fmt.Fprintf(w, "		device: %s.device,\n", recvName)
 	for _, field := range field.TypeNode.Fields {
 		if field.TypeNode.Qualifier == nil {
-			generateInitializationGetter(recvName, field, w, 0)
+			generateInitializationGetter(n, field, w, 0)
 		}
 	}
 	fmt.Fprintf(w, "	}\n")
@@ -253,7 +267,11 @@ func generateSetMethod(n *Node, w io.Writer) {
 	case "string":
 		fmt.Fprintf(w, "    return ep.device.SetString(addr, val)\n")
 	case "bool":
-		fmt.Fprintf(w, "    return ep.device.SetBool(addr, val)\n")
+		fmt.Fprintf(w, "    if val {\n")
+		fmt.Fprintf(w, "    	return ep.device.SetInt(addr, 1)\n")
+		fmt.Fprintf(w, "    } else {\n")
+		fmt.Fprintf(w, "    	return ep.device.SetInt(addr, 0)\n")
+		fmt.Fprintf(w, "    }\n")
 	default:
 		panic("bug")
 	}
