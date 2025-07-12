@@ -19,7 +19,7 @@ const (
 
 	// Timing constants
 	pingInterval    = 2 * time.Second
-	responseTimeout = 8 * time.Second
+	responseTimeout = 4 * time.Second
 )
 
 // Fader represents a motorized fader on an xtouch controller.
@@ -133,7 +133,8 @@ func (x *XTouch) startHandshake() error {
 				// Check for response timeout
 				x.handshakeMutex.RLock()
 				if time.Since(x.lastResponse) > responseTimeout {
-					fmt.Println("Warning: No handshake response received within timeout period")
+					fmt.Println("Warning: No handshake response received within timeout period; giving up")
+					return
 				}
 				x.handshakeMutex.RUnlock()
 
@@ -223,9 +224,9 @@ type channelStrip struct {
 	Encoder       *Encoder
 	EncoderButton *Button
 	Scribble      *Scribble
-	Rec           *ToggleButton
-	Solo          *ToggleButton
-	Mute          *ToggleButton
+	Rec           *Button
+	Solo          *Button
+	Mute          *Button
 	Select        *Button
 	Meter         *Meter
 	Fader         *Fader
@@ -241,9 +242,9 @@ func (x *XTouch) NewChannelStrip(id uint8) *channelStrip {
 		Encoder:       x.NewEncoder(0, id+32),
 		EncoderButton: x.NewButton(0, id+16),
 		Scribble:      x.NewScribble(id + 20),
-		Rec:           x.NewToggleButton(0, id),
-		Solo:          x.NewToggleButton(0, id+8),
-		Mute:          x.NewToggleButton(0, id+16),
+		Rec:           x.NewButton(0, id),
+		Solo:          x.NewButton(0, id+8),
+		Mute:          x.NewButton(0, id+16),
 		Select:        x.NewButton(0, id+24),
 		Meter:         x.NewMeter(id),
 		Fader:         x.NewFader(id),
