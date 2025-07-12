@@ -1,7 +1,6 @@
 package reaper
 
 import (
-	"fmt"
 	"strings"
 	stdTime "time"
 
@@ -70,10 +69,9 @@ func (s *Dispatcher) Dispatch(packet osc.Packet) {
 		return
 
 	case *osc.Message:
-		fmt.Printf("Osc message: %s\n", p.Address)
+		// fmt.Printf("Osc message: %s %v\n", p.Address, p.Arguments[0])
 		for _, namedHandler := range s.handlers {
 			if match, args := matchAddr(namedHandler.name, p.Address); match {
-				fmt.Printf("args: %v\n", args)
 				for _, arg := range args {
 					p.Arguments = append(p.Arguments, arg)
 				}
@@ -87,10 +85,9 @@ func (s *Dispatcher) Dispatch(packet osc.Packet) {
 		go func() {
 			<-timer.C
 			for _, message := range p.Messages {
-				fmt.Printf("Osc message: %s\n", message.Address)
+				// fmt.Printf("Osc message: %s %v\n", message.Address, message.Arguments[0])
 				for _, namedHandler := range s.handlers {
 					if match, args := matchAddr(namedHandler.name, message.Address); match {
-						fmt.Printf("args: %v\n", args)
 						for _, arg := range args {
 							message.Arguments = append(message.Arguments, arg)
 						}

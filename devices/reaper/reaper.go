@@ -623,16 +623,24 @@ func (reaper *Reaper) Marker(markerNum int64) *marker {
 		device: reaper.device,
 		Name: &markerName{
 			device: reaper.device,
-		},
+			state: markerNameState{
+				markerNum: markerNum,
+			}},
 		Number: &markerNumber{
 			device: reaper.device,
-			Str: &markerNumberStr{
+			state: markerNumberState{
+				markerNum: markerNum,
+			}, Str: &markerNumberStr{
 				device: reaper.device,
-			},
+				state: markerNumberStrState{
+					markerNum: markerNum,
+				}},
 		},
 		Time: &markerTime{
 			device: reaper.device,
-		},
+			state: markerTimeState{
+				markerNum: markerNum,
+			}},
 	}
 }
 
@@ -644,19 +652,29 @@ func (reaper *Reaper) Region(regionNum int64) *region {
 		device: reaper.device,
 		Name: &regionName{
 			device: reaper.device,
-		},
+			state: regionNameState{
+				regionNum: regionNum,
+			}},
 		Number: &regionNumber{
 			device: reaper.device,
-			Str: &regionNumberStr{
+			state: regionNumberState{
+				regionNum: regionNum,
+			}, Str: &regionNumberStr{
 				device: reaper.device,
-			},
+				state: regionNumberStrState{
+					regionNum: regionNum,
+				}},
 		},
 		Time: &regionTime{
 			device: reaper.device,
-		},
+			state: regionTimeState{
+				regionNum: regionNum,
+			}},
 		Length: &regionLength{
 			device: reaper.device,
-		},
+			state: regionLengthState{
+				regionNum: regionNum,
+			}},
 	}
 }
 
@@ -668,13 +686,19 @@ func (reaper *Reaper) Marker_id(marker_idNum int64) *marker_id {
 		device: reaper.device,
 		Name: &marker_idName{
 			device: reaper.device,
-		},
+			state: marker_idNameState{
+				marker_idNum: marker_idNum,
+			}},
 		Time: &marker_idTime{
 			device: reaper.device,
-		},
+			state: marker_idTimeState{
+				marker_idNum: marker_idNum,
+			}},
 		Number: &marker_idNumber{
 			device: reaper.device,
-		},
+			state: marker_idNumberState{
+				marker_idNum: marker_idNum,
+			}},
 	}
 }
 
@@ -686,16 +710,24 @@ func (reaper *Reaper) Region_id(region_idNum int64) *region_id {
 		device: reaper.device,
 		Name: &region_idName{
 			device: reaper.device,
-		},
+			state: region_idNameState{
+				region_idNum: region_idNum,
+			}},
 		Time: &region_idTime{
 			device: reaper.device,
-		},
+			state: region_idTimeState{
+				region_idNum: region_idNum,
+			}},
 		Length: &region_idLength{
 			device: reaper.device,
-		},
+			state: region_idLengthState{
+				region_idNum: region_idNum,
+			}},
 		Number: &region_idNumber{
 			device: reaper.device,
-		},
+			state: region_idNumberState{
+				region_idNum: region_idNum,
+			}},
 	}
 }
 
@@ -707,276 +739,458 @@ func (reaper *Reaper) Track(trackNum int64) *track {
 		device: reaper.device,
 		Name: &trackName{
 			device: reaper.device,
-		},
+			state: trackNameState{
+				trackNum: trackNum,
+			}},
 		Number: &trackNumber{
 			device: reaper.device,
-			Str: &trackNumberStr{
+			state: trackNumberState{
+				trackNum: trackNum,
+			}, Str: &trackNumberStr{
 				device: reaper.device,
-			},
+				state: trackNumberStrState{
+					trackNum: trackNum,
+				}},
 		},
 		Mute: &trackMute{
 			device: reaper.device,
-			Toggle: &trackMuteToggle{
+			state: trackMuteState{
+				trackNum: trackNum,
+			}, Toggle: &trackMuteToggle{
 				device: reaper.device,
-			},
+				state: trackMuteToggleState{
+					trackNum: trackNum,
+				}},
 		},
 		Solo: &trackSolo{
 			device: reaper.device,
-			Toggle: &trackSoloToggle{
+			state: trackSoloState{
+				trackNum: trackNum,
+			}, Toggle: &trackSoloToggle{
 				device: reaper.device,
-			},
+				state: trackSoloToggleState{
+					trackNum: trackNum,
+				}},
 		},
 		Recarm: &trackRecarm{
 			device: reaper.device,
-			Toggle: &trackRecarmToggle{
+			state: trackRecarmState{
+				trackNum: trackNum,
+			}, Toggle: &trackRecarmToggle{
 				device: reaper.device,
-			},
+				state: trackRecarmToggleState{
+					trackNum: trackNum,
+				}},
 		},
 		Monitor: &trackMonitor{
 			device: reaper.device,
-		},
+			state: trackMonitorState{
+				trackNum: trackNum,
+			}},
 		Select: &trackSelect{
 			device: reaper.device,
-		},
+			state: trackSelectState{
+				trackNum: trackNum,
+			}},
 		Vu: &trackVu{
 			device: reaper.device,
-			L: &trackVuL{
+			state: trackVuState{
+				trackNum: trackNum,
+			}, L: &trackVuL{
 				device: reaper.device,
-			},
+				state: trackVuLState{
+					trackNum: trackNum,
+				}},
 			R: &trackVuR{
 				device: reaper.device,
-			},
+				state: trackVuRState{
+					trackNum: trackNum,
+				}},
 		},
 		Volume: &trackVolume{
 			device: reaper.device,
-			Str: &trackVolumeStr{
+			state: trackVolumeState{
+				trackNum: trackNum,
+			}, Str: &trackVolumeStr{
 				device: reaper.device,
-			},
+				state: trackVolumeStrState{
+					trackNum: trackNum,
+				}},
 			Db: &trackVolumeDb{
 				device: reaper.device,
-			},
+				state: trackVolumeDbState{
+					trackNum: trackNum,
+				}},
 			Touch: &trackVolumeTouch{
 				device: reaper.device,
-			},
+				state: trackVolumeTouchState{
+					trackNum: trackNum,
+				}},
 		},
 		Pan: &trackPan{
 			device: reaper.device,
-			Str: &trackPanStr{
+			state: trackPanState{
+				trackNum: trackNum,
+			}, Str: &trackPanStr{
 				device: reaper.device,
-			},
+				state: trackPanStrState{
+					trackNum: trackNum,
+				}},
 			Touch: &trackPanTouch{
 				device: reaper.device,
-			},
+				state: trackPanTouchState{
+					trackNum: trackNum,
+				}},
 		},
 		Pan2: &trackPan2{
 			device: reaper.device,
-			Str: &trackPan2Str{
+			state: trackPan2State{
+				trackNum: trackNum,
+			}, Str: &trackPan2Str{
 				device: reaper.device,
-			},
+				state: trackPan2StrState{
+					trackNum: trackNum,
+				}},
 		},
 		Panmode: &trackPanmode{
 			device: reaper.device,
-		},
+			state: trackPanmodeState{
+				trackNum: trackNum,
+			}},
 		Auto: &trackAuto{
 			device: reaper.device,
-		},
+			state: trackAutoState{
+				trackNum: trackNum,
+			}},
 		Autotrim: &trackAutotrim{
 			device: reaper.device,
-		},
+			state: trackAutotrimState{
+				trackNum: trackNum,
+			}},
 		Autoread: &trackAutoread{
 			device: reaper.device,
-		},
+			state: trackAutoreadState{
+				trackNum: trackNum,
+			}},
 		Autolatch: &trackAutolatch{
 			device: reaper.device,
-		},
+			state: trackAutolatchState{
+				trackNum: trackNum,
+			}},
 		Autotouch: &trackAutotouch{
 			device: reaper.device,
-		},
+			state: trackAutotouchState{
+				trackNum: trackNum,
+			}},
 		Autowrite: &trackAutowrite{
 			device: reaper.device,
-		},
+			state: trackAutowriteState{
+				trackNum: trackNum,
+			}},
 		Fxeq: &trackFxeq{
 			device: reaper.device,
-			Bypass: &trackFxeqBypass{
+			state: trackFxeqState{
+				trackNum: trackNum,
+			}, Bypass: &trackFxeqBypass{
 				device: reaper.device,
-			},
+				state: trackFxeqBypassState{
+					trackNum: trackNum,
+				}},
 			Openui: &trackFxeqOpenui{
 				device: reaper.device,
-			},
+				state: trackFxeqOpenuiState{
+					trackNum: trackNum,
+				}},
 			Preset: &trackFxeqPreset{
 				device: reaper.device,
-			},
+				state: trackFxeqPresetState{
+					trackNum: trackNum,
+				}},
 			Presetminus: &trackFxeqPresetminus{
 				device: reaper.device,
-			},
+				state: trackFxeqPresetminusState{
+					trackNum: trackNum,
+				}},
 			Presetplus: &trackFxeqPresetplus{
 				device: reaper.device,
-			},
+				state: trackFxeqPresetplusState{
+					trackNum: trackNum,
+				}},
 			Gain: &trackFxeqGain{
 				device: reaper.device,
-				Db: &trackFxeqGainDb{
+				state: trackFxeqGainState{
+					trackNum: trackNum,
+				}, Db: &trackFxeqGainDb{
 					device: reaper.device,
-				},
+					state: trackFxeqGainDbState{
+						trackNum: trackNum,
+					}},
 			},
 			Wetdry: &trackFxeqWetdry{
 				device: reaper.device,
-				Str: &trackFxeqWetdryStr{
+				state: trackFxeqWetdryState{
+					trackNum: trackNum,
+				}, Str: &trackFxeqWetdryStr{
 					device: reaper.device,
-				},
+					state: trackFxeqWetdryStrState{
+						trackNum: trackNum,
+					}},
 			},
 			Hipass: &trackFxeqHipass{
 				device: reaper.device,
-				Freq: &trackFxeqHipassFreq{
+				state: trackFxeqHipassState{
+					trackNum: trackNum,
+				}, Freq: &trackFxeqHipassFreq{
 					device: reaper.device,
-					Hz: &trackFxeqHipassFreqHz{
+					state: trackFxeqHipassFreqState{
+						trackNum: trackNum,
+					}, Hz: &trackFxeqHipassFreqHz{
 						device: reaper.device,
-					},
+						state: trackFxeqHipassFreqHzState{
+							trackNum: trackNum,
+						}},
 					Str: &trackFxeqHipassFreqStr{
 						device: reaper.device,
-					},
+						state: trackFxeqHipassFreqStrState{
+							trackNum: trackNum,
+						}},
 				},
 				Q: &trackFxeqHipassQ{
 					device: reaper.device,
-					Oct: &trackFxeqHipassQOct{
+					state: trackFxeqHipassQState{
+						trackNum: trackNum,
+					}, Oct: &trackFxeqHipassQOct{
 						device: reaper.device,
-					},
+						state: trackFxeqHipassQOctState{
+							trackNum: trackNum,
+						}},
 					Str: &trackFxeqHipassQStr{
 						device: reaper.device,
-					},
+						state: trackFxeqHipassQStrState{
+							trackNum: trackNum,
+						}},
 				},
 			},
 			Loshelf: &trackFxeqLoshelf{
 				device: reaper.device,
-				Freq: &trackFxeqLoshelfFreq{
+				state: trackFxeqLoshelfState{
+					trackNum: trackNum,
+				}, Freq: &trackFxeqLoshelfFreq{
 					device: reaper.device,
-					Hz: &trackFxeqLoshelfFreqHz{
+					state: trackFxeqLoshelfFreqState{
+						trackNum: trackNum,
+					}, Hz: &trackFxeqLoshelfFreqHz{
 						device: reaper.device,
-					},
+						state: trackFxeqLoshelfFreqHzState{
+							trackNum: trackNum,
+						}},
 					Str: &trackFxeqLoshelfFreqStr{
 						device: reaper.device,
-					},
+						state: trackFxeqLoshelfFreqStrState{
+							trackNum: trackNum,
+						}},
 				},
 				Gain: &trackFxeqLoshelfGain{
 					device: reaper.device,
-					Db: &trackFxeqLoshelfGainDb{
+					state: trackFxeqLoshelfGainState{
+						trackNum: trackNum,
+					}, Db: &trackFxeqLoshelfGainDb{
 						device: reaper.device,
-					},
+						state: trackFxeqLoshelfGainDbState{
+							trackNum: trackNum,
+						}},
 					Str: &trackFxeqLoshelfGainStr{
 						device: reaper.device,
-					},
+						state: trackFxeqLoshelfGainStrState{
+							trackNum: trackNum,
+						}},
 				},
 				Q: &trackFxeqLoshelfQ{
 					device: reaper.device,
-					Oct: &trackFxeqLoshelfQOct{
+					state: trackFxeqLoshelfQState{
+						trackNum: trackNum,
+					}, Oct: &trackFxeqLoshelfQOct{
 						device: reaper.device,
-					},
+						state: trackFxeqLoshelfQOctState{
+							trackNum: trackNum,
+						}},
 					Str: &trackFxeqLoshelfQStr{
 						device: reaper.device,
-					},
+						state: trackFxeqLoshelfQStrState{
+							trackNum: trackNum,
+						}},
 				},
 			},
 			Notch: &trackFxeqNotch{
 				device: reaper.device,
-				Freq: &trackFxeqNotchFreq{
+				state: trackFxeqNotchState{
+					trackNum: trackNum,
+				}, Freq: &trackFxeqNotchFreq{
 					device: reaper.device,
-					Hz: &trackFxeqNotchFreqHz{
+					state: trackFxeqNotchFreqState{
+						trackNum: trackNum,
+					}, Hz: &trackFxeqNotchFreqHz{
 						device: reaper.device,
-					},
+						state: trackFxeqNotchFreqHzState{
+							trackNum: trackNum,
+						}},
 					Str: &trackFxeqNotchFreqStr{
 						device: reaper.device,
-					},
+						state: trackFxeqNotchFreqStrState{
+							trackNum: trackNum,
+						}},
 				},
 				Gain: &trackFxeqNotchGain{
 					device: reaper.device,
-					Db: &trackFxeqNotchGainDb{
+					state: trackFxeqNotchGainState{
+						trackNum: trackNum,
+					}, Db: &trackFxeqNotchGainDb{
 						device: reaper.device,
-					},
+						state: trackFxeqNotchGainDbState{
+							trackNum: trackNum,
+						}},
 					Str: &trackFxeqNotchGainStr{
 						device: reaper.device,
-					},
+						state: trackFxeqNotchGainStrState{
+							trackNum: trackNum,
+						}},
 				},
 				Q: &trackFxeqNotchQ{
 					device: reaper.device,
-					Oct: &trackFxeqNotchQOct{
+					state: trackFxeqNotchQState{
+						trackNum: trackNum,
+					}, Oct: &trackFxeqNotchQOct{
 						device: reaper.device,
-					},
+						state: trackFxeqNotchQOctState{
+							trackNum: trackNum,
+						}},
 					Str: &trackFxeqNotchQStr{
 						device: reaper.device,
-					},
+						state: trackFxeqNotchQStrState{
+							trackNum: trackNum,
+						}},
 				},
 			},
 			Hishelf: &trackFxeqHishelf{
 				device: reaper.device,
-				Freq: &trackFxeqHishelfFreq{
+				state: trackFxeqHishelfState{
+					trackNum: trackNum,
+				}, Freq: &trackFxeqHishelfFreq{
 					device: reaper.device,
-					Hz: &trackFxeqHishelfFreqHz{
+					state: trackFxeqHishelfFreqState{
+						trackNum: trackNum,
+					}, Hz: &trackFxeqHishelfFreqHz{
 						device: reaper.device,
-					},
+						state: trackFxeqHishelfFreqHzState{
+							trackNum: trackNum,
+						}},
 					Str: &trackFxeqHishelfFreqStr{
 						device: reaper.device,
-					},
+						state: trackFxeqHishelfFreqStrState{
+							trackNum: trackNum,
+						}},
 				},
 				Gain: &trackFxeqHishelfGain{
 					device: reaper.device,
-					Db: &trackFxeqHishelfGainDb{
+					state: trackFxeqHishelfGainState{
+						trackNum: trackNum,
+					}, Db: &trackFxeqHishelfGainDb{
 						device: reaper.device,
-					},
+						state: trackFxeqHishelfGainDbState{
+							trackNum: trackNum,
+						}},
 					Str: &trackFxeqHishelfGainStr{
 						device: reaper.device,
-					},
+						state: trackFxeqHishelfGainStrState{
+							trackNum: trackNum,
+						}},
 				},
 				Q: &trackFxeqHishelfQ{
 					device: reaper.device,
-					Oct: &trackFxeqHishelfQOct{
+					state: trackFxeqHishelfQState{
+						trackNum: trackNum,
+					}, Oct: &trackFxeqHishelfQOct{
 						device: reaper.device,
-					},
+						state: trackFxeqHishelfQOctState{
+							trackNum: trackNum,
+						}},
 					Str: &trackFxeqHishelfQStr{
 						device: reaper.device,
-					},
+						state: trackFxeqHishelfQStrState{
+							trackNum: trackNum,
+						}},
 				},
 			},
 			Lopass: &trackFxeqLopass{
 				device: reaper.device,
-				Freq: &trackFxeqLopassFreq{
+				state: trackFxeqLopassState{
+					trackNum: trackNum,
+				}, Freq: &trackFxeqLopassFreq{
 					device: reaper.device,
-					Hz: &trackFxeqLopassFreqHz{
+					state: trackFxeqLopassFreqState{
+						trackNum: trackNum,
+					}, Hz: &trackFxeqLopassFreqHz{
 						device: reaper.device,
-					},
+						state: trackFxeqLopassFreqHzState{
+							trackNum: trackNum,
+						}},
 					Str: &trackFxeqLopassFreqStr{
 						device: reaper.device,
-					},
+						state: trackFxeqLopassFreqStrState{
+							trackNum: trackNum,
+						}},
 				},
 				Q: &trackFxeqLopassQ{
 					device: reaper.device,
-					Oct: &trackFxeqLopassQOct{
+					state: trackFxeqLopassQState{
+						trackNum: trackNum,
+					}, Oct: &trackFxeqLopassQOct{
 						device: reaper.device,
-					},
+						state: trackFxeqLopassQOctState{
+							trackNum: trackNum,
+						}},
 					Str: &trackFxeqLopassQStr{
 						device: reaper.device,
-					},
+						state: trackFxeqLopassQStrState{
+							trackNum: trackNum,
+						}},
 				},
 			},
 		},
 		Fxinst: &trackFxinst{
 			device: reaper.device,
-			Name: &trackFxinstName{
+			state: trackFxinstState{
+				trackNum: trackNum,
+			}, Name: &trackFxinstName{
 				device: reaper.device,
-			},
+				state: trackFxinstNameState{
+					trackNum: trackNum,
+				}},
 			Bypass: &trackFxinstBypass{
 				device: reaper.device,
-			},
+				state: trackFxinstBypassState{
+					trackNum: trackNum,
+				}},
 			Openui: &trackFxinstOpenui{
 				device: reaper.device,
-			},
+				state: trackFxinstOpenuiState{
+					trackNum: trackNum,
+				}},
 			Preset: &trackFxinstPreset{
 				device: reaper.device,
-			},
+				state: trackFxinstPresetState{
+					trackNum: trackNum,
+				}},
 			Presetminus: &trackFxinstPresetminus{
 				device: reaper.device,
-			},
+				state: trackFxinstPresetminusState{
+					trackNum: trackNum,
+				}},
 			Presetplus: &trackFxinstPresetplus{
 				device: reaper.device,
-			},
+				state: trackFxinstPresetplusState{
+					trackNum: trackNum,
+				}},
 		},
 	}
 }
@@ -989,56 +1203,92 @@ func (reaper *Reaper) Fx(fxNum int64) *fx {
 		device: reaper.device,
 		Name: &fxName{
 			device: reaper.device,
-		},
+			state: fxNameState{
+				fxNum: fxNum,
+			}},
 		Number: &fxNumber{
 			device: reaper.device,
-			Str: &fxNumberStr{
+			state: fxNumberState{
+				fxNum: fxNum,
+			}, Str: &fxNumberStr{
 				device: reaper.device,
-			},
+				state: fxNumberStrState{
+					fxNum: fxNum,
+				}},
 		},
 		Bypass: &fxBypass{
 			device: reaper.device,
-		},
+			state: fxBypassState{
+				fxNum: fxNum,
+			}},
 		Openui: &fxOpenui{
 			device: reaper.device,
-		},
+			state: fxOpenuiState{
+				fxNum: fxNum,
+			}},
 		Preset: &fxPreset{
 			device: reaper.device,
-		},
+			state: fxPresetState{
+				fxNum: fxNum,
+			}},
 		Presetminus: &fxPresetminus{
 			device: reaper.device,
-		},
+			state: fxPresetminusState{
+				fxNum: fxNum,
+			}},
 		Presetplus: &fxPresetplus{
 			device: reaper.device,
-		},
+			state: fxPresetplusState{
+				fxNum: fxNum,
+			}},
 		Wetdry: &fxWetdry{
 			device: reaper.device,
-			Str: &fxWetdryStr{
+			state: fxWetdryState{
+				fxNum: fxNum,
+			}, Str: &fxWetdryStr{
 				device: reaper.device,
-			},
+				state: fxWetdryStrState{
+					fxNum: fxNum,
+				}},
 		},
 		Last_touched: &fxLast_touched{
 			device: reaper.device,
-			Track: &fxLast_touchedTrack{
+			state: fxLast_touchedState{
+				fxNum: fxNum,
+			}, Track: &fxLast_touchedTrack{
 				device: reaper.device,
-				Name: &fxLast_touchedTrackName{
+				state: fxLast_touchedTrackState{
+					fxNum: fxNum,
+				}, Name: &fxLast_touchedTrackName{
 					device: reaper.device,
-				},
+					state: fxLast_touchedTrackNameState{
+						fxNum: fxNum,
+					}},
 				Number: &fxLast_touchedTrackNumber{
 					device: reaper.device,
-					Str: &fxLast_touchedTrackNumberStr{
+					state: fxLast_touchedTrackNumberState{
+						fxNum: fxNum,
+					}, Str: &fxLast_touchedTrackNumberStr{
 						device: reaper.device,
-					},
+						state: fxLast_touchedTrackNumberStrState{
+							fxNum: fxNum,
+						}},
 				},
 			},
 			Name: &fxLast_touchedName{
 				device: reaper.device,
-			},
+				state: fxLast_touchedNameState{
+					fxNum: fxNum,
+				}},
 			Number: &fxLast_touchedNumber{
 				device: reaper.device,
-				Str: &fxLast_touchedNumberStr{
+				state: fxLast_touchedNumberState{
+					fxNum: fxNum,
+				}, Str: &fxLast_touchedNumberStr{
 					device: reaper.device,
-				},
+					state: fxLast_touchedNumberStrState{
+						fxNum: fxNum,
+					}},
 			},
 		},
 	}
@@ -1052,23 +1302,37 @@ func (reaper *Reaper) Fxparam(fxparamNum int64) *fxparam {
 		device: reaper.device,
 		Name: &fxparamName{
 			device: reaper.device,
-		},
+			state: fxparamNameState{
+				fxparamNum: fxparamNum,
+			}},
 		Value: &fxparamValue{
 			device: reaper.device,
-			Str: &fxparamValueStr{
+			state: fxparamValueState{
+				fxparamNum: fxparamNum,
+			}, Str: &fxparamValueStr{
 				device: reaper.device,
-			},
+				state: fxparamValueStrState{
+					fxparamNum: fxparamNum,
+				}},
 		},
 		Last_touched: &fxparamLast_touched{
 			device: reaper.device,
-			Name: &fxparamLast_touchedName{
+			state: fxparamLast_touchedState{
+				fxparamNum: fxparamNum,
+			}, Name: &fxparamLast_touchedName{
 				device: reaper.device,
-			},
+				state: fxparamLast_touchedNameState{
+					fxparamNum: fxparamNum,
+				}},
 			Value: &fxparamLast_touchedValue{
 				device: reaper.device,
-				Str: &fxparamLast_touchedValueStr{
+				state: fxparamLast_touchedValueState{
+					fxparamNum: fxparamNum,
+				}, Str: &fxparamLast_touchedValueStr{
 					device: reaper.device,
-				},
+					state: fxparamLast_touchedValueStrState{
+						fxparamNum: fxparamNum,
+					}},
 			},
 		},
 	}
@@ -1082,12 +1346,18 @@ func (reaper *Reaper) Fxinstparam(fxinstparamNum int64) *fxinstparam {
 		device: reaper.device,
 		Name: &fxinstparamName{
 			device: reaper.device,
-		},
+			state: fxinstparamNameState{
+				fxinstparamNum: fxinstparamNum,
+			}},
 		Value: &fxinstparamValue{
 			device: reaper.device,
-			Str: &fxinstparamValueStr{
+			state: fxinstparamValueState{
+				fxinstparamNum: fxinstparamNum,
+			}, Str: &fxinstparamValueStr{
 				device: reaper.device,
-			},
+				state: fxinstparamValueStrState{
+					fxinstparamNum: fxinstparamNum,
+				}},
 		},
 	}
 }
@@ -1100,13 +1370,19 @@ func (reaper *Reaper) Vkb_midi(vkb_midiNum int64) *vkb_midi {
 		device: reaper.device,
 		Program: &vkb_midiProgram{
 			device: reaper.device,
-		},
+			state: vkb_midiProgramState{
+				vkb_midiNum: vkb_midiNum,
+			}},
 		Channelpressure: &vkb_midiChannelpressure{
 			device: reaper.device,
-		},
+			state: vkb_midiChannelpressureState{
+				vkb_midiNum: vkb_midiNum,
+			}},
 		Pitch: &vkb_midiPitch{
 			device: reaper.device,
-		},
+			state: vkb_midiPitchState{
+				vkb_midiNum: vkb_midiNum,
+			}},
 	}
 }
 
@@ -1118,15 +1394,23 @@ func (reaper *Reaper) Action(actionNum int64) *action {
 		device: reaper.device,
 		Str: &actionStr{
 			device: reaper.device,
-		},
+			state: actionStrState{
+				actionNum: actionNum,
+			}},
 		Cc: &actionCc{
 			device: reaper.device,
-			Soft: &actionCcSoft{
+			state: actionCcState{
+				actionNum: actionNum,
+			}, Soft: &actionCcSoft{
 				device: reaper.device,
-			},
+				state: actionCcSoftState{
+					actionNum: actionNum,
+				}},
 			Relative: &actionCcRelative{
 				device: reaper.device,
-			},
+				state: actionCcRelativeState{
+					actionNum: actionNum,
+				}},
 		},
 	}
 }
@@ -1182,7 +1466,11 @@ func (ep *scrollXMinus) Bind(callback func(bool) error) {
 
 func (ep *scrollXMinus) Set(val bool) error {
 	addr := "/scroll/x/minus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type scrollXPlus struct {
@@ -1196,7 +1484,11 @@ func (ep *scrollXPlus) Bind(callback func(bool) error) {
 
 func (ep *scrollXPlus) Set(val bool) error {
 	addr := "/scroll/x/plus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type scrollY struct {
@@ -1226,7 +1518,11 @@ func (ep *scrollYMinus) Bind(callback func(bool) error) {
 
 func (ep *scrollYMinus) Set(val bool) error {
 	addr := "/scroll/y/minus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type scrollYPlus struct {
@@ -1240,7 +1536,11 @@ func (ep *scrollYPlus) Bind(callback func(bool) error) {
 
 func (ep *scrollYPlus) Set(val bool) error {
 	addr := "/scroll/y/plus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type zoom struct {
@@ -1276,7 +1576,11 @@ func (ep *zoomXMinus) Bind(callback func(bool) error) {
 
 func (ep *zoomXMinus) Set(val bool) error {
 	addr := "/zoom/x/minus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type zoomXPlus struct {
@@ -1290,7 +1594,11 @@ func (ep *zoomXPlus) Bind(callback func(bool) error) {
 
 func (ep *zoomXPlus) Set(val bool) error {
 	addr := "/zoom/x/plus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type zoomY struct {
@@ -1320,7 +1628,11 @@ func (ep *zoomYMinus) Bind(callback func(bool) error) {
 
 func (ep *zoomYMinus) Set(val bool) error {
 	addr := "/zoom/y/minus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type zoomYPlus struct {
@@ -1334,7 +1646,11 @@ func (ep *zoomYPlus) Bind(callback func(bool) error) {
 
 func (ep *zoomYPlus) Set(val bool) error {
 	addr := "/zoom/y/plus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type time struct {
@@ -1444,7 +1760,11 @@ func (ep *click) Bind(callback func(bool) error) {
 
 func (ep *click) Set(val bool) error {
 	addr := "/click"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type replace struct {
@@ -1458,7 +1778,11 @@ func (ep *replace) Bind(callback func(bool) error) {
 
 func (ep *replace) Set(val bool) error {
 	addr := "/replace"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type repeat struct {
@@ -1472,7 +1796,11 @@ func (ep *repeat) Bind(callback func(bool) error) {
 
 func (ep *repeat) Set(val bool) error {
 	addr := "/repeat"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type record struct {
@@ -1486,7 +1814,11 @@ func (ep *record) Bind(callback func(bool) error) {
 
 func (ep *record) Set(val bool) error {
 	addr := "/record"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type stop struct {
@@ -1500,7 +1832,11 @@ func (ep *stop) Bind(callback func(bool) error) {
 
 func (ep *stop) Set(val bool) error {
 	addr := "/stop"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type play struct {
@@ -1514,7 +1850,11 @@ func (ep *play) Bind(callback func(bool) error) {
 
 func (ep *play) Set(val bool) error {
 	addr := "/play"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type pause struct {
@@ -1528,7 +1868,11 @@ func (ep *pause) Bind(callback func(bool) error) {
 
 func (ep *pause) Set(val bool) error {
 	addr := "/pause"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type autorecarm struct {
@@ -1542,7 +1886,11 @@ func (ep *autorecarm) Bind(callback func(bool) error) {
 
 func (ep *autorecarm) Set(val bool) error {
 	addr := "/autorecarm"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type soloreset struct {
@@ -1556,7 +1904,11 @@ func (ep *soloreset) Bind(callback func(bool) error) {
 
 func (ep *soloreset) Set(val bool) error {
 	addr := "/soloreset"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type anysolo struct {
@@ -1570,7 +1922,11 @@ func (ep *anysolo) Bind(callback func(bool) error) {
 
 func (ep *anysolo) Set(val bool) error {
 	addr := "/anysolo"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type rewind struct {
@@ -1584,7 +1940,11 @@ func (ep *rewind) Bind(callback func(bool) error) {
 
 func (ep *rewind) Set(val bool) error {
 	addr := "/rewind"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type forward struct {
@@ -1598,7 +1958,11 @@ func (ep *forward) Bind(callback func(bool) error) {
 
 func (ep *forward) Set(val bool) error {
 	addr := "/forward"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type bymarker struct {
@@ -1612,7 +1976,11 @@ func (ep *bymarker) Bind(callback func(bool) error) {
 
 func (ep *bymarker) Set(val bool) error {
 	addr := "/bymarker"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type editloop struct {
@@ -1626,7 +1994,11 @@ func (ep *editloop) Bind(callback func(bool) error) {
 
 func (ep *editloop) Set(val bool) error {
 	addr := "/editloop"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type marker struct {
@@ -1656,7 +2028,11 @@ func (ep *marker) Set(val bool) error {
 		ep.state.markerNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type markerName struct {
@@ -1778,7 +2154,11 @@ func (ep *region) Set(val bool) error {
 		ep.state.regionNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type regionName struct {
@@ -2427,18 +2807,28 @@ func (master *master) Send(sendNum int64) *masterSend {
 		device: master.device,
 		Name: &masterSendName{
 			device: master.device,
-		},
+			state: masterSendNameState{
+				sendNum: sendNum,
+			}},
 		Volume: &masterSendVolume{
 			device: master.device,
-			Str: &masterSendVolumeStr{
+			state: masterSendVolumeState{
+				sendNum: sendNum,
+			}, Str: &masterSendVolumeStr{
 				device: master.device,
-			},
+				state: masterSendVolumeStrState{
+					sendNum: sendNum,
+				}},
 		},
 		Pan: &masterSendPan{
 			device: master.device,
-			Str: &masterSendPanStr{
+			state: masterSendPanState{
+				sendNum: sendNum,
+			}, Str: &masterSendPanStr{
 				device: master.device,
-			},
+				state: masterSendPanStrState{
+					sendNum: sendNum,
+				}},
 		},
 	}
 }
@@ -2732,18 +3122,28 @@ func (track *track) Send(sendNum int64) *trackSend {
 		device: track.device,
 		Name: &trackSendName{
 			device: track.device,
-		},
+			state: trackSendNameState{
+				sendNum: sendNum,
+			}},
 		Volume: &trackSendVolume{
 			device: track.device,
-			Str: &trackSendVolumeStr{
+			state: trackSendVolumeState{
+				sendNum: sendNum,
+			}, Str: &trackSendVolumeStr{
 				device: track.device,
-			},
+				state: trackSendVolumeStrState{
+					sendNum: sendNum,
+				}},
 		},
 		Pan: &trackSendPan{
 			device: track.device,
-			Str: &trackSendPanStr{
+			state: trackSendPanState{
+				sendNum: sendNum,
+			}, Str: &trackSendPanStr{
 				device: track.device,
-			},
+				state: trackSendPanStrState{
+					sendNum: sendNum,
+				}},
 		},
 	}
 }
@@ -2757,18 +3157,28 @@ func (track *track) Recv(recvNum int64) *trackRecv {
 		device: track.device,
 		Name: &trackRecvName{
 			device: track.device,
-		},
+			state: trackRecvNameState{
+				recvNum: recvNum,
+			}},
 		Volume: &trackRecvVolume{
 			device: track.device,
-			Str: &trackRecvVolumeStr{
+			state: trackRecvVolumeState{
+				recvNum: recvNum,
+			}, Str: &trackRecvVolumeStr{
 				device: track.device,
-			},
+				state: trackRecvVolumeStrState{
+					recvNum: recvNum,
+				}},
 		},
 		Pan: &trackRecvPan{
 			device: track.device,
-			Str: &trackRecvPanStr{
+			state: trackRecvPanState{
+				recvNum: recvNum,
+			}, Str: &trackRecvPanStr{
 				device: track.device,
-			},
+				state: trackRecvPanStrState{
+					recvNum: recvNum,
+				}},
 		},
 	}
 }
@@ -2782,33 +3192,53 @@ func (track *track) Fx(fxNum int64) *trackFx {
 		device: track.device,
 		Name: &trackFxName{
 			device: track.device,
-		},
+			state: trackFxNameState{
+				fxNum: fxNum,
+			}},
 		Number: &trackFxNumber{
 			device: track.device,
-			Str: &trackFxNumberStr{
+			state: trackFxNumberState{
+				fxNum: fxNum,
+			}, Str: &trackFxNumberStr{
 				device: track.device,
-			},
+				state: trackFxNumberStrState{
+					fxNum: fxNum,
+				}},
 		},
 		Bypass: &trackFxBypass{
 			device: track.device,
-		},
+			state: trackFxBypassState{
+				fxNum: fxNum,
+			}},
 		Openui: &trackFxOpenui{
 			device: track.device,
-		},
+			state: trackFxOpenuiState{
+				fxNum: fxNum,
+			}},
 		Preset: &trackFxPreset{
 			device: track.device,
-		},
+			state: trackFxPresetState{
+				fxNum: fxNum,
+			}},
 		Presetminus: &trackFxPresetminus{
 			device: track.device,
-		},
+			state: trackFxPresetminusState{
+				fxNum: fxNum,
+			}},
 		Presetplus: &trackFxPresetplus{
 			device: track.device,
-		},
+			state: trackFxPresetplusState{
+				fxNum: fxNum,
+			}},
 		Wetdry: &trackFxWetdry{
 			device: track.device,
-			Str: &trackFxWetdryStr{
+			state: trackFxWetdryState{
+				fxNum: fxNum,
+			}, Str: &trackFxWetdryStr{
 				device: track.device,
-			},
+				state: trackFxWetdryStrState{
+					fxNum: fxNum,
+				}},
 		},
 	}
 }
@@ -2822,7 +3252,9 @@ func (track *track) Fxinstparam(fxinstparamNum int64) *trackFxinstparam {
 		device: track.device,
 		Value: &trackFxinstparamValue{
 			device: track.device,
-		},
+			state: trackFxinstparamValueState{
+				fxinstparamNum: fxinstparamNum,
+			}},
 	}
 }
 
@@ -2915,7 +3347,11 @@ func (ep *trackMute) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackMuteToggle struct {
@@ -2942,7 +3378,11 @@ func (ep *trackMuteToggle) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackSolo struct {
@@ -2970,7 +3410,11 @@ func (ep *trackSolo) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackSoloToggle struct {
@@ -2997,7 +3441,11 @@ func (ep *trackSoloToggle) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackRecarm struct {
@@ -3025,7 +3473,11 @@ func (ep *trackRecarm) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackRecarmToggle struct {
@@ -3052,7 +3504,11 @@ func (ep *trackRecarmToggle) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackMonitor struct {
@@ -3106,7 +3562,11 @@ func (ep *trackSelect) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackVu struct {
@@ -3300,7 +3760,11 @@ func (ep *trackVolumeTouch) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackPan struct {
@@ -3383,7 +3847,11 @@ func (ep *trackPanTouch) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackPan2 struct {
@@ -3849,7 +4317,11 @@ func (ep *trackAutotrim) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackAutoread struct {
@@ -3876,7 +4348,11 @@ func (ep *trackAutoread) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackAutolatch struct {
@@ -3903,7 +4379,11 @@ func (ep *trackAutolatch) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackAutotouch struct {
@@ -3930,7 +4410,11 @@ func (ep *trackAutotouch) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackAutowrite struct {
@@ -3957,7 +4441,11 @@ func (ep *trackAutowrite) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackFx struct {
@@ -3988,7 +4476,9 @@ func (trackFx *trackFx) Fxparam(fxparamNum int64) *trackFxFxparam {
 		device: trackFx.device,
 		Value: &trackFxFxparamValue{
 			device: trackFx.device,
-		},
+			state: trackFxFxparamValueState{
+				fxparamNum: fxparamNum,
+			}},
 	}
 }
 
@@ -4090,7 +4580,11 @@ func (ep *trackFxBypass) Set(val bool) error {
 		ep.state.fxNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackFxOpenui struct {
@@ -4120,7 +4614,11 @@ func (ep *trackFxOpenui) Set(val bool) error {
 		ep.state.fxNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackFxPreset struct {
@@ -4180,7 +4678,11 @@ func (ep *trackFxPresetminus) Set(val bool) error {
 		ep.state.fxNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackFxPresetplus struct {
@@ -4210,7 +4712,11 @@ func (ep *trackFxPresetplus) Set(val bool) error {
 		ep.state.fxNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackFxWetdry struct {
@@ -4349,30 +4855,48 @@ func (trackFxeq *trackFxeq) Band(bandNum int64) *trackFxeqBand {
 		device: trackFxeq.device,
 		Freq: &trackFxeqBandFreq{
 			device: trackFxeq.device,
-			Hz: &trackFxeqBandFreqHz{
+			state: trackFxeqBandFreqState{
+				bandNum: bandNum,
+			}, Hz: &trackFxeqBandFreqHz{
 				device: trackFxeq.device,
-			},
+				state: trackFxeqBandFreqHzState{
+					bandNum: bandNum,
+				}},
 			Str: &trackFxeqBandFreqStr{
 				device: trackFxeq.device,
-			},
+				state: trackFxeqBandFreqStrState{
+					bandNum: bandNum,
+				}},
 		},
 		Gain: &trackFxeqBandGain{
 			device: trackFxeq.device,
-			Db: &trackFxeqBandGainDb{
+			state: trackFxeqBandGainState{
+				bandNum: bandNum,
+			}, Db: &trackFxeqBandGainDb{
 				device: trackFxeq.device,
-			},
+				state: trackFxeqBandGainDbState{
+					bandNum: bandNum,
+				}},
 			Str: &trackFxeqBandGainStr{
 				device: trackFxeq.device,
-			},
+				state: trackFxeqBandGainStrState{
+					bandNum: bandNum,
+				}},
 		},
 		Q: &trackFxeqBandQ{
 			device: trackFxeq.device,
-			Oct: &trackFxeqBandQOct{
+			state: trackFxeqBandQState{
+				bandNum: bandNum,
+			}, Oct: &trackFxeqBandQOct{
 				device: trackFxeq.device,
-			},
+				state: trackFxeqBandQOctState{
+					bandNum: bandNum,
+				}},
 			Str: &trackFxeqBandQStr{
 				device: trackFxeq.device,
-			},
+				state: trackFxeqBandQStrState{
+					bandNum: bandNum,
+				}},
 		},
 	}
 }
@@ -4401,7 +4925,11 @@ func (ep *trackFxeqBypass) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackFxeqOpenui struct {
@@ -4428,7 +4956,11 @@ func (ep *trackFxeqOpenui) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackFxeqPreset struct {
@@ -6114,7 +6646,11 @@ func (ep *trackFxinstBypass) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackFxinstOpenui struct {
@@ -6141,7 +6677,11 @@ func (ep *trackFxinstOpenui) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackFxinstPreset struct {
@@ -6195,7 +6735,11 @@ func (ep *trackFxinstPresetminus) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackFxinstPresetplus struct {
@@ -6222,7 +6766,11 @@ func (ep *trackFxinstPresetplus) Set(val bool) error {
 		ep.state.trackNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type trackFxinstparam struct {
@@ -6293,12 +6841,18 @@ func (fx *fx) Fxparam(fxparamNum int64) *fxFxparam {
 		device: fx.device,
 		Name: &fxFxparamName{
 			device: fx.device,
-		},
+			state: fxFxparamNameState{
+				fxparamNum: fxparamNum,
+			}},
 		Value: &fxFxparamValue{
 			device: fx.device,
-			Str: &fxFxparamValueStr{
+			state: fxFxparamValueState{
+				fxparamNum: fxparamNum,
+			}, Str: &fxFxparamValueStr{
 				device: fx.device,
-			},
+				state: fxFxparamValueStrState{
+					fxparamNum: fxparamNum,
+				}},
 		},
 	}
 }
@@ -6391,7 +6945,11 @@ func (ep *fxBypass) Set(val bool) error {
 		ep.state.fxNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxOpenui struct {
@@ -6418,7 +6976,11 @@ func (ep *fxOpenui) Set(val bool) error {
 		ep.state.fxNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxPreset struct {
@@ -6472,7 +7034,11 @@ func (ep *fxPresetminus) Set(val bool) error {
 		ep.state.fxNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxPresetplus struct {
@@ -6499,7 +7065,11 @@ func (ep *fxPresetplus) Set(val bool) error {
 		ep.state.fxNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxFxparam struct {
@@ -7022,36 +7592,58 @@ func (fxeq *fxeq) Band(bandNum int64) *fxeqBand {
 		device: fxeq.device,
 		Str: &fxeqBandStr{
 			device: fxeq.device,
-		},
+			state: fxeqBandStrState{
+				bandNum: bandNum,
+			}},
 		Bypass: &fxeqBandBypass{
 			device: fxeq.device,
-		},
+			state: fxeqBandBypassState{
+				bandNum: bandNum,
+			}},
 		Freq: &fxeqBandFreq{
 			device: fxeq.device,
-			Hz: &fxeqBandFreqHz{
+			state: fxeqBandFreqState{
+				bandNum: bandNum,
+			}, Hz: &fxeqBandFreqHz{
 				device: fxeq.device,
-			},
+				state: fxeqBandFreqHzState{
+					bandNum: bandNum,
+				}},
 			Str: &fxeqBandFreqStr{
 				device: fxeq.device,
-			},
+				state: fxeqBandFreqStrState{
+					bandNum: bandNum,
+				}},
 		},
 		Gain: &fxeqBandGain{
 			device: fxeq.device,
-			Db: &fxeqBandGainDb{
+			state: fxeqBandGainState{
+				bandNum: bandNum,
+			}, Db: &fxeqBandGainDb{
 				device: fxeq.device,
-			},
+				state: fxeqBandGainDbState{
+					bandNum: bandNum,
+				}},
 			Str: &fxeqBandGainStr{
 				device: fxeq.device,
-			},
+				state: fxeqBandGainStrState{
+					bandNum: bandNum,
+				}},
 		},
 		Q: &fxeqBandQ{
 			device: fxeq.device,
-			Oct: &fxeqBandQOct{
+			state: fxeqBandQState{
+				bandNum: bandNum,
+			}, Oct: &fxeqBandQOct{
 				device: fxeq.device,
-			},
+				state: fxeqBandQOctState{
+					bandNum: bandNum,
+				}},
 			Str: &fxeqBandQStr{
 				device: fxeq.device,
-			},
+				state: fxeqBandQStrState{
+					bandNum: bandNum,
+				}},
 		},
 	}
 }
@@ -7067,7 +7659,11 @@ func (ep *fxeqBypass) Bind(callback func(bool) error) {
 
 func (ep *fxeqBypass) Set(val bool) error {
 	addr := "/fxeq/bypass"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxeqOpenui struct {
@@ -7081,7 +7677,11 @@ func (ep *fxeqOpenui) Bind(callback func(bool) error) {
 
 func (ep *fxeqOpenui) Set(val bool) error {
 	addr := "/fxeq/openui"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxeqPreset struct {
@@ -7232,7 +7832,11 @@ func (ep *fxeqHipassBypass) Bind(callback func(bool) error) {
 
 func (ep *fxeqHipassBypass) Set(val bool) error {
 	addr := "/fxeq/hipass/bypass"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxeqHipassFreq struct {
@@ -7357,7 +7961,11 @@ func (ep *fxeqLoshelfBypass) Bind(callback func(bool) error) {
 
 func (ep *fxeqLoshelfBypass) Set(val bool) error {
 	addr := "/fxeq/loshelf/bypass"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxeqLoshelfFreq struct {
@@ -7557,7 +8165,11 @@ func (ep *fxeqBandBypass) Set(val bool) error {
 		ep.state.bandNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxeqBandFreq struct {
@@ -7843,7 +8455,11 @@ func (ep *fxeqNotchBypass) Bind(callback func(bool) error) {
 
 func (ep *fxeqNotchBypass) Set(val bool) error {
 	addr := "/fxeq/notch/bypass"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxeqNotchFreq struct {
@@ -8012,7 +8628,11 @@ func (ep *fxeqHishelfBypass) Bind(callback func(bool) error) {
 
 func (ep *fxeqHishelfBypass) Set(val bool) error {
 	addr := "/fxeq/hishelf/bypass"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxeqHishelfFreq struct {
@@ -8180,7 +8800,11 @@ func (ep *fxeqLopassBypass) Bind(callback func(bool) error) {
 
 func (ep *fxeqLopassBypass) Set(val bool) error {
 	addr := "/fxeq/lopass/bypass"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxeqLopassFreq struct {
@@ -8306,7 +8930,11 @@ func (ep *fxinstBypass) Bind(callback func(bool) error) {
 
 func (ep *fxinstBypass) Set(val bool) error {
 	addr := "/fxinst/bypass"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxinstOpenui struct {
@@ -8320,7 +8948,11 @@ func (ep *fxinstOpenui) Bind(callback func(bool) error) {
 
 func (ep *fxinstOpenui) Set(val bool) error {
 	addr := "/fxinst/openui"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxinstPreset struct {
@@ -8348,7 +8980,11 @@ func (ep *fxinstPresetminus) Bind(callback func(bool) error) {
 
 func (ep *fxinstPresetminus) Set(val bool) error {
 	addr := "/fxinst/presetminus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxinstPresetplus struct {
@@ -8362,7 +8998,11 @@ func (ep *fxinstPresetplus) Bind(callback func(bool) error) {
 
 func (ep *fxinstPresetplus) Set(val bool) error {
 	addr := "/fxinst/presetplus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type fxinstparam struct {
@@ -8697,7 +9337,11 @@ func (ep *action) Set(val bool) error {
 		ep.state.actionNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type actionStr struct {
@@ -8834,7 +9478,11 @@ func (ep *midiaction) Set(val bool) error {
 		ep.state.midiactionNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type midilistaction struct {
@@ -8861,7 +9509,11 @@ func (ep *midilistaction) Set(val bool) error {
 		ep.state.midilistactionNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type device struct {
@@ -8926,7 +9578,11 @@ func (ep *deviceTrackCount) Set(val bool) error {
 		ep.state.countNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceTrackFollows struct {
@@ -8956,7 +9612,11 @@ func (ep *deviceTrackFollowsDevice) Bind(callback func(bool) error) {
 
 func (ep *deviceTrackFollowsDevice) Set(val bool) error {
 	addr := "/device/track/follows/device"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceTrackFollowsLast_touched struct {
@@ -8970,7 +9630,11 @@ func (ep *deviceTrackFollowsLast_touched) Bind(callback func(bool) error) {
 
 func (ep *deviceTrackFollowsLast_touched) Set(val bool) error {
 	addr := "/device/track/follows/last_touched"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceTrackBank struct {
@@ -9016,7 +9680,11 @@ func (ep *deviceTrackBankFollowsDevice) Bind(callback func(bool) error) {
 
 func (ep *deviceTrackBankFollowsDevice) Set(val bool) error {
 	addr := "/device/track/bank/follows/device"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceTrackBankFollowsMixer struct {
@@ -9030,7 +9698,11 @@ func (ep *deviceTrackBankFollowsMixer) Bind(callback func(bool) error) {
 
 func (ep *deviceTrackBankFollowsMixer) Set(val bool) error {
 	addr := "/device/track/bank/follows/mixer"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceTrackBankSelect struct {
@@ -9057,7 +9729,11 @@ func (ep *deviceTrackBankSelect) Set(val bool) error {
 		ep.state.selectNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceTrackBankMinus struct {
@@ -9071,7 +9747,11 @@ func (ep *deviceTrackBankMinus) Bind(callback func(bool) error) {
 
 func (ep *deviceTrackBankMinus) Set(val bool) error {
 	addr := "/device/track/bank/minus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceTrackBankPlus struct {
@@ -9085,7 +9765,11 @@ func (ep *deviceTrackBankPlus) Bind(callback func(bool) error) {
 
 func (ep *deviceTrackBankPlus) Set(val bool) error {
 	addr := "/device/track/bank/plus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceTrackSelect struct {
@@ -9112,7 +9796,11 @@ func (ep *deviceTrackSelect) Set(val bool) error {
 		ep.state.selectNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceTrackMinus struct {
@@ -9126,7 +9814,11 @@ func (ep *deviceTrackMinus) Bind(callback func(bool) error) {
 
 func (ep *deviceTrackMinus) Set(val bool) error {
 	addr := "/device/track/minus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceTrackPlus struct {
@@ -9140,7 +9832,11 @@ func (ep *deviceTrackPlus) Bind(callback func(bool) error) {
 
 func (ep *deviceTrackPlus) Set(val bool) error {
 	addr := "/device/track/plus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceSend struct {
@@ -9180,7 +9876,11 @@ func (ep *deviceSendCount) Set(val bool) error {
 		ep.state.countNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceReceive struct {
@@ -9220,7 +9920,11 @@ func (ep *deviceReceiveCount) Set(val bool) error {
 		ep.state.countNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceFx struct {
@@ -9272,7 +9976,11 @@ func (ep *deviceFxCount) Set(val bool) error {
 		ep.state.countNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceFxFollows struct {
@@ -9303,7 +10011,11 @@ func (ep *deviceFxFollowsDevice) Bind(callback func(bool) error) {
 
 func (ep *deviceFxFollowsDevice) Set(val bool) error {
 	addr := "/device/fx/follows/device"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceFxFollowsLast_touched struct {
@@ -9317,7 +10029,11 @@ func (ep *deviceFxFollowsLast_touched) Bind(callback func(bool) error) {
 
 func (ep *deviceFxFollowsLast_touched) Set(val bool) error {
 	addr := "/device/fx/follows/last_touched"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceFxFollowsFocused struct {
@@ -9331,7 +10047,11 @@ func (ep *deviceFxFollowsFocused) Bind(callback func(bool) error) {
 
 func (ep *deviceFxFollowsFocused) Set(val bool) error {
 	addr := "/device/fx/follows/focused"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceFxSelect struct {
@@ -9358,7 +10078,11 @@ func (ep *deviceFxSelect) Set(val bool) error {
 		ep.state.selectNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceFxMinus struct {
@@ -9372,7 +10096,11 @@ func (ep *deviceFxMinus) Bind(callback func(bool) error) {
 
 func (ep *deviceFxMinus) Set(val bool) error {
 	addr := "/device/fx/minus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceFxPlus struct {
@@ -9386,7 +10114,11 @@ func (ep *deviceFxPlus) Bind(callback func(bool) error) {
 
 func (ep *deviceFxPlus) Set(val bool) error {
 	addr := "/device/fx/plus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceFxparam struct {
@@ -9427,7 +10159,11 @@ func (ep *deviceFxparamCount) Set(val bool) error {
 		ep.state.countNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceFxparamBank struct {
@@ -9470,7 +10206,11 @@ func (ep *deviceFxparamBankSelect) Set(val bool) error {
 		ep.state.selectNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceFxparamBankStr struct {
@@ -9498,7 +10238,11 @@ func (ep *deviceFxparamBankMinus) Bind(callback func(bool) error) {
 
 func (ep *deviceFxparamBankMinus) Set(val bool) error {
 	addr := "/device/fxparam/bank/minus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceFxparamBankPlus struct {
@@ -9512,7 +10256,11 @@ func (ep *deviceFxparamBankPlus) Bind(callback func(bool) error) {
 
 func (ep *deviceFxparamBankPlus) Set(val bool) error {
 	addr := "/device/fxparam/bank/plus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceFxinstparam struct {
@@ -9553,7 +10301,11 @@ func (ep *deviceFxinstparamCount) Set(val bool) error {
 		ep.state.countNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceFxinstparamBank struct {
@@ -9596,7 +10348,11 @@ func (ep *deviceFxinstparamBankSelect) Set(val bool) error {
 		ep.state.selectNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceFxinstparamBankStr struct {
@@ -9624,7 +10380,11 @@ func (ep *deviceFxinstparamBankMinus) Bind(callback func(bool) error) {
 
 func (ep *deviceFxinstparamBankMinus) Set(val bool) error {
 	addr := "/device/fxinstparam/bank/minus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceFxinstparamBankPlus struct {
@@ -9638,7 +10398,11 @@ func (ep *deviceFxinstparamBankPlus) Bind(callback func(bool) error) {
 
 func (ep *deviceFxinstparamBankPlus) Set(val bool) error {
 	addr := "/device/fxinstparam/bank/plus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceMarker struct {
@@ -9679,7 +10443,11 @@ func (ep *deviceMarkerCount) Set(val bool) error {
 		ep.state.countNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceMarkerBank struct {
@@ -9721,7 +10489,11 @@ func (ep *deviceMarkerBankSelect) Set(val bool) error {
 		ep.state.selectNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceMarkerBankMinus struct {
@@ -9735,7 +10507,11 @@ func (ep *deviceMarkerBankMinus) Bind(callback func(bool) error) {
 
 func (ep *deviceMarkerBankMinus) Set(val bool) error {
 	addr := "/device/marker/bank/minus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceMarkerBankPlus struct {
@@ -9749,7 +10525,11 @@ func (ep *deviceMarkerBankPlus) Bind(callback func(bool) error) {
 
 func (ep *deviceMarkerBankPlus) Set(val bool) error {
 	addr := "/device/marker/bank/plus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceRegion struct {
@@ -9790,7 +10570,11 @@ func (ep *deviceRegionCount) Set(val bool) error {
 		ep.state.countNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceRegionBank struct {
@@ -9832,7 +10616,11 @@ func (ep *deviceRegionBankSelect) Set(val bool) error {
 		ep.state.selectNum,
 	)
 
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceRegionBankMinus struct {
@@ -9846,7 +10634,11 @@ func (ep *deviceRegionBankMinus) Bind(callback func(bool) error) {
 
 func (ep *deviceRegionBankMinus) Set(val bool) error {
 	addr := "/device/region/bank/minus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type deviceRegionBankPlus struct {
@@ -9860,7 +10652,11 @@ func (ep *deviceRegionBankPlus) Bind(callback func(bool) error) {
 
 func (ep *deviceRegionBankPlus) Set(val bool) error {
 	addr := "/device/region/bank/plus"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type reaperconfig struct {
@@ -9900,7 +10696,11 @@ func (ep *reaperconfigTrackFollowsReaperconfig) Bind(callback func(bool) error) 
 
 func (ep *reaperconfigTrackFollowsReaperconfig) Set(val bool) error {
 	addr := "/reaperconfig/track/follows/reaperconfig"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
 
 type reaperconfigTrackFollowsDevice struct {
@@ -9914,5 +10714,9 @@ func (ep *reaperconfigTrackFollowsDevice) Bind(callback func(bool) error) {
 
 func (ep *reaperconfigTrackFollowsDevice) Set(val bool) error {
 	addr := "/reaperconfig/track/follows/device"
-	return ep.device.SetBool(addr, val)
+	if val {
+		return ep.device.SetInt(addr, 1)
+	} else {
+		return ep.device.SetInt(addr, 0)
+	}
 }
