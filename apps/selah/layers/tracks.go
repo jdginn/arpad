@@ -7,6 +7,7 @@ import (
 
 	"github.com/hypebeast/go-osc/osc"
 
+	. "github.com/jdginn/arpad/apps/selah/layers/mode"
 	reaper "github.com/jdginn/arpad/devices/reaper"
 	xtouchlib "github.com/jdginn/arpad/devices/xtouch"
 )
@@ -14,28 +15,6 @@ import (
 const (
 	FADER_EPSILON float64 = 0.001
 )
-
-type bindable[A any] interface {
-	Bind(func(A) error)
-}
-
-type setable[T any] interface {
-	Set(T) error
-}
-
-type bindableSetable[T any] interface {
-	bindable[T]
-	setable[T]
-}
-
-func link[T any](b bindable[T], s setable[T]) {
-	b.Bind(func(v T) error { return s.Set(v) })
-}
-
-func link2[T any](x, y bindableSetable[T]) {
-	x.Bind(func(v T) error { return y.Set(v) })
-	y.Bind(func(v T) error { return x.Set(v) })
-}
 
 // get returns the first element in the slice for which the predicate returns true.
 // If no such element exists, it returns the zero value of T and false.
@@ -66,18 +45,43 @@ func (t *TrackManager) listenForNewTracks() {
 		if _, exists := get(t.tracks, func(track *TrackData) bool {
 			return track.reaperIdx == idx
 		}); !exists {
-			newTrack := NewTrackData(
+			t.tracks = append(t.tracks, NewTrackData(
 				t.x,
 				t.r,
 				idx,
 				0,
-			)
-
-			t.tracks = append(t.tracks, newTrack)
+			))
 		}
 	}); err != nil {
 		panic(err)
 	}
+	if err := t.r.OscDispatcher().AddMsgHandler("/track/@/send/@/*", func(m *osc.Message) {
+		trackIdx, err := strconv.ParseInt(m.Arguments[1].(string), 10, 64)
+		if err != nil {
+			return
+		}
+		sendIdx, err := strconv.ParseInt(m.Arguments[2].(string), 10, 64)
+		if err != nil {
+			return
+		}
+		if _, exists := get(t.tracks, func(track *TrackData) bool {
+			return track.reaperIdx == trackIdx
+		}); !exists {
+			t.tracks = append(t.tracks, NewTrackData(
+				t.x,
+				t.r,
+				trackIdx,
+				0,
+			))
+		}
+		track, _ := get(t.tracks, func(track *TrackData) bool {
+			return track.reaperIdx == trackIdx
+		})
+		track.sends[sendIdx] = NewTrackSendData(track, sendIdx, 0)
+	}); err != nil {
+		panic(err)
+	}
+	// TODO: this seems a bit brittle
 }
 
 func NewTrackManager(x *xtouchlib.XTouchDefault, r *reaper.Reaper) *TrackManager {
@@ -118,8 +122,8 @@ type TrackData struct {
 	mute       bool
 	solo       bool
 	rec        bool
-	sends      map[int]*trackSendData
-	rcvs       map[int]*trackSendData
+	sends      map[int64]*trackSendData
+	rcvs       map[int64]*trackSendData
 }
 
 func NewTrackData(x *xtouchlib.XTouchDefault, r *reaper.Reaper, reaperIdx, surfaceIdx int64) *TrackData {
@@ -128,15 +132,15 @@ func NewTrackData(x *xtouchlib.XTouchDefault, r *reaper.Reaper, reaperIdx, surfa
 		r:          r,
 		reaperIdx:  reaperIdx,
 		surfaceIdx: surfaceIdx,
-		sends:      make(map[int]*trackSendData),
-		rcvs:       make(map[int]*trackSendData),
+		sends:      make(map[int64]*trackSendData),
+		rcvs:       make(map[int64]*trackSendData),
 	}
 	// REC
 	t.r.Track(t.reaperIdx).Recarm.Bind(func(v bool) error {
 		t.rec = v
 		return t.x.Channels[t.surfaceIdx].Solo.LED.Set(v)
 	})
-	t.x.Channels[t.surfaceIdx].Rec.On.Bind(func(v uint8) error {
+	FilterBind(MIX, t.x.Channels[t.surfaceIdx].Rec.On).Bind(func(v uint8) error {
 		t.rec = !t.rec
 		return t.r.Track(t.reaperIdx).Recarm.Set(t.rec)
 	})
@@ -145,7 +149,7 @@ func NewTrackData(x *xtouchlib.XTouchDefault, r *reaper.Reaper, reaperIdx, surfa
 		t.solo = v
 		return t.x.Channels[t.surfaceIdx].Solo.LED.Set(v)
 	})
-	t.x.Channels[t.surfaceIdx].Solo.On.Bind(func(v uint8) error {
+	FilterBind(MIX, t.x.Channels[t.surfaceIdx].Solo.On).Bind(func(v uint8) error {
 		t.solo = !t.solo
 		return t.r.Track(t.reaperIdx).Solo.Set(t.solo)
 	})
@@ -154,7 +158,7 @@ func NewTrackData(x *xtouchlib.XTouchDefault, r *reaper.Reaper, reaperIdx, surfa
 		t.mute = v
 		return t.x.Channels[t.surfaceIdx].Mute.LED.Set(v)
 	})
-	t.x.Channels[t.surfaceIdx].Mute.On.Bind(func(v uint8) error {
+	FilterBind(MIX, t.x.Channels[t.surfaceIdx].Mute.On).Bind(func(v uint8) error {
 		t.mute = !t.mute
 		return t.r.Track(t.reaperIdx).Mute.Set(t.rec)
 	})
@@ -163,7 +167,7 @@ func NewTrackData(x *xtouchlib.XTouchDefault, r *reaper.Reaper, reaperIdx, surfa
 		t.volume = v
 		return t.x.Channels[t.surfaceIdx].Fader.Set(normFloatToInt(v))
 	})
-	t.x.Channels[t.surfaceIdx].Fader.Bind(func(v int16) error {
+	FilterBind(MIX, t.x.Channels[t.surfaceIdx].Fader).Bind(func(v int16) error {
 		newVal := int16ToNormFloat(v)
 		// Because both feedback and input are implemented on the same physical control for fader,
 		// we need some deduplication to avoid jittering the faders or flooding the system with
@@ -180,7 +184,7 @@ func NewTrackData(x *xtouchlib.XTouchDefault, r *reaper.Reaper, reaperIdx, surfa
 		t.pan = v
 		return t.x.Channels[t.surfaceIdx].Encoder.Ring.Set(v) // TODO: verify
 	})
-	t.x.Channels[t.surfaceIdx].Encoder.Ring.Bind(func(v uint8) error {
+	FilterBind(MIX, t.x.Channels[t.surfaceIdx].Encoder.Ring).Bind(func(v uint8) error {
 		t.pan = float64(v) / float64(math.MaxUint8)
 		return t.r.Track(t.reaperIdx).Pan.Set(t.pan)
 	})
@@ -200,8 +204,8 @@ func (t *TrackData) TransitionMix() (errs error) {
 
 type trackSendData struct {
 	*TrackData
-	sendIdx uint64
-	rcvIdx  uint64
+	sendIdx int64
+	rcvIdx  int64
 	vol     float64
 	pan     float64
 
@@ -209,7 +213,7 @@ type trackSendData struct {
 	Pan *trackSendDataPan
 }
 
-func NewTrackSendData(parent *TrackData, sendIdx, rcvIdx uint64) *trackSendData {
+func NewTrackSendData(parent *TrackData, sendIdx, rcvIdx int64) *trackSendData {
 	s := &trackSendData{
 		TrackData: parent,
 		sendIdx:   sendIdx,
@@ -217,6 +221,21 @@ func NewTrackSendData(parent *TrackData, sendIdx, rcvIdx uint64) *trackSendData 
 	}
 	s.Vol = &trackSendDataVol{trackSendData: s}
 	s.Pan = &trackSendDataPan{trackSendData: s}
+
+	// Volume
+	s.r.Track(s.reaperIdx).Send(s.sendIdx).Volume.Bind(func(v float64) error {
+		s.vol = v
+		return nil
+	})
+	// TODO: implement send to xtouch
+
+	// Pan
+	s.r.Track(s.reaperIdx).Send(s.sendIdx).Pan.Bind(func(v float64) error {
+		s.pan = v
+		return nil
+	})
+	// TODO: implement send to xtouch
+
 	return s
 }
 
