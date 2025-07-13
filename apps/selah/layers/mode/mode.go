@@ -1,6 +1,7 @@
 package mode
 
 import (
+	"errors"
 	"sync"
 )
 
@@ -9,12 +10,12 @@ type Mode uint64
 const (
 	DEFAULT Mode = 1 << iota
 	MIX
-	MIX_THIS_TRACK_SENDS
-	MIX_SENDS_TO_THIS_BUS
+	MIX_SELECTED_TRACK_SENDS
+	MIX_SELECTED_TRACK_RECEIVES
 	RECORD
-	RECORD_THIS_TRACK_SENDS
-	RECORD_SENDS_TO_THIS_OUTPUT
-	RECORD_SENDS_TO_THIS_AUX
+	RECORD_SELECTED_TRACK_SENDS
+	RECORD_SELECTED_OUTPUT_RECEIVES
+	RECORD_SELECTED_AUX_RECEIVES
 	ALL = 0xFFFFFFFFFFFFFFFF
 )
 
@@ -28,6 +29,11 @@ type setable[T any] interface {
 	Set(T) error
 }
 
+type callbackEvent struct {
+	mode     Mode
+	callback func() error
+}
+
 // registry tracks events that need to be performed upon state transition
 //
 // 1. setables: tracks the last known value for decorated setables and calls the relevant ones
@@ -37,15 +43,32 @@ type setable[T any] interface {
 // to this package and have no automatic state management; the user is responsible for managing
 // any state on their own.
 type registry struct {
-	mu       sync.Mutex
-	currMode Mode
+	mu        sync.Mutex
+	currMode  Mode
+	callbacks []callbackEvent
 }
 
 var reg = &registry{}
 
+func OnTransition(mode Mode, callback func() error) {
+	reg.mu.Lock()
+	defer reg.mu.Unlock()
+	reg.callbacks = append(reg.callbacks, callbackEvent{mode: mode, callback: callback})
+}
+
 func SetMode(newMode Mode) (errs error) {
 	reg.mu.Lock()
 	defer reg.mu.Unlock()
+	if newMode == reg.currMode {
+		return
+	}
+	for _, callback := range reg.callbacks {
+		if callback.mode == newMode {
+			if err := callback.callback(); err != nil {
+				errs = errors.Join(errs, err)
+			}
+		}
+	}
 	reg.currMode = newMode
 	return errs
 }

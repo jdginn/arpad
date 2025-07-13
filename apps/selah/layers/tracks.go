@@ -14,6 +14,7 @@ import (
 
 const (
 	FADER_EPSILON float64 = 0.001
+	NUM_CHANNELS  int     = 8
 )
 
 // get returns the first element in the slice for which the predicate returns true.
@@ -29,12 +30,14 @@ func get[T any](s []T, predicate func(T) bool) (T, bool) {
 }
 
 type TrackManager struct {
-	x      *xtouchlib.XTouchDefault
-	r      *reaper.Reaper
-	tracks []*TrackData
+	x             *xtouchlib.XTouchDefault
+	r             *reaper.Reaper
+	tracks        []*TrackData
+	selectedTrack *TrackData
 }
 
 func (t *TrackManager) listenForNewTracks() {
+	// TODO: don't panic here
 	// Find and populate our collection of track states
 	if err := t.r.OscDispatcher().AddMsgHandler("/track/@/*", func(m *osc.Message) {
 		// TODO: this seems a bit brittle
@@ -49,12 +52,13 @@ func (t *TrackManager) listenForNewTracks() {
 				t.x,
 				t.r,
 				idx,
-				0,
+				idx,
 			))
 		}
 	}); err != nil {
 		panic(err)
 	}
+	// Update track send info
 	if err := t.r.OscDispatcher().AddMsgHandler("/track/@/send/@/*", func(m *osc.Message) {
 		trackIdx, err := strconv.ParseInt(m.Arguments[1].(string), 10, 64)
 		if err != nil {
@@ -71,7 +75,7 @@ func (t *TrackManager) listenForNewTracks() {
 				t.x,
 				t.r,
 				trackIdx,
-				0,
+				trackIdx,
 			))
 		}
 		track, _ := get(t.tracks, func(track *TrackData) bool {
@@ -81,7 +85,22 @@ func (t *TrackManager) listenForNewTracks() {
 	}); err != nil {
 		panic(err)
 	}
-	// TODO: this seems a bit brittle
+	// Update selected track
+	if err := t.r.OscDispatcher().AddMsgHandler("/track/@/select", func(m *osc.Message) {
+		trackIdx, err := strconv.ParseInt(m.Arguments[1].(string), 10, 64)
+		if err != nil {
+			return
+		}
+		if selectedTarck, ok := get(t.tracks, func(track *TrackData) bool {
+			return track.reaperIdx == trackIdx
+		}); ok {
+			t.selectedTrack = selectedTarck
+			// TODO: we need some kind of callback here because we might need to update stuff on xtouch depending on mode
+			// TODO: need to update select button LEDs; turn off old selected track if it changes, turn on new one
+		}
+	}); err != nil {
+		panic(err)
+	}
 }
 
 func NewTrackManager(x *xtouchlib.XTouchDefault, r *reaper.Reaper) *TrackManager {
@@ -94,12 +113,11 @@ func NewTrackManager(x *xtouchlib.XTouchDefault, r *reaper.Reaper) *TrackManager
 	return t
 }
 
-func (t *TrackManager) TransitionMix() error {
-	var err error
-	for _, track := range t.tracks {
-		err = errors.Join(err, track.TransitionMix())
+func (m *TrackManager) TransitionMix() (errs error) {
+	for _, track := range m.tracks {
+		errs = errors.Join(errs, track.TransitionMix())
 	}
-	return err
+	return errs
 }
 
 // TODO: verify this
@@ -188,6 +206,7 @@ func NewTrackData(x *xtouchlib.XTouchDefault, r *reaper.Reaper, reaperIdx, surfa
 		t.pan = float64(v) / float64(math.MaxUint8)
 		return t.r.Track(t.reaperIdx).Pan.Set(t.pan)
 	})
+	OnTransition(MIX, t.TransitionMix)
 	return t
 }
 
@@ -208,9 +227,6 @@ type trackSendData struct {
 	rcvIdx  int64
 	vol     float64
 	pan     float64
-
-	Vol *trackSendDataVol
-	Pan *trackSendDataPan
 }
 
 func NewTrackSendData(parent *TrackData, sendIdx, rcvIdx int64) *trackSendData {
@@ -219,8 +235,6 @@ func NewTrackSendData(parent *TrackData, sendIdx, rcvIdx int64) *trackSendData {
 		sendIdx:   sendIdx,
 		rcvIdx:    rcvIdx,
 	}
-	s.Vol = &trackSendDataVol{trackSendData: s}
-	s.Pan = &trackSendDataPan{trackSendData: s}
 
 	// Volume
 	s.r.Track(s.reaperIdx).Send(s.sendIdx).Volume.Bind(func(v float64) error {
@@ -237,22 +251,6 @@ func NewTrackSendData(parent *TrackData, sendIdx, rcvIdx int64) *trackSendData {
 	// TODO: implement send to xtouch
 
 	return s
-}
-
-type trackSendDataVol struct{ *trackSendData }
-
-func (v *trackSendDataVol) Set(val float64) error {
-	v.vol = val
-	// TODO: implement vol setting logic for send/rcv
-	return nil
-}
-
-type trackSendDataPan struct{ *trackSendData }
-
-func (p *trackSendDataPan) Set(val float64) error {
-	p.pan = val
-	// TODO: implement pan setting logic for send/rcv
-	return nil
 }
 
 func (s *trackSendData) OnTransition() (errs error) {
