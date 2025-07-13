@@ -2,6 +2,7 @@ package layers
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"strconv"
 
@@ -19,8 +20,18 @@ type setable[T any] interface {
 	Set(T) error
 }
 
+type bindableSetable[T any] interface {
+	bindable[T]
+	setable[T]
+}
+
 func link[T any](b bindable[T], s setable[T]) {
 	b.Bind(func(v T) error { return s.Set(v) })
+}
+
+func link2[T any](x, y bindableSetable[T]) {
+	x.Bind(func(v T) error { return y.Set(v) })
+	y.Bind(func(v T) error { return x.Set(v) })
 }
 
 // get returns the first element in the slice for which the predicate returns true.
@@ -37,12 +48,13 @@ func get[T any](s []T, predicate func(T) bool) (T, bool) {
 
 type TrackManager struct {
 	x      *xtouchlib.XTouchDefault
+	r      *reaper.Reaper
 	tracks []*TrackData
 }
 
-func (t *TrackManager) listenForNewTracks(reaper *reaper.Reaper) {
+func (t *TrackManager) listenForNewTracks() {
 	// Find and populate our collection of track states
-	if err := reaper.OscDispatcher().AddMsgHandler("/track/@/*", func(m *osc.Message) {
+	if err := t.r.OscDispatcher().AddMsgHandler("/track/@/*", func(m *osc.Message) {
 		// TODO: this seems a bit brittle
 		idx, err := strconv.ParseInt(m.Arguments[1].(string), 10, 64)
 		if err != nil {
@@ -53,13 +65,57 @@ func (t *TrackManager) listenForNewTracks(reaper *reaper.Reaper) {
 		}); !exists {
 			newTrack := NewTrackData(
 				t.x,
+				t.r,
 				idx,
 			)
-			link(reaper.Track(idx).Volume.Db, newTrack.Volume)
-			link(reaper.Track(idx).Pan, newTrack.Pan)
-			link(reaper.Track(idx).Mute, newTrack.Mute)
-			link(reaper.Track(idx).Solo, newTrack.Solo)
-			link(reaper.Track(idx).Recarm, newTrack.Rec)
+
+			// REC
+			t.r.Track(idx).Recarm.Bind(func(v bool) error {
+				newTrack.rec = v
+				return t.x.Channels[newTrack.surfaceIdx].Solo.SetLED(v)
+			})
+			t.x.Channels[newTrack.surfaceIdx].Rec.On.Bind(func(v uint8) error {
+				newTrack.rec = !newTrack.rec
+				return t.r.Track(idx).Recarm.Set(newTrack.rec)
+			})
+			// SOLO
+			t.r.Track(idx).Solo.Bind(func(v bool) error {
+				newTrack.solo = v
+				return t.x.Channels[newTrack.surfaceIdx].Solo.SetLED(v)
+			})
+			t.x.Channels[newTrack.surfaceIdx].Solo.On.Bind(func(v uint8) error {
+				newTrack.solo = !newTrack.solo
+				return t.r.Track(idx).Solo.Set(newTrack.solo)
+			})
+			// MUTE
+			t.r.Track(idx).Mute.Bind(func(v bool) error {
+				newTrack.mute = v
+				return t.x.Channels[newTrack.surfaceIdx].Mute.SetLED(v)
+			})
+			t.x.Channels[newTrack.surfaceIdx].Mute.On.Bind(func(v uint8) error {
+				newTrack.mute = !newTrack.mute
+				return t.r.Track(idx).Mute.Set(newTrack.rec)
+			})
+			// Fader
+			t.r.Track(idx).Volume.Bind(func(v float64) error {
+				newTrack.volume = v
+				return t.x.Channels[newTrack.surfaceIdx].Fader.Set(normFloatToInt(v))
+			})
+			t.x.Channels[newTrack.surfaceIdx].Fader.Bind(func(v int16) error {
+				newTrack.volume = int16ToNormFloat(v)
+				fmt.Printf("fader %d -> volume %f\n", v, newTrack.volume)
+				return t.r.Track(idx).Volume.Set(newTrack.volume)
+			})
+			// Pan
+			t.r.Track(idx).Pan.Bind(func(v float64) error {
+				newTrack.pan = v
+				return t.x.Channels[newTrack.surfaceIdx].Encoder.Ring.Set(v) // TODO: verify
+			})
+			t.x.Channels[newTrack.surfaceIdx].Encoder.Ring.Bind(func(v uint8) error {
+				newTrack.pan = float64(v) / float64(math.MaxUint8)
+				return t.r.Track(idx).Pan.Set(newTrack.pan)
+			})
+
 			t.tracks = append(t.tracks, newTrack)
 		}
 	}); err != nil {
@@ -67,12 +123,13 @@ func (t *TrackManager) listenForNewTracks(reaper *reaper.Reaper) {
 	}
 }
 
-func NewTrackManager(x *xtouchlib.XTouchDefault, reaper *reaper.Reaper) *TrackManager {
+func NewTrackManager(x *xtouchlib.XTouchDefault, r *reaper.Reaper) *TrackManager {
 	t := &TrackManager{
 		x:      x,
+		r:      r,
 		tracks: make([]*TrackData, 0),
 	}
-	t.listenForNewTracks(reaper)
+	t.listenForNewTracks()
 	return t
 }
 
@@ -84,12 +141,18 @@ func (t *TrackManager) TransitionMix() error {
 	return err
 }
 
+// TODO: verify this
 func normFloatToInt(norm float64) int16 {
-	return int16((norm - 0.5) * float64(math.MaxInt16))
+	return int16((norm)*float64(0x8000)) - 0x4000
+}
+
+func int16ToNormFloat(val int16) float64 {
+	return float64(val) / float64(0x4000)
 }
 
 type TrackData struct {
 	x          *xtouchlib.XTouchDefault
+	r          *reaper.Reaper
 	surfaceIdx int64
 	reaperIdx  int64
 	name       string
@@ -100,67 +163,17 @@ type TrackData struct {
 	rec        bool
 	sends      map[int]*trackSendData
 	rcvs       map[int]*trackSendData
-
-	Volume *trackDataVolume
-	Pan    *trackDataPan
-	Mute   *trackDataMute
-	Solo   *trackDataSolo
-	Rec    *trackDataRec
 }
 
-func NewTrackData(x *xtouchlib.XTouchDefault, reaperIdx int64) *TrackData {
+func NewTrackData(x *xtouchlib.XTouchDefault, r *reaper.Reaper, reaperIdx int64) *TrackData {
 	t := &TrackData{
 		x:         x,
+		r:         r,
 		reaperIdx: reaperIdx,
 		sends:     make(map[int]*trackSendData),
 		rcvs:      make(map[int]*trackSendData),
 	}
-	t.Volume = &trackDataVolume{TrackData: t}
-	t.Pan = &trackDataPan{TrackData: t}
-	t.Mute = &trackDataMute{TrackData: t}
-	t.Solo = &trackDataSolo{TrackData: t}
-	t.Rec = &trackDataRec{TrackData: t}
 	return t
-}
-
-type trackDataVolume struct{ *TrackData }
-
-func (v *trackDataVolume) Set(val float64) error {
-	v.volume = val
-	v.x.Channels[v.surfaceIdx].Fader.Set(normFloatToInt(val))
-	return nil
-}
-
-type trackDataPan struct{ *TrackData }
-
-func (p *trackDataPan) Set(val float64) error {
-	p.pan = val
-	p.x.Channels[p.surfaceIdx].Encoder.Ring.Set(val)
-	return nil
-}
-
-type trackDataMute struct{ *TrackData }
-
-func (m *trackDataMute) Set(val bool) error {
-	m.mute = val
-	m.x.Channels[m.surfaceIdx].Mute.SetLED(val)
-	return nil
-}
-
-type trackDataSolo struct{ *TrackData }
-
-func (s *trackDataSolo) Set(val bool) error {
-	s.solo = val
-	s.x.Channels[s.surfaceIdx].Solo.SetLED(val)
-	return nil
-}
-
-type trackDataRec struct{ *TrackData }
-
-func (r *trackDataRec) Set(val bool) error {
-	r.rec = val
-	r.x.Channels[r.surfaceIdx].Rec.SetLED(val)
-	return nil
 }
 
 func (t *TrackData) TransitionMix() (errs error) {
