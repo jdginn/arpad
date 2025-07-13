@@ -75,7 +75,7 @@ func (t *TrackManager) listenForNewTracks() {
 			// REC
 			t.r.Track(idx).Recarm.Bind(func(v bool) error {
 				newTrack.rec = v
-				return t.x.Channels[newTrack.surfaceIdx].Solo.SetLED(v)
+				return t.x.Channels[newTrack.surfaceIdx].Solo.LED.Set(v)
 			})
 			t.x.Channels[newTrack.surfaceIdx].Rec.On.Bind(func(v uint8) error {
 				newTrack.rec = !newTrack.rec
@@ -84,7 +84,7 @@ func (t *TrackManager) listenForNewTracks() {
 			// SOLO
 			t.r.Track(idx).Solo.Bind(func(v bool) error {
 				newTrack.solo = v
-				return t.x.Channels[newTrack.surfaceIdx].Solo.SetLED(v)
+				return t.x.Channels[newTrack.surfaceIdx].Solo.LED.Set(v)
 			})
 			t.x.Channels[newTrack.surfaceIdx].Solo.On.Bind(func(v uint8) error {
 				newTrack.solo = !newTrack.solo
@@ -93,7 +93,7 @@ func (t *TrackManager) listenForNewTracks() {
 			// MUTE
 			t.r.Track(idx).Mute.Bind(func(v bool) error {
 				newTrack.mute = v
-				return t.x.Channels[newTrack.surfaceIdx].Mute.SetLED(v)
+				return t.x.Channels[newTrack.surfaceIdx].Mute.LED.Set(v)
 			})
 			t.x.Channels[newTrack.surfaceIdx].Mute.On.Bind(func(v uint8) error {
 				newTrack.mute = !newTrack.mute
@@ -191,9 +191,9 @@ func (t *TrackData) TransitionMix() (errs error) {
 	return errors.Join(errs,
 		xt.Fader.Set(normFloatToInt(t.volume)),
 		xt.Encoder.Ring.Set(t.pan),
-		xt.Mute.SetLED(t.mute),
-		xt.Solo.SetLED(t.solo),
-		xt.Rec.SetLED(t.rec),
+		xt.Mute.LED.Set(t.mute),
+		xt.Solo.LED.Set(t.solo),
+		xt.Rec.LED.Set(t.rec),
 	)
 }
 

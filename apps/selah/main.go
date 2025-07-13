@@ -66,7 +66,7 @@ const (
 
 const (
 	MIDI_IN  = "IAC Driver Bus 1"
-	MIDI_OUT = "IAC Driver Bus 1"
+	MIDI_OUT = "IAC Driver Bus 2"
 )
 
 const (
@@ -108,6 +108,10 @@ func link[T any](b bindable[T], s setable[T]) {
 	b.Bind(func(v T) error { return s.Set(v) })
 }
 
+func int16ToNormFloat(val int16) float64 {
+	return float64(val) / float64(math.MaxInt16) * 2
+}
+
 func main() {
 	defer midi.CloseDriver()
 	fmt.Printf("outports:\n" + midi.GetOutPorts().String() + "\n")
@@ -127,39 +131,19 @@ func main() {
 	trackManager := layers.NewTrackManager(xtouch, reaper)
 	OnTransition(MIX, trackManager.TransitionMix)
 
+	xtouch.Channels[1].Fader.Bind(func(v int16) error {
+		return reaper.Track(2).Volume.Set(int16ToNormFloat(v))
+	})
+
 	// Transport
 	Bind(ALL, reaper.Play, func(b bool) error {
-		return xtouch.Transport.PLAY.SetLED(b)
+		return xtouch.Transport.PLAY.LED.Set(b)
 	})
 	Bind(ALL, reaper.Click, func(b bool) error {
-		return xtouch.Transport.Click.SetLED(b)
+		return xtouch.Transport.Click.LED.Set(b)
 	})
 
 	// XTouch bindings
-	//
-	// Per-channel strip controls
-	for trackNum := int64(1); trackNum < DEVICE_TRACKS; trackNum++ {
-		c := xtouch.Channels[trackNum]
-		rt := reaper.Track(trackNum)
-
-		// MIX Mode
-		Bind(MIX, c.Fader, func(val int16) error {
-			return rt.Volume.Set(intToNormFloat(val))
-		})
-		Bind(MIX, c.Mute, func(b bool) error {
-			return rt.Mute.Set(b)
-		})
-		Bind(MIX, c.Solo, func(b bool) error {
-			return rt.Solo.Set(b)
-		})
-		Bind(MIX, c.Rec, func(b bool) error {
-			return rt.Recarm.Set(b)
-		})
-		Bind(MIX, c.Select.On, func(uint8) error {
-			return rt.Select.Set(true)
-		})
-		// ...
-	}
 
 	// Transport
 	Bind(ALL, xtouch.Transport.PLAY.On, func(uint8) error {
@@ -168,11 +152,11 @@ func main() {
 	Bind(ALL, xtouch.Transport.STOP.On, func(uint8) error {
 		return reaper.Stop.Set(true)
 	})
-	Bind(ALL, xtouch.Transport.Click, func(b bool) error {
-		return reaper.Click.Set(b)
+	Bind(ALL, xtouch.Transport.Click.On, func(uint8) error {
+		return reaper.Click.Set(true)
 	})
-	Bind(MIX, xtouch.Transport.Solo, func(b bool) error {
-		return reaper.Soloreset.Set(b)
+	Bind(MIX, xtouch.Transport.Solo.On, func(uint8) error {
+		return reaper.Soloreset.Set(true)
 	})
 	Bind(MIX, xtouch.Transport.REW.On, func(uint8) error {
 		return reaper.Rewind.Set(true)
