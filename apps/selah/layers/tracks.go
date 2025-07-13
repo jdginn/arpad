@@ -70,61 +70,8 @@ func (t *TrackManager) listenForNewTracks() {
 				t.x,
 				t.r,
 				idx,
+				0,
 			)
-
-			// REC
-			t.r.Track(idx).Recarm.Bind(func(v bool) error {
-				newTrack.rec = v
-				return t.x.Channels[newTrack.surfaceIdx].Solo.LED.Set(v)
-			})
-			t.x.Channels[newTrack.surfaceIdx].Rec.On.Bind(func(v uint8) error {
-				newTrack.rec = !newTrack.rec
-				return t.r.Track(idx).Recarm.Set(newTrack.rec)
-			})
-			// SOLO
-			t.r.Track(idx).Solo.Bind(func(v bool) error {
-				newTrack.solo = v
-				return t.x.Channels[newTrack.surfaceIdx].Solo.LED.Set(v)
-			})
-			t.x.Channels[newTrack.surfaceIdx].Solo.On.Bind(func(v uint8) error {
-				newTrack.solo = !newTrack.solo
-				return t.r.Track(idx).Solo.Set(newTrack.solo)
-			})
-			// MUTE
-			t.r.Track(idx).Mute.Bind(func(v bool) error {
-				newTrack.mute = v
-				return t.x.Channels[newTrack.surfaceIdx].Mute.LED.Set(v)
-			})
-			t.x.Channels[newTrack.surfaceIdx].Mute.On.Bind(func(v uint8) error {
-				newTrack.mute = !newTrack.mute
-				return t.r.Track(idx).Mute.Set(newTrack.rec)
-			})
-			// Fader
-			t.r.Track(idx).Volume.Bind(func(v float64) error {
-				newTrack.volume = v
-				return t.x.Channels[newTrack.surfaceIdx].Fader.Set(normFloatToInt(v))
-			})
-			t.x.Channels[newTrack.surfaceIdx].Fader.Bind(func(v int16) error {
-				newVal := int16ToNormFloat(v)
-				// Because both feedback and input are implemented on the same physical control for fader,
-				// we need some deduplication to avoid jittering the faders or flooding the system with
-				// echoing messages.
-				if math.Abs(newVal-newTrack.volume) < FADER_EPSILON {
-					newTrack.volume = newVal
-					return nil
-				}
-				newTrack.volume = newVal
-				return t.r.Track(idx).Volume.Set(newTrack.volume)
-			})
-			// Pan
-			t.r.Track(idx).Pan.Bind(func(v float64) error {
-				newTrack.pan = v
-				return t.x.Channels[newTrack.surfaceIdx].Encoder.Ring.Set(v) // TODO: verify
-			})
-			t.x.Channels[newTrack.surfaceIdx].Encoder.Ring.Bind(func(v uint8) error {
-				newTrack.pan = float64(v) / float64(math.MaxUint8)
-				return t.r.Track(idx).Pan.Set(newTrack.pan)
-			})
 
 			t.tracks = append(t.tracks, newTrack)
 		}
@@ -175,14 +122,68 @@ type TrackData struct {
 	rcvs       map[int]*trackSendData
 }
 
-func NewTrackData(x *xtouchlib.XTouchDefault, r *reaper.Reaper, reaperIdx int64) *TrackData {
+func NewTrackData(x *xtouchlib.XTouchDefault, r *reaper.Reaper, reaperIdx, surfaceIdx int64) *TrackData {
 	t := &TrackData{
-		x:         x,
-		r:         r,
-		reaperIdx: reaperIdx,
-		sends:     make(map[int]*trackSendData),
-		rcvs:      make(map[int]*trackSendData),
+		x:          x,
+		r:          r,
+		reaperIdx:  reaperIdx,
+		surfaceIdx: surfaceIdx,
+		sends:      make(map[int]*trackSendData),
+		rcvs:       make(map[int]*trackSendData),
 	}
+	// REC
+	t.r.Track(t.reaperIdx).Recarm.Bind(func(v bool) error {
+		t.rec = v
+		return t.x.Channels[t.surfaceIdx].Solo.LED.Set(v)
+	})
+	t.x.Channels[t.surfaceIdx].Rec.On.Bind(func(v uint8) error {
+		t.rec = !t.rec
+		return t.r.Track(t.reaperIdx).Recarm.Set(t.rec)
+	})
+	// SOLO
+	t.r.Track(t.reaperIdx).Solo.Bind(func(v bool) error {
+		t.solo = v
+		return t.x.Channels[t.surfaceIdx].Solo.LED.Set(v)
+	})
+	t.x.Channels[t.surfaceIdx].Solo.On.Bind(func(v uint8) error {
+		t.solo = !t.solo
+		return t.r.Track(t.reaperIdx).Solo.Set(t.solo)
+	})
+	// MUTE
+	t.r.Track(t.reaperIdx).Mute.Bind(func(v bool) error {
+		t.mute = v
+		return t.x.Channels[t.surfaceIdx].Mute.LED.Set(v)
+	})
+	t.x.Channels[t.surfaceIdx].Mute.On.Bind(func(v uint8) error {
+		t.mute = !t.mute
+		return t.r.Track(t.reaperIdx).Mute.Set(t.rec)
+	})
+	// Fader
+	t.r.Track(t.reaperIdx).Volume.Bind(func(v float64) error {
+		t.volume = v
+		return t.x.Channels[t.surfaceIdx].Fader.Set(normFloatToInt(v))
+	})
+	t.x.Channels[t.surfaceIdx].Fader.Bind(func(v int16) error {
+		newVal := int16ToNormFloat(v)
+		// Because both feedback and input are implemented on the same physical control for fader,
+		// we need some deduplication to avoid jittering the faders or flooding the system with
+		// echoing messages.
+		if math.Abs(newVal-t.volume) < FADER_EPSILON {
+			t.volume = newVal
+			return nil
+		}
+		t.volume = newVal
+		return t.r.Track(t.reaperIdx).Volume.Set(t.volume)
+	})
+	// Pan
+	t.r.Track(t.reaperIdx).Pan.Bind(func(v float64) error {
+		t.pan = v
+		return t.x.Channels[t.surfaceIdx].Encoder.Ring.Set(v) // TODO: verify
+	})
+	t.x.Channels[t.surfaceIdx].Encoder.Ring.Bind(func(v uint8) error {
+		t.pan = float64(v) / float64(math.MaxUint8)
+		return t.r.Track(t.reaperIdx).Pan.Set(t.pan)
+	})
 	return t
 }
 
