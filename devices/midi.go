@@ -224,7 +224,7 @@ func (f *MidiDevice) Run() {
 			}
 			for _, pitchbend := range f.pitchBend {
 				if pitchbend.channel == channel {
-					if err := pitchbend.callback(relative); err != nil {
+					if err := pitchbend.callback(int16(absolute)); err != nil {
 						fmt.Println("failed to process Pitch Bend:", err)
 					}
 				}
