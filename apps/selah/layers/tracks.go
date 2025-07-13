@@ -2,7 +2,6 @@ package layers
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"strconv"
 
@@ -10,6 +9,10 @@ import (
 
 	reaper "github.com/jdginn/arpad/devices/reaper"
 	xtouchlib "github.com/jdginn/arpad/devices/xtouch"
+)
+
+const (
+	FADER_EPSILON float64 = 0.001
 )
 
 type bindable[A any] interface {
@@ -102,8 +105,15 @@ func (t *TrackManager) listenForNewTracks() {
 				return t.x.Channels[newTrack.surfaceIdx].Fader.Set(normFloatToInt(v))
 			})
 			t.x.Channels[newTrack.surfaceIdx].Fader.Bind(func(v int16) error {
-				newTrack.volume = int16ToNormFloat(v)
-				fmt.Printf("fader %d -> volume %f\n", v, newTrack.volume)
+				newVal := int16ToNormFloat(v)
+				// Because both feedback and input are implemented on the same physical control for fader,
+				// we need some deduplication to avoid jittering the faders or flooding the system with
+				// echoing messages.
+				if math.Abs(newVal-newTrack.volume) < FADER_EPSILON {
+					newTrack.volume = newVal
+					return nil
+				}
+				newTrack.volume = newVal
 				return t.r.Track(idx).Volume.Set(newTrack.volume)
 			})
 			// Pan
