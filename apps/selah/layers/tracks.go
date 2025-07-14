@@ -278,6 +278,22 @@ func NewTrackData(m *TrackManager, reaperIdx, surfaceIdx int64) *TrackData {
 		sends:      make(map[int64]*trackSendData),
 		rcvs:       make(map[int64]*trackSendData),
 	}
+	// Track name to scribble strip
+	//
+	// TODO: how do we get color? What do we put on the bottom line?
+	// TODO: how do we truncate names?
+	t.r.Track(t.reaperIdx).Name.Bind(func(v string) error {
+		t.name = v
+		switch CurrMode() {
+		case MIX:
+			return m.x.Channels[t.surfaceIdx].Scribble.
+				WithColor(xtouchlib.White).
+				WithTopMessage(t.name).
+				WithBottomMessage("").
+				Set()
+		}
+		return nil
+	})
 	// Select
 	t.r.Track(t.reaperIdx).Select.Bind(func(v bool) (errs error) {
 		switch CurrMode() {
