@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"strconv"
+	"time"
 
 	"github.com/hypebeast/go-osc/osc"
 
@@ -13,9 +14,25 @@ import (
 )
 
 const (
-	FADER_EPSILON float64 = 0.001
-	NUM_CHANNELS  int64   = 8
+	FADER_EPSILON         float64 = 0.001
+	NUM_CHANNELS          int64   = 8
+	REAPER_REFRESH_ACTION int64   = 41743
 )
+
+func runPeriodically(interval time.Duration, fn func() error) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			fn() // TODO: maybe should handle this error somehow
+		}
+	}
+}
+
+func (t *TrackManager) refreshReaper() error {
+	return t.r.Action(REAPER_REFRESH_ACTION).Set(true)
+}
 
 // get returns the first element in the slice for which the predicate returns true.
 // If no such element exists, it returns the zero value of T and false.
@@ -234,6 +251,8 @@ func NewTrackManager(x *xtouchlib.XTouchDefault, r *reaper.Reaper) *TrackManager
 	for i := int64(0); i < NUM_CHANNELS; i++ {
 		t.AddHardwareTrack(i)
 	}
+	go runPeriodically(time.Second*2, t.refreshReaper)
+	time.Sleep(10 * time.Millisecond)
 	t.listenForNewTracks()
 	return t
 }
