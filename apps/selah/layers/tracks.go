@@ -2,7 +2,6 @@ package layers
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"strconv"
 
@@ -108,9 +107,7 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 		if t, ok := m.getTrack(idx); ok {
 			switch CurrMode() {
 			case MIX:
-				fmt.Println("Raw value %d", v)
 				newVal := intToNormFloat(v)
-				fmt.Println("Normalized value %f", newVal)
 				// Because both feedback and input are implemented on the same physical control for fader,
 				// we need some deduplication to avoid jittering the faders or flooding the system with
 				// echoing messages.
