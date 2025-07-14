@@ -8,8 +8,8 @@ import (
 type Mode uint64
 
 const (
-	DEFAULT Mode = 1 << iota
-	MIX
+	DEFAULT Mode = 0
+	MIX          = 1<<iota - 1
 	MIX_SELECTED_TRACK_SENDS
 	MIX_SELECTED_TRACK_RECEIVES
 	RECORD
