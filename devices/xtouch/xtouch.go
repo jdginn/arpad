@@ -75,14 +75,44 @@ type Scribble struct {
 	channel uint8
 }
 
+func (s *Scribble) WithColor(c ScribbleColor) scribbleColor {
+	return scribbleColor{s, c}
+}
+
+type scribbleColor struct {
+	*Scribble
+
+	color ScribbleColor
+}
+
+func (s scribbleColor) WithTopMessage(m string) scribbleTopMessage {
+	return scribbleTopMessage{s, m}
+}
+
+type scribbleTopMessage struct {
+	scribbleColor
+
+	msgTop string
+}
+
+func (s scribbleTopMessage) WithBottomMessage(m string) scribbleBottomMessage {
+	return scribbleBottomMessage{s, m}
+}
+
+type scribbleBottomMessage struct {
+	scribbleTopMessage
+
+	msgBottom string
+}
+
 // TODO: consider making this take strings instead of []byte?
-func (s *Scribble) SendScribble(color ScribbleColor, msgTop, msgBottom []byte) error {
+func (s scribbleBottomMessage) Set() error {
 	// TODO: check msg for length, support best-effort truncation?
 	b := make([]byte, 0, 20)
 	b = append(HeaderScribble, byte(s.channel))
-	b = append(b, byte(color))
-	b = append(b, msgTop...)
-	b = append(b, msgBottom...)
+	b = append(b, byte(s.color))
+	b = append(b, s.msgTop...)
+	b = append(b, s.msgBottom...)
 	return s.d.SysEx.Set(midi.SysEx(b)) // TODO: check this
 }
 
