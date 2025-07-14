@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math"
-	"strings"
 	"time"
 
 	"gitlab.com/gomidi/midi/v2"
@@ -47,15 +45,15 @@ import (
 // - Control room monitoring selection (main monitors, mono mixcube, nearfield monitors, headphones-only, other?) mapped to View bttons (excluding Global View)
 // - Per-channel record arm always controls the DAW
 
-const (
-	MIDI_IN  = "X-Touch INT"
-	MIDI_OUT = "X-Touch INT"
-)
-
 // const (
-// 	MIDI_IN  = "IAC Driver Bus 1"
-// 	MIDI_OUT = "IAC Driver Bus 2"
+// 	MIDI_IN  = "X-Touch INT"
+// 	MIDI_OUT = "X-Touch INT"
 // )
+
+const (
+	MIDI_IN  = "IAC Driver Bus 1"
+	MIDI_OUT = "IAC Driver Bus 2"
+)
 
 const (
 	OSC_REAPER_IP   = "0.0.0.0"
@@ -65,40 +63,6 @@ const (
 )
 
 const DEVICE_TRACKS = 8
-
-func intToNormFloat(abs int16) float64 {
-	return float64(abs) / 4 / float64(math.MaxUint16)
-}
-
-func normFloatToInt(norm float64) int16 {
-	return int16((norm - 0.5) * float64(math.MaxInt16))
-}
-
-func getFirstWildcard(prefix, path string) (string, bool) {
-	if !strings.HasPrefix(path, prefix) {
-		return "", false
-	}
-	rest := strings.TrimPrefix(path, prefix)
-	// If there are more slashes, split and return the first part
-	parts := strings.SplitN(rest, "/", 2)
-	return parts[0], true
-}
-
-type bindable[A any] interface {
-	Bind(func(A) error)
-}
-
-type setable[T any] interface {
-	Set(T) error
-}
-
-func link[T any](b bindable[T], s setable[T]) {
-	b.Bind(func(v T) error { return s.Set(v) })
-}
-
-func int16ToNormFloat(val int16) float64 {
-	return float64(val) / float64(math.MaxInt16) * 2
-}
 
 func main() {
 	defer midi.CloseDriver()
@@ -124,19 +88,6 @@ func main() {
 	fmt.Println("Reaper is running...")
 	go xtouch.Run()
 	fmt.Println("Xtouch is running...")
-
-	// go func() {
-	// 	for {
-	// 		fmt.Print("A\n")
-	// 		reaper.Track(1).Volume.Set(5)
-	// 		reaper.Track(2).Volume.Set(0)
-	// 		time.Sleep(time.Second)
-	// 		fmt.Print("B\n")
-	// 		reaper.Track(1).Volume.Set(0)
-	// 		reaper.Track(2).Volume.Set(0.75)
-	// 		time.Sleep(time.Second)
-	// 	}
-	// }()
 
 	time.Sleep(time.Second * 1000)
 }
