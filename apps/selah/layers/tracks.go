@@ -58,6 +58,18 @@ func (m *TrackManager) getTrack(surfaceIdx int64) (*TrackData, bool) {
 }
 
 func (m *TrackManager) AddHardwareTrack(idx int64) {
+	// Select
+	m.x.Channels[idx].Select.On.Bind(func() (errs error) {
+		if t, ok := m.getTrack(idx); ok {
+			switch CurrMode() {
+			case MIX:
+				errs = errors.Join(errs, m.r.Track(m.selectedTrack.reaperIdx).Select.Set(false))
+				m.selectedTrack = t
+				errs = errors.Join(errs, m.r.Track(t.reaperIdx).Select.Set(true))
+			}
+		}
+		return nil
+	})
 	// REC
 	m.x.Channels[idx].Rec.On.Bind(func() error {
 		if t, ok := m.getTrack(idx); ok {
@@ -162,8 +174,7 @@ func (t *TrackManager) listenForNewTracks() {
 			return track.reaperIdx == idx
 		}); !exists {
 			t.logicalTracks = append(t.logicalTracks, NewTrackData(
-				t.x,
-				t.r,
+				t,
 				idx,
 				idx-1,
 			))
@@ -186,8 +197,7 @@ func (t *TrackManager) listenForNewTracks() {
 			return track.reaperIdx == trackIdx
 		}); !exists {
 			t.logicalTracks = append(t.logicalTracks, NewTrackData(
-				t.x,
-				t.r,
+				t,
 				trackIdx,
 				trackIdx-1,
 			))
@@ -249,6 +259,7 @@ func intToNormFloat(val uint16) float64 {
 type TrackData struct {
 	x          *xtouchlib.XTouchDefault
 	r          *reaper.Reaper
+	m          *TrackManager
 	surfaceIdx int64
 	reaperIdx  int64
 	name       string
@@ -261,15 +272,27 @@ type TrackData struct {
 	rcvs       map[int64]*trackSendData
 }
 
-func NewTrackData(x *xtouchlib.XTouchDefault, r *reaper.Reaper, reaperIdx, surfaceIdx int64) *TrackData {
+func NewTrackData(m *TrackManager, reaperIdx, surfaceIdx int64) *TrackData {
 	t := &TrackData{
-		x:          x,
-		r:          r,
+		x:          m.x,
+		r:          m.r,
 		reaperIdx:  reaperIdx,
 		surfaceIdx: surfaceIdx,
 		sends:      make(map[int64]*trackSendData),
 		rcvs:       make(map[int64]*trackSendData),
 	}
+	// Select
+	t.r.Track(t.reaperIdx).Select.Bind(func(v bool) (errs error) {
+		switch CurrMode() {
+		case MIX:
+			// Turn off select button for the previously selected track
+			errs = errors.Join(errs, m.x.Channels[m.selectedTrack.surfaceIdx].Select.LED.Set(!v))
+			m.selectedTrack = t
+			// Turn on select button for the newly selected track
+			errs = errors.Join(errs, t.x.Channels[t.surfaceIdx].Select.LED.Set(v))
+		}
+		return errs
+	})
 	// REC
 	t.r.Track(t.reaperIdx).Recarm.Bind(func(v bool) error {
 		t.rec = v
