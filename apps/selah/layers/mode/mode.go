@@ -73,6 +73,12 @@ func SetMode(newMode Mode) (errs error) {
 	return errs
 }
 
+func CurrMode() Mode {
+	reg.mu.Lock()
+	defer reg.mu.Unlock()
+	return reg.currMode
+}
+
 func FilterSet[T any](mode Mode, s setable[T]) setable[T] {
 	return &statefulSetable[T]{mode: mode, target: s}
 }
