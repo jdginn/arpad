@@ -79,16 +79,16 @@ func (ep *cC) Set(value uint8) error {
 type pitchBend struct {
 	device   *MidiDevice
 	channel  uint8
-	callback func(int16) error
+	callback func(uint16) error
 }
 
-func (ep *pitchBend) Bind(callback func(int16) error) {
+func (ep *pitchBend) Bind(callback func(uint16) error) {
 	ep.callback = callback
 	ep.device.pitchBend = append(ep.device.pitchBend, ep)
 }
 
-func (ep *pitchBend) Set(value int16) error {
-	return ep.device.outPort.Send(midi.Pitchbend(ep.channel, value))
+func (ep *pitchBend) Set(value uint16) error {
+	return ep.device.outPort.Send(midi.Pitchbend(ep.channel, int16(value-0x2000)))
 }
 
 type note struct {
@@ -216,7 +216,7 @@ func (f *MidiDevice) Run() {
 			}
 		case midi.PitchBendMsg:
 			var channel uint8
-			var relative int16 // unused
+			var relative int16
 			var absolute uint16
 			if ok := msg.GetPitchBend(&channel, &relative, &absolute); !ok {
 				fmt.Println("failed to parse Pitch Bend message:", err)
@@ -224,7 +224,7 @@ func (f *MidiDevice) Run() {
 			}
 			for _, pitchbend := range f.pitchBend {
 				if pitchbend.channel == channel {
-					if err := pitchbend.callback(int16(absolute)); err != nil {
+					if err := pitchbend.callback(absolute); err != nil {
 						fmt.Println("failed to process Pitch Bend:", err)
 					}
 				}

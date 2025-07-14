@@ -36,7 +36,7 @@ func (e *Encoder) Bind(callback func(uint8) error) {
 }
 
 type ring struct {
-	*Encoder
+	base             *Encoder
 	AllSegments      ringSetAllSegments
 	ClearAllSegments ringClearAllSegments
 }
@@ -92,10 +92,10 @@ func (e *ring) Set(v float64) error {
 	highValue = highPattern[step]
 
 	// Send both CC messages
-	if err := e.d.CC(e.channel, e.ledRingLow).Set(lowValue); err != nil {
+	if err := e.base.d.CC(e.base.channel, e.base.ledRingLow).Set(lowValue); err != nil {
 		return fmt.Errorf("failed to set low LED ring value: %v", err)
 	}
-	if err := e.d.CC(e.channel, e.ledRingLow).Set(highValue); err != nil {
+	if err := e.base.d.CC(e.base.channel, e.base.ledRingLow).Set(highValue); err != nil {
 		return fmt.Errorf("failed to set low LED ring value: %v", err)
 	}
 

@@ -2,6 +2,7 @@ package layers
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"strconv"
 
@@ -91,11 +92,13 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 		return nil
 	})
 	// Fader
-	m.x.Channels[idx].Fader.Bind(func(v int16) error {
+	m.x.Channels[idx].Fader.Bind(func(v uint16) error {
 		if t, ok := m.getTrack(idx); ok {
 			switch CurrMode() {
 			case MIX:
-				newVal := int16ToNormFloat(v)
+				fmt.Println("Raw value %d", v)
+				newVal := intToNormFloat(v)
+				fmt.Println("Normalized value %f", newVal)
 				// Because both feedback and input are implemented on the same physical control for fader,
 				// we need some deduplication to avoid jittering the faders or flooding the system with
 				// echoing messages.
@@ -105,14 +108,13 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 				}
 				t.volume = newVal
 				err := m.r.Track(t.reaperIdx).Volume.Set(t.volume)
-				m.x.Channels[idx].Fader.Set(v)
 				if err != nil {
 					panic(err)
 				}
 				return err
 			case MIX_SELECTED_TRACK_SENDS:
 				// TODO: this indexing is wrong; we need to find send idx from path wildcard values
-				newVal := int16ToNormFloat(v)
+				newVal := intToNormFloat(v)
 				// Because both feedback and input are implemented on the same physical control for fader,
 				// we need some deduplication to avoid jittering the faders or flooding the system with
 				// echoing messages.
@@ -236,12 +238,11 @@ func (m *TrackManager) TransitionMix() (errs error) {
 	return errs
 }
 
-// TODO: verify this
-func normFloatToInt(norm float64) int16 {
-	return int16((norm)*float64(0x8000)) - 0x4000
+func normFloatToInt(norm float64) uint16 {
+	return uint16((norm) * float64(0x4000))
 }
 
-func int16ToNormFloat(val int16) float64 {
+func intToNormFloat(val uint16) float64 {
 	return float64(val) / float64(0x4000)
 }
 

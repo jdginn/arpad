@@ -13,9 +13,9 @@ import (
 	"github.com/jdginn/arpad/devices"
 	reaperlib "github.com/jdginn/arpad/devices/reaper"
 	xtouchlib "github.com/jdginn/arpad/devices/xtouch"
-	. "github.com/jdginn/arpad/mode"
 
 	"github.com/jdginn/arpad/apps/selah/layers"
+	. "github.com/jdginn/arpad/apps/selah/layers/mode"
 )
 
 // Modes:
@@ -48,31 +48,19 @@ import (
 // - Per-channel record arm always controls the DAW
 
 const (
-	DEFAULT Mode = 1 << iota
-	MIX
-	MIX_THIS_TRACK_SENDS
-	MIX_SENDS_TO_THIS_BUS
-	RECORD
-	RECORD_THIS_TRACK_SENDS
-	RECORD_SENDS_TO_THIS_OUTPUT
-	RECORD_SENDS_TO_THIS_AUX
-	ALL = 0xFFFFFFFFFFFFFFFF
+	MIDI_IN  = "X-Touch INT"
+	MIDI_OUT = "X-Touch INT"
 )
 
 // const (
-// 	MIDI_IN  = "X-Touch INT"
-// 	MIDI_OUT = "X-Touch INT"
+// 	MIDI_IN  = "IAC Driver Bus 1"
+// 	MIDI_OUT = "IAC Driver Bus 2"
 // )
-
-const (
-	MIDI_IN  = "IAC Driver Bus 1"
-	MIDI_OUT = "IAC Driver Bus 2"
-)
 
 const (
 	OSC_REAPER_IP   = "0.0.0.0"
 	OSC_REAPER_PORT = 9000
-	OSC_ARPAD_IP    = "192.168.1.146"
+	OSC_ARPAD_IP    = "192.168.22.129"
 	OSC_ARPAD_PORT  = 9001
 )
 
@@ -128,55 +116,50 @@ func main() {
 
 	reaper := reaperlib.NewReaper(devices.NewOscDevice(OSC_ARPAD_IP, OSC_ARPAD_PORT, OSC_REAPER_IP, OSC_REAPER_PORT, reaperlib.NewDispatcher()))
 
-	trackManager := layers.NewTrackManager(xtouch, reaper)
-	OnTransition(MIX, trackManager.TransitionMix)
+	layers.NewTrackManager(xtouch, reaper)
 
-	xtouch.Channels[1].Fader.Bind(func(v int16) error {
-		return reaper.Track(2).Volume.Set(int16ToNormFloat(v))
-	})
-
-	// Transport
-	Bind(ALL, reaper.Play, func(b bool) error {
-		return xtouch.Transport.PLAY.LED.Set(b)
-	})
-	Bind(ALL, reaper.Click, func(b bool) error {
-		return xtouch.Transport.Click.LED.Set(b)
-	})
-
-	// XTouch bindings
-
-	// Transport
-	Bind(ALL, xtouch.Transport.PLAY.On, func(uint8) error {
-		return reaper.Play.Set(true)
-	})
-	Bind(ALL, xtouch.Transport.STOP.On, func(uint8) error {
-		return reaper.Stop.Set(true)
-	})
-	Bind(ALL, xtouch.Transport.Click.On, func(uint8) error {
-		return reaper.Click.Set(true)
-	})
-	Bind(MIX, xtouch.Transport.Solo.On, func(uint8) error {
-		return reaper.Soloreset.Set(true)
-	})
-	Bind(MIX, xtouch.Transport.REW.On, func(uint8) error {
-		return reaper.Rewind.Set(true)
-	})
-	Bind(ALL, xtouch.Transport.FF.On, func(b uint8) error {
-		return reaper.Forward.Set(true)
-	})
-
-	// Mode selection
-	Bind(MIX, xtouch.EncoderAssign.TRACK.On, func(uint8) error {
-		return SetMode(MIX)
-	})
-	Bind(MIX, xtouch.EncoderAssign.PAN_SURROUND.On, func(uint8) error {
-		return SetMode(RECORD)
-	})
-
-	// Layer selection within modes
-	Bind(MIX|MIX_THIS_TRACK_SENDS, xtouch.View.GLOBAL.On, func(uint8) error {
-		return SetMode(MIX_SENDS_TO_THIS_BUS)
-	})
+	// // Transport
+	// Bind(ALL, reaper.Play, func(b bool) error {
+	// 	return xtouch.Transport.PLAY.LED.Set(b)
+	// })
+	// Bind(ALL, reaper.Click, func(b bool) error {
+	// 	return xtouch.Transport.Click.LED.Set(b)
+	// })
+	//
+	// // XTouch bindings
+	//
+	// // Transport
+	// Bind(ALL, xtouch.Transport.PLAY.On, func(uint8) error {
+	// 	return reaper.Play.Set(true)
+	// })
+	// Bind(ALL, xtouch.Transport.STOP.On, func(uint8) error {
+	// 	return reaper.Stop.Set(true)
+	// })
+	// Bind(ALL, xtouch.Transport.Click.On, func(uint8) error {
+	// 	return reaper.Click.Set(true)
+	// })
+	// Bind(MIX, xtouch.Transport.Solo.On, func(uint8) error {
+	// 	return reaper.Soloreset.Set(true)
+	// })
+	// Bind(MIX, xtouch.Transport.REW.On, func(uint8) error {
+	// 	return reaper.Rewind.Set(true)
+	// })
+	// Bind(ALL, xtouch.Transport.FF.On, func(b uint8) error {
+	// 	return reaper.Forward.Set(true)
+	// })
+	//
+	// // Mode selection
+	// Bind(MIX, xtouch.EncoderAssign.TRACK.On, func(uint8) error {
+	// 	return SetMode(MIX)
+	// })
+	// Bind(MIX, xtouch.EncoderAssign.PAN_SURROUND.On, func(uint8) error {
+	// 	return SetMode(RECORD)
+	// })
+	//
+	// // Layer selection within modes
+	// Bind(MIX|MIX_THIS_TRACK_SENDS, xtouch.View.GLOBAL.On, func(uint8) error {
+	// 	return SetMode(MIX_SENDS_TO_THIS_BUS)
+	// })
 
 	SetMode(MIX)
 	go reaper.Run()

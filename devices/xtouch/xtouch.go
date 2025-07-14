@@ -13,12 +13,13 @@ import (
 
 const (
 	// Handshake message sent by X-Touch every 2 seconds
-	handshakePingMessage = "\xF0\x00\x20\x32\x58\x54\x00\xF7"
+	handshakePingMessage = "\x00\x00\x66\x14\x00"
 	// Expected response message (should be received every 6-8 seconds)
-	handshakeResponseMessage = "\xF0\x00\x00\x66\x14\x00\xF7"
+	// handshakeResponseMessage = "\x00\x20\x32\x58\x54\x00"
+	handshakeResponseMessage = "\x00\x00\x66\x14\x01\x30\x31\x35\x36\x34\x30\x33\x35\x38\x43\x41"
 
 	// Timing constants
-	pingInterval    = 2 * time.Second
+	pingInterval    = 1 * time.Second
 	responseTimeout = 4 * time.Second
 )
 
@@ -32,11 +33,15 @@ type Fader struct {
 	ChannelNo uint8
 }
 
-func (f *Fader) Bind(callback func(int16) error) {
-	f.d.PitchBend(uint8(f.ChannelNo)).Bind(callback)
+func (f *Fader) Bind(callback func(uint16) error) {
+	f.d.PitchBend(uint8(f.ChannelNo)).Bind(
+		func(v uint16) error {
+			f.d.PitchBend(uint8(f.ChannelNo)).Set(v)
+			return callback(v)
+		})
 }
 
-func (f *Fader) Set(val int16) error {
+func (f *Fader) Set(val uint16) error {
 	return f.d.PitchBend(uint8(f.ChannelNo)).Set(val)
 }
 
@@ -197,6 +202,7 @@ func (x *XTouch) NewEncoder(channelNo uint8, id uint8) *Encoder {
 		ledRingHigh: ledHighCC,
 	}
 	enc.Ring = ring{
+		base:             enc,
 		AllSegments:      ringSetAllSegments{enc},
 		ClearAllSegments: ringClearAllSegments{enc},
 	}
@@ -237,7 +243,6 @@ type channelStrip struct {
 // NewChannelStrip returns a new channelStrip corresponding to the given index into a
 // bank of channelStrips. For typical devices, id will be between 0 and 7.
 func (x *XTouch) NewChannelStrip(id uint8) *channelStrip {
-	fmt.Printf("New channel strip with itd %d\n", id)
 	return &channelStrip{
 		Encoder:       x.NewEncoder(0, id+32),
 		EncoderButton: x.NewButton(0, id+16),

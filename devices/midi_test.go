@@ -144,7 +144,7 @@ func TestMidiDevice(t *testing.T) {
 		{
 			name: "pitch bend messages are handled with correct values",
 			setupBindings: func(d *devtest.MidiDevice) {
-				d.PitchBend(1).Bind(func(value int16) error {
+				d.PitchBend(1).Bind(func(value uint16) error {
 					assert.Equal(int16(100), value, "incorrect relative value")
 					return nil
 				})
@@ -159,7 +159,7 @@ func TestMidiDevice(t *testing.T) {
 		{
 			name: "pitch bend messages are handled with correct values",
 			setupBindings: func(d *devtest.MidiDevice) {
-				d.PitchBend(1).Bind(func(value int16) error {
+				d.PitchBend(1).Bind(func(value uint16) error {
 					assert.Equal(int16(100), value, "incorrect relative value")
 					return nil
 				})
