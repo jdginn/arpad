@@ -95,8 +95,9 @@ func main() {
 
 	reaper := reaperlib.NewReaper(devices.NewOscDevice(OSC_ARPAD_IP, OSC_ARPAD_PORT, OSC_REAPER_IP, OSC_REAPER_PORT, reaperlib.NewDispatcher()))
 
-	layers.NewEncoderAssign(xtouch)
-	layers.NewTrackManager(xtouch, reaper)
+	manager := layers.NewManager(xtouch, reaper)
+	layers.NewEncoderAssign(manager)
+	layers.NewTrackManager(manager)
 	SetMode(MIX)
 
 	go reaper.Run()

@@ -3,25 +3,23 @@ package layers
 import (
 	"errors"
 
-	. "github.com/jdginn/arpad/apps/selah/layers/mode"
-	"github.com/jdginn/arpad/devices/xtouch"
 	xtouchlib "github.com/jdginn/arpad/devices/xtouch"
 )
 
 type EncoderAssign struct {
-	x                    *xtouchlib.XTouchDefault
+	*Manager
 	currentlyIlluminated *xtouchlib.Button
 }
 
-func NewEncoderAssign(x *xtouch.XTouchDefault) *EncoderAssign {
+func NewEncoderAssign(m *Manager) *EncoderAssign {
 	e := &EncoderAssign{
-		x: x,
+		Manager: m,
 	}
 
 	e.x.EncoderAssign.TRACK.On.Bind(func() error {
-		return SetMode(MIX)
+		return e.SetMode(MIX)
 	})
-	OnTransition(MIX, func() (errs error) {
+	e.OnTransition(MIX, func() (errs error) {
 		if e.currentlyIlluminated == e.x.EncoderAssign.TRACK {
 			return
 		}
@@ -31,9 +29,9 @@ func NewEncoderAssign(x *xtouch.XTouchDefault) *EncoderAssign {
 	})
 
 	e.x.EncoderAssign.PAN_SURROUND.On.Bind(func() error {
-		return SetMode(MIX_SELECTED_TRACK_SENDS)
+		return e.SetMode(MIX_SELECTED_TRACK_SENDS)
 	})
-	OnTransition(MIX_SELECTED_TRACK_SENDS, func() (errs error) {
+	e.OnTransition(MIX_SELECTED_TRACK_SENDS, func() (errs error) {
 		if e.currentlyIlluminated == e.x.EncoderAssign.PAN_SURROUND {
 			return
 		}

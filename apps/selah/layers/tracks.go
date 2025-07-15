@@ -8,7 +8,6 @@ import (
 
 	"github.com/hypebeast/go-osc/osc"
 
-	. "github.com/jdginn/arpad/apps/selah/layers/mode"
 	reaper "github.com/jdginn/arpad/devices/reaper"
 	xtouchlib "github.com/jdginn/arpad/devices/xtouch"
 )
@@ -18,21 +17,6 @@ const (
 	NUM_CHANNELS          int64   = 8
 	REAPER_REFRESH_ACTION int64   = 41743
 )
-
-func runPeriodically(interval time.Duration, fn func() error) {
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			fn() // TODO: maybe should handle this error somehow
-		}
-	}
-}
-
-func (t *TrackManager) refreshReaper() error {
-	return t.r.Action(REAPER_REFRESH_ACTION).Set(true)
-}
 
 // get returns the first element in the slice for which the predicate returns true.
 // If no such element exists, it returns the zero value of T and false.
@@ -52,8 +36,7 @@ type trackMapping struct {
 }
 
 type TrackManager struct {
-	x             *xtouchlib.XTouchDefault
-	r             *reaper.Reaper
+	*Manager
 	logicalTracks []*TrackData
 	trackMappings map[int64]int64
 	selectedTrack *TrackData
@@ -76,12 +59,12 @@ func (m *TrackManager) getTrack(surfaceIdx int64) (*TrackData, bool) {
 func (m *TrackManager) AddHardwareTrack(idx int64) {
 	// Select
 	m.x.Channels[idx].Select.On.Bind(func() (errs error) {
-		if t, ok := m.getTrack(idx); ok {
-			switch CurrMode() {
+		if track, ok := m.getTrack(idx); ok {
+			switch m.CurrMode() {
 			case MIX:
 				errs = errors.Join(errs, m.r.Track(m.selectedTrack.reaperIdx).Select.Set(false))
-				m.selectedTrack = t
-				errs = errors.Join(errs, m.r.Track(t.reaperIdx).Select.Set(true))
+				m.selectedTrack = track
+				errs = errors.Join(errs, m.r.Track(track.reaperIdx).Select.Set(true))
 			}
 		}
 		return nil
@@ -89,7 +72,7 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 	// REC
 	m.x.Channels[idx].Rec.On.Bind(func() error {
 		if t, ok := m.getTrack(idx); ok {
-			switch CurrMode() {
+			switch m.CurrMode() {
 			case MIX:
 				t.rec = !t.rec
 				return m.r.Track(t.reaperIdx).Recarm.Set(t.rec)
@@ -100,7 +83,7 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 	// SOLO
 	m.x.Channels[idx].Solo.On.Bind(func() error {
 		if t, ok := m.getTrack(idx); ok {
-			switch CurrMode() {
+			switch m.CurrMode() {
 			case MIX:
 				t.solo = !t.solo
 				return m.r.Track(t.reaperIdx).Solo.Set(t.solo)
@@ -111,7 +94,7 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 	// MUTE
 	m.x.Channels[idx].Mute.On.Bind(func() error {
 		if t, ok := m.getTrack(idx); ok {
-			switch CurrMode() {
+			switch m.CurrMode() {
 			case MIX:
 				t.mute = !t.mute
 				return m.r.Track(t.reaperIdx).Mute.Set(t.mute)
@@ -122,7 +105,7 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 	// Fader
 	m.x.Channels[idx].Fader.Bind(func(v uint16) error {
 		if t, ok := m.getTrack(idx); ok {
-			switch CurrMode() {
+			switch m.CurrMode() {
 			case MIX:
 				newVal := intToNormFloat(v)
 				// Because both feedback and input are implemented on the same physical control for fader,
@@ -157,7 +140,7 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 	// Pan
 	m.x.Channels[idx].Encoder.Bind(func(v uint8) error {
 		if t, ok := m.getTrack(idx); ok {
-			switch CurrMode() {
+			switch m.CurrMode() {
 			case MIX:
 				t.pan = float64(v) / float64(math.MaxUint8)
 				return m.r.Track(t.reaperIdx).Pan.Set(t.pan)
@@ -241,10 +224,9 @@ func (t *TrackManager) listenForNewTracks() {
 	}
 }
 
-func NewTrackManager(x *xtouchlib.XTouchDefault, r *reaper.Reaper) *TrackManager {
+func NewTrackManager(m *Manager) *TrackManager {
 	t := &TrackManager{
-		x:             x,
-		r:             r,
+		Manager:       m,
 		logicalTracks: make([]*TrackData, 0),
 		trackMappings: make(map[int64]int64),
 	}
@@ -303,7 +285,7 @@ func NewTrackData(m *TrackManager, reaperIdx, surfaceIdx int64) *TrackData {
 	// TODO: how do we truncate names?
 	t.r.Track(t.reaperIdx).Name.Bind(func(v string) error {
 		t.name = v
-		switch CurrMode() {
+		switch m.CurrMode() {
 		case MIX:
 			return m.x.Channels[t.surfaceIdx].Scribble.
 				WithColor(xtouchlib.White).
@@ -315,7 +297,7 @@ func NewTrackData(m *TrackManager, reaperIdx, surfaceIdx int64) *TrackData {
 	})
 	// Select
 	t.r.Track(t.reaperIdx).Select.Bind(func(v bool) (errs error) {
-		switch CurrMode() {
+		switch m.CurrMode() {
 		case MIX:
 			// Turn off select button for the previously selected track
 			errs = errors.Join(errs, m.x.Channels[m.selectedTrack.surfaceIdx].Select.LED.Set(!v))
@@ -328,7 +310,7 @@ func NewTrackData(m *TrackManager, reaperIdx, surfaceIdx int64) *TrackData {
 	// REC
 	t.r.Track(t.reaperIdx).Recarm.Bind(func(v bool) error {
 		t.rec = v
-		switch CurrMode() {
+		switch m.CurrMode() {
 		case MIX:
 			return t.x.Channels[t.surfaceIdx].Rec.LED.Set(v)
 		}
@@ -337,7 +319,7 @@ func NewTrackData(m *TrackManager, reaperIdx, surfaceIdx int64) *TrackData {
 	// SOLO
 	t.r.Track(t.reaperIdx).Solo.Bind(func(v bool) error {
 		t.solo = v
-		switch CurrMode() {
+		switch m.CurrMode() {
 		case MIX:
 			return t.x.Channels[t.surfaceIdx].Solo.LED.Set(v)
 		}
@@ -346,7 +328,7 @@ func NewTrackData(m *TrackManager, reaperIdx, surfaceIdx int64) *TrackData {
 	// MUTE
 	t.r.Track(t.reaperIdx).Mute.Bind(func(v bool) error {
 		t.mute = v
-		switch CurrMode() {
+		switch m.CurrMode() {
 		case MIX:
 			return t.x.Channels[t.surfaceIdx].Mute.LED.Set(v)
 		}
@@ -355,7 +337,7 @@ func NewTrackData(m *TrackManager, reaperIdx, surfaceIdx int64) *TrackData {
 	// Fader
 	t.r.Track(t.reaperIdx).Volume.Bind(func(v float64) error {
 		t.volume = v
-		switch CurrMode() {
+		switch m.CurrMode() {
 		case MIX:
 			return t.x.Channels[t.surfaceIdx].Fader.Set(normFloatToInt(v))
 		}
@@ -364,13 +346,13 @@ func NewTrackData(m *TrackManager, reaperIdx, surfaceIdx int64) *TrackData {
 	// Pan
 	t.r.Track(t.reaperIdx).Pan.Bind(func(v float64) error {
 		t.pan = v
-		switch CurrMode() {
+		switch m.CurrMode() {
 		case MIX:
 			return t.x.Channels[t.surfaceIdx].Encoder.Ring.Set(v) // TODO: verify
 		}
 		return nil
 	})
-	OnTransition(MIX, t.TransitionMix)
+	m.OnTransition(MIX, t.TransitionMix)
 	return t
 }
 
