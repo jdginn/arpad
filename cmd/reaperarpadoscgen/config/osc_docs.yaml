@@ -1,0 +1,24 @@
+- osc_address: /track/{track_guid}/volume
+  arguments:
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
+  - name: volume
+    type: float
+    description: volume of the track, normalized to 0 to 1.0
+- osc_address: /track/{track_guid}/pan
+  arguments:
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
+  - name: pan
+    type: float
+    description: pan of the track, normalized to -1.0 to 1.0
+- osc_address: /track/{track_guid}/mute
+  arguments:
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
+  - name: mute
+    type: int
+    description: 0 to mute, 1 to unmute
