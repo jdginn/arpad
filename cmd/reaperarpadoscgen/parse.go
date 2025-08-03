@@ -11,7 +11,29 @@ import (
 type ActionModel struct {
 	Address       string          `yaml:"osc_address"`
 	Arguments     []ArgumentModel `yaml:"arguments"`
+	Direction     string          `yaml:"direction"`
 	Documentation string          `yaml:"documentation"`
+}
+
+type Direction int
+
+const (
+	Both Direction = iota
+	Readonly
+	Writeonly
+)
+
+func strToDirection(s string) Direction {
+	switch s {
+	case "":
+		return Both
+	case "readonly":
+		return Readonly
+	case "writeonly":
+		return Writeonly
+	default:
+		panic(fmt.Sprintf("Bad direction for osc message %s\n", s))
+	}
 }
 
 type ArgumentModel struct {
@@ -45,6 +67,7 @@ type Action struct {
 	AddressLiteral string
 	Segments       []Segment
 	Arguments      []Argument
+	Direction      Direction
 	Documentation  string
 }
 
@@ -122,7 +145,6 @@ func buildSegments(pattern string) (sanitizedPath string, segments []Segment, er
 func Parse(models []ActionModel) ([]Action, error) {
 	actions := make([]Action, len(models))
 	for i, model := range models {
-		fmt.Printf("Model: %+v\n", model)
 		sanitizedAddress, segments, err := buildSegments(model.Address)
 		if err != nil {
 			return nil, err
@@ -131,6 +153,7 @@ func Parse(models []ActionModel) ([]Action, error) {
 			AddressLiteral: sanitizedAddress,
 			Segments:       segments,
 			Arguments:      make([]Argument, len(model.Arguments)),
+			Direction:      strToDirection(model.Direction),
 			Documentation:  model.Documentation,
 		}
 

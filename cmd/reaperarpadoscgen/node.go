@@ -47,6 +47,7 @@ type Endpoint struct {
 	ActionName    string // for codegen naming
 	OSCPath       string // full OSC path
 	ValueType     string // "float64", "int64", etc.
+	Direction     Direction
 	Documentation string
 	// ...other endpoint metadata
 }
@@ -133,6 +134,7 @@ func insertPattern(root *Node, act Action) {
 	// At the leaf, attach endpoint metadata
 	curr.Endpoint = &Endpoint{
 		ValueType:     oscTypeToGoTypeLiteral(act.Arguments[len(act.Arguments)-1].Type), // e.g. "float64"
+		Direction:     act.Direction,
 		Documentation: act.Documentation,
 	}
 }

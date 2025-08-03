@@ -140,8 +140,12 @@ func generateNodeStructs(n *Node, w io.Writer) {
 	}
 
 	if n.Endpoint != nil {
-		generateBindMethod(n, w)
-		generateSetMethod(n, w)
+		if n.Endpoint.Direction != Writeonly {
+			generateBindMethod(n, w)
+		}
+		if n.Endpoint.Direction != Readonly {
+			generateSetMethod(n, w)
+		}
 	}
 
 	// Recurse for all children
