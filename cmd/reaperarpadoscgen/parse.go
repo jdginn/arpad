@@ -54,6 +54,7 @@ const (
 	Float OscType = iota
 	Int
 	String
+	Bool
 )
 
 func strToOscType(s string) OscType {
@@ -64,6 +65,8 @@ func strToOscType(s string) OscType {
 		return Int
 	case "string":
 		return String
+	case "bool":
+		return Bool
 	default:
 		panic(fmt.Sprintf("Bad type for osc message %s\n", s))
 	}
@@ -77,6 +80,8 @@ func oscTypeToGoTypeLiteral(t OscType) string {
 		return "int64"
 	case String:
 		return "string"
+	case Bool:
+		return "bool"
 	default:
 		panic(fmt.Sprintf("Bad type for osc message %v\n", t))
 	}

@@ -267,11 +267,7 @@ func generateSetMethod(n *Node, w io.Writer) {
 	case "string":
 		fmt.Fprintf(w, "    return ep.device.SetString(addr, val)\n")
 	case "bool":
-		fmt.Fprintf(w, "    if val {\n")
-		fmt.Fprintf(w, "    	return ep.device.SetInt(addr, 1)\n")
-		fmt.Fprintf(w, "    } else {\n")
-		fmt.Fprintf(w, "    	return ep.device.SetInt(addr, 0)\n")
-		fmt.Fprintf(w, "    }\n")
+		fmt.Fprintf(w, "    return ep.device.SetBool(addr, val)\n")
 	default:
 		panic("bug")
 	}
