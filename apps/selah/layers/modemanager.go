@@ -59,10 +59,6 @@ func runPeriodically(interval time.Duration, fn func() error) {
 	}
 }
 
-func (m *Manager) refreshReaper() error {
-	return m.r.Action(REAPER_REFRESH_ACTION).Set(true)
-}
-
 func NewManager(x *xtouch.XTouchDefault, r *reaper.Reaper) *Manager {
 	m := &Manager{
 		x:         x,
@@ -70,7 +66,6 @@ func NewManager(x *xtouch.XTouchDefault, r *reaper.Reaper) *Manager {
 		currMode:  MIX,
 		callbacks: make([]callbackEvent, 0),
 	}
-	go runPeriodically(time.Second*1, m.refreshReaper)
 	return m
 }
 

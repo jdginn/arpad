@@ -15,7 +15,6 @@ import (
 	xtouchlib "github.com/jdginn/arpad/devices/xtouch"
 
 	"github.com/jdginn/arpad/apps/selah/layers"
-	. "github.com/jdginn/arpad/apps/selah/layers/mode"
 )
 
 // Modes:
@@ -98,7 +97,7 @@ func main() {
 	manager := layers.NewManager(xtouch, reaper)
 	layers.NewEncoderAssign(manager)
 	layers.NewTrackManager(manager)
-	SetMode(MIX)
+	manager.SetMode(layers.MIX)
 
 	go reaper.Run()
 	fmt.Println("Reaper is running...")
