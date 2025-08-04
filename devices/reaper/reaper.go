@@ -99,6 +99,11 @@ func (track *track) Send(send_index int64) *trackSend {
 			send_index: send_index,
 		},
 		device: track.device,
+		Guid: &trackSendGuid{
+			device: track.device,
+			state: trackSendGuidState{
+				send_index: send_index,
+			}},
 		Volume: &trackSendVolume{
 			device: track.device,
 			state: trackSendVolumeState{
@@ -321,6 +326,7 @@ func (ep *trackRecarm) Set(val bool) error {
 
 type trackSend struct {
 	device *devices.OscDevice
+	Guid   *trackSendGuid
 	Volume *trackSendVolume
 	Pan    *trackSendPan
 	state  trackSendState
@@ -329,6 +335,26 @@ type trackSend struct {
 type trackSendState struct {
 	track_guid string
 	send_index int64
+}
+
+type trackSendGuid struct {
+	device *devices.OscDevice
+	state  trackSendGuidState
+}
+
+type trackSendGuidState struct {
+	track_guid string
+	send_index int64
+}
+
+func (ep *trackSendGuid) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%d/send/%d/guid",
+		ep.state.track_guid,
+		ep.state.send_index,
+	)
+
+	ep.device.BindString(addr, callback)
 }
 
 type trackSendVolume struct {

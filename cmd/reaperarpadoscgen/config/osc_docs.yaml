@@ -1,87 +1,99 @@
 - osc_address: /track/{track_guid}/index
   arguments:
-    - name: track_guid
-      type: string
-      description: unique identifier for the track
-    - name: index
-      type: int
-      description: index of the track in the project according to reaper's mixer view
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
+  - name: index
+    type: int
+    description: index of the track in the project according to reaper's mixer view
   direction: readonly
 - osc_address: /track/{track_guid}/name
   arguments:
-    - name: track_guid
-      type: string
-      description: unique identifier for the track
-    - name: name
-      type: string
-      description: name of the track
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
+  - name: name
+    type: string
+    description: name of the track
 - osc_address: /track/{track_guid}/selected
   arguments:
-    - name: track_guid
-      type: string
-      description: unique identifier for the track
-    - name: selected
-      type: bool
-      description: true means track is selected
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
+  - name: selected
+    type: bool
+    description: true means track is selected
 - osc_address: /track/{track_guid}/volume
   arguments:
-    - name: track_guid
-      type: string
-      description: unique identifier for the track
-    - name: volume
-      type: float
-      description: volume of the track, normalized to 0 to 1.0
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
+  - name: volume
+    type: float
+    description: volume of the track, normalized to 0 to 1.0
 - osc_address: /track/{track_guid}/pan
   arguments:
-    - name: track_guid
-      type: string
-      description: unique identifier for the track
-    - name: pan
-      type: float
-      description: pan of the track, normalized to -1.0 to 1.0
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
+  - name: pan
+    type: float
+    description: pan of the track, normalized to -1.0 to 1.0
 - osc_address: /track/{track_guid}/mute
   arguments:
-    - name: track_guid
-      type: string
-      description: unique identifier for the track
-    - name: mute
-      type: bool
-      description: true means track is muted
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
+  - name: mute
+    type: bool
+    description: true means track is muted
 - osc_address: /track/{track_guid}/solo
   arguments:
-    - name: track_guid
-      type: string
-      description: unique identifier for the track
-    - name: solo
-      type: bool
-      description: true means track is soloed
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
+  - name: solo
+    type: bool
+    description: true means track is soloed
 - osc_address: /track/{track_guid}/rec-arm
   arguments:
-    - name: track_guid
-      type: string
-      description: unique identifier for the track
-    - name: rec_arm
-      type: bool
-      description: true means track is armed for recording
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
+  - name: rec_arm
+    type: bool
+    description: true means track is armed for recording
+- osc_address: /track/{track_guid}/send/{send_index}/guid
+  arguments:
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
+  - name: send_index
+    type: int
+    description: index of the send on the track
+  - name: guid
+    type: string
+    description: unique identifier for the send
+  direction: readonly
 - osc_address: /track/{track_guid}/send/{send_index}/volume
   arguments:
-    - name: track_guid
-      type: string
-      description: unique identifier for the track
-    - name: send_index
-      type: int
-      description: index of the send on the track
-    - name: volume
-      type: float
-      description: volume of the send, normalized to 0 to 1.
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
+  - name: send_index
+    type: int
+    description: index of the send on the track
+  - name: volume
+    type: float
+    description: volume of the send, normalized to 0 to 1.
 - osc_address: /track/{track_guid}/send/{send_index}/pan
   arguments:
-    - name: track_guid
-      type: string
-      description: unique identifier for the track
-    - name: send_index
-      type: int
-      description: index of the send on the track
-    - name: pan
-      type: float
-      description: pan of the send, normalized to -1.0 to 1.0
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
+  - name: send_index
+    type: int
+    description: index of the send on the track
+  - name: pan
+    type: float
+    description: pan of the send, normalized to -1.0 to 1.0
