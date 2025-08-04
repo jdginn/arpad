@@ -3,7 +3,6 @@ package layers
 import (
 	"errors"
 	"sync"
-	"time"
 
 	reaper "github.com/jdginn/arpad/devices/reaper"
 	"github.com/jdginn/arpad/devices/xtouch"
@@ -46,17 +45,6 @@ type Manager struct {
 
 	currMode  Mode
 	callbacks []callbackEvent
-}
-
-func runPeriodically(interval time.Duration, fn func() error) {
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			fn() // TODO: maybe should handle this error somehow
-		}
-	}
 }
 
 func NewManager(x *xtouch.XTouchDefault, r *reaper.Reaper) *Manager {
