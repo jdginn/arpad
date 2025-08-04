@@ -2,6 +2,7 @@ package layers
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"sync"
 
@@ -149,6 +150,7 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 			case MIX:
 				t.mute = !t.mute
 				return m.r.Track(m.BySurfIdx(idx).Guid()).Mute.Set(t.mute)
+			case MIX_SELECTED_TRACK_SENDS:
 			}
 		}
 		return nil
@@ -173,7 +175,6 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 				}
 				return err
 			case MIX_SELECTED_TRACK_SENDS:
-				// TODO: this indexing is wrong; we need to find send idx from path wildcard values
 				newVal := intToNormFloat(v)
 				// Because both feedback and input are implemented on the same physical control for fader,
 				// we need some deduplication to avoid jittering the faders or flooding the system with
@@ -183,7 +184,7 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 					return nil
 				}
 				t.sends[idx].volume = newVal
-				return m.r.Track(m.BySurfIdx(idx).Guid()).Send(idx).Volume.Set(t.volume)
+				return m.r.Track(m.selectedTrack.guid).Send(idx).Volume.Set(t.volume)
 			}
 		}
 		return nil
@@ -196,12 +197,8 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 				t.pan = float64(v) / float64(math.MaxUint8)
 				return m.r.Track(m.BySurfIdx(idx).Guid()).Pan.Set(t.pan)
 			case MIX_SELECTED_TRACK_SENDS:
-				newVal := float64(v) / float64(math.MaxUint8)
-				// Because both feedback and input are implemented on the same physical control for fader,
-				// we need some deduplication to avoid jittering the faders or flooding the system with
-				// echoing messages.
-				t.pan = newVal
-				return m.r.Track(m.BySurfIdx(idx).Guid()).Send(idx).Pan.Set(t.volume)
+				t.pan = float64(v) / float64(math.MaxUint8)
+				return m.r.Track(m.selectedTrack.guid).Send(idx).Pan.Set(t.volume)
 			}
 		}
 		return nil
@@ -210,15 +207,14 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 
 func (t *TrackManager) listenForNewTracks() {
 	// Find and populate our collection of track states
-	//
-	// TODO: don't panic here
 	if err := t.r.OscDispatcher().AddMsgHandler("/track/@/*", func(m *osc.Message) {
 		guid := m.Arguments[0].(GUID)
 		if _, exists := t.tracks[guid]; !exists {
 			t.tracks[guid] = NewTrackData(t, guid)
 		}
 	}); err != nil {
-		panic(err)
+		// TODO: find a better logging solution
+		fmt.Println(err)
 	}
 }
 
@@ -367,20 +363,23 @@ func (t *TrackData) TransitionMix() (errs error) {
 
 type trackSendData struct {
 	*TrackData
-	sendIdx int64
-	rcvIdx  int64
-	vol     float64
-	pan     float64
+	sendIdx  int64 // index of this send into this track's sends
+	sendGuid GUID  // GUID of the track to which we are sending
+	vol      float64
+	pan      float64
 }
 
 func NewTrackSendData(parent *TrackData, sendIdx, rcvIdx int64) *trackSendData {
 	s := &trackSendData{
 		TrackData: parent,
 		sendIdx:   sendIdx,
-		rcvIdx:    rcvIdx,
 	}
 
-	// Volume
+	s.r.Track(s.guid).Send(s.sendIdx).Guid.Bind(func(guid GUID) error {
+		s.sendGuid = guid
+		return nil
+	})
+
 	s.r.Track(s.guid).Send(s.sendIdx).Volume.Bind(func(v float64) error {
 		s.vol = v
 		return nil
