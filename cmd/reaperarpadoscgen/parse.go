@@ -120,6 +120,9 @@ func sanitizeElement(s string) string {
 	if s == "reaper" {
 		return "reaperconfig"
 	}
+	if s == "rec-arm" {
+		return "recarm"
+	}
 	s = strings.ReplaceAll(s, "+", "plus")
 	s = strings.ReplaceAll(s, "-", "minus")
 	return s
