@@ -29,6 +29,14 @@ type mapper struct {
 	surfaceIndexToGuid map[int64]GUID
 }
 
+func NewMapper() *mapper {
+	return &mapper{
+		Mutex:              &sync.Mutex{},
+		guidToSurfaceIndex: make(map[GUID]int64),
+		surfaceIndexToGuid: make(map[int64]GUID),
+	}
+}
+
 func (m *mapper) ByGuid(guid GUID) *mappingGuid {
 	return &mappingGuid{m, guid}
 }
@@ -221,6 +229,7 @@ func (t *TrackManager) listenForNewTracks() {
 func NewTrackManager(m *Manager) *TrackManager {
 	t := &TrackManager{
 		Manager: m,
+		mapper:  NewMapper(),
 		tracks:  make(map[GUID]*TrackData),
 	}
 	return t
