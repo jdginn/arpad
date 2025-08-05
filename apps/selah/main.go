@@ -48,38 +48,50 @@ import (
 
 const (
 	OSC_REAPER_IP   = "0.0.0.0"
-	OSC_REAPER_PORT = 9000
-	OSC_ARPAD_IP    = "192.168.22.129"
-	OSC_ARPAD_PORT  = 9001
+	OSC_REAPER_PORT = 9090
+	OSC_ARPAD_IP    = "0.0.0.0"
+	OSC_ARPAD_PORT  = 9091
 )
 
 const DEVICE_TRACKS = 8
 
 func getMidiPorts() (in drivers.In, out drivers.Out, err error) {
 	const MIDI_IN = "X-Touch INT"
+	const MIDI_IN_2 = "X-TOUCH_INT"
 	const FALLBACK_MIDI_IN = "IAC Driver Bus 1"
 	const MIDI_OUT = "X-Touch INT"
+	const MIDI_OUT_2 = "X-TOUCH_INT"
 	const FALLBACK_MIDI_OUT = "IAC Driver Bus 2"
 	const LAST_DITCH_MIDI_OUT = "IAC Driver Bus 1"
+	fmt.Printf("In ports: %v\n", midi.GetInPorts())
+	fmt.Printf("Out ports: %v\n", midi.GetOutPorts())
 	in, err = midi.FindInPort(MIDI_IN)
 	if err != nil {
-		in, err = midi.FindInPort(FALLBACK_MIDI_IN)
+		in, err = midi.FindInPort(MIDI_IN_2)
 		if err != nil {
-			return in, out, fmt.Errorf("could not any midi in port")
+			in, err = midi.FindInPort(FALLBACK_MIDI_IN)
+			if err != nil {
+				return in, out, fmt.Errorf("could not any midi in port")
+			}
+			slog.Warn("Midi in: X-Touch not found; fallling back to IAC Driver Bus 1. Is the hardware connected?")
 		}
-		slog.Warn("Midi in: X-Touch not found; fallling back to IAC Driver Bus 1. Is the hardware connected?")
+		slog.Warn("Midi in: X-Touch not found; fallling back to X-Touch extender.")
 	}
 	out, err = midi.FindOutPort(MIDI_OUT)
 	if err != nil {
-		out, err = midi.FindOutPort(FALLBACK_MIDI_OUT)
+		out, err = midi.FindOutPort(MIDI_OUT_2)
 		if err != nil {
-			out, err = midi.FindOutPort(LAST_DITCH_MIDI_OUT)
+			out, err = midi.FindOutPort(FALLBACK_MIDI_OUT)
 			if err != nil {
-				return in, out, fmt.Errorf("could not find any midi in port")
+				out, err = midi.FindOutPort(LAST_DITCH_MIDI_OUT)
+				if err != nil {
+					return in, out, fmt.Errorf("could not find any midi in port")
+				}
+				slog.Warn("Midi out: X-Touch not found; fallling back to IAC Driver Bus 1, WHICH LOOPS MIDI BACK IN. This will cause problems. Please configure IAC Driver Bus 2 in Audo MIDI Setup.")
 			}
-			slog.Warn("Midi out: X-Touch not found; fallling back to IAC Driver Bus 1, WHICH LOOPS MIDI BACK IN. This will cause problems. Please configure IAC Driver Bus 2 in Audo MIDI Setup.")
+			slog.Warn("Midi out: X-Touch not found; fallling back to IAC Driver Bus 2. Is the hardware connected?")
 		}
-		slog.Warn("Midi out: X-Touch not found; fallling back to IAC Driver Bus 2. Is the hardware connected?")
+		slog.Warn("Midi out: X-Touch not found; fallling back to X-Touch extender.")
 	}
 	return in, out, nil
 }
