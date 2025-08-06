@@ -13,6 +13,7 @@ import (
 	"github.com/jdginn/arpad/devices"
 	reaperlib "github.com/jdginn/arpad/devices/reaper"
 	xtouchlib "github.com/jdginn/arpad/devices/xtouch"
+	"github.com/jdginn/arpad/logging"
 
 	"github.com/jdginn/arpad/apps/selah/layers"
 )
@@ -55,6 +56,12 @@ const (
 
 const DEVICE_TRACKS = 8
 
+var log *slog.Logger
+
+func init() {
+	log = logging.Get(logging.APP)
+}
+
 func getMidiPorts() (in drivers.In, out drivers.Out, err error) {
 	const MIDI_IN = "X-Touch INT"
 	const MIDI_IN_2 = "X-TOUCH_INT"
@@ -73,9 +80,9 @@ func getMidiPorts() (in drivers.In, out drivers.Out, err error) {
 			if err != nil {
 				return in, out, fmt.Errorf("could not any midi in port")
 			}
-			slog.Warn("Midi in: X-Touch not found; fallling back to IAC Driver Bus 1. Is the hardware connected?")
+			log.Warn("Midi in: X-Touch not found; fallling back to IAC Driver Bus 1. Is the hardware connected?")
 		}
-		slog.Warn("Midi in: X-Touch not found; fallling back to X-Touch extender.")
+		log.Warn("Midi in: X-Touch not found; fallling back to X-Touch extender.")
 	}
 	out, err = midi.FindOutPort(MIDI_OUT)
 	if err != nil {
@@ -87,11 +94,11 @@ func getMidiPorts() (in drivers.In, out drivers.Out, err error) {
 				if err != nil {
 					return in, out, fmt.Errorf("could not find any midi in port")
 				}
-				slog.Warn("Midi out: X-Touch not found; fallling back to IAC Driver Bus 1, WHICH LOOPS MIDI BACK IN. This will cause problems. Please configure IAC Driver Bus 2 in Audo MIDI Setup.")
+				log.Warn("Midi out: X-Touch not found; fallling back to IAC Driver Bus 1, WHICH LOOPS MIDI BACK IN. This will cause problems. Please configure IAC Driver Bus 2 in Audo MIDI Setup.")
 			}
-			slog.Warn("Midi out: X-Touch not found; fallling back to IAC Driver Bus 2. Is the hardware connected?")
+			log.Warn("Midi out: X-Touch not found; fallling back to IAC Driver Bus 2. Is the hardware connected?")
 		}
-		slog.Warn("Midi out: X-Touch not found; fallling back to X-Touch extender.")
+		log.Warn("Midi out: X-Touch not found; fallling back to X-Touch extender.")
 	}
 	return in, out, nil
 }
@@ -102,6 +109,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	log.Info("Starting Selah app...")
+
 	xtouch := xtouchlib.New(devices.NewMidiDevice(in, out))
 
 	reaper := reaperlib.NewReaper(devices.NewOscDevice(OSC_ARPAD_IP, OSC_ARPAD_PORT, OSC_REAPER_IP, OSC_REAPER_PORT, reaperlib.NewDispatcher()))
@@ -112,9 +122,9 @@ func main() {
 	manager.SetMode(layers.MIX)
 
 	go reaper.Run()
-	fmt.Println("Reaper is running...")
+	log.Info("Reaper is running...")
 	go xtouch.Run()
-	fmt.Println("Xtouch is running...")
+	log.Info("Xtouch is running...")
 
 	time.Sleep(time.Second * 1000)
 }
