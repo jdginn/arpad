@@ -49,9 +49,9 @@ import (
 
 const (
 	OSC_REAPER_IP   = "0.0.0.0"
-	OSC_REAPER_PORT = 9090
+	OSC_REAPER_PORT = 9091
 	OSC_ARPAD_IP    = "0.0.0.0"
-	OSC_ARPAD_PORT  = 9091
+	OSC_ARPAD_PORT  = 9090
 )
 
 const DEVICE_TRACKS = 8
@@ -118,7 +118,10 @@ func main() {
 
 	manager := layers.NewManager(xtouch, reaper)
 	layers.NewEncoderAssign(manager)
-	layers.NewTrackManager(manager)
+	trackManager := layers.NewTrackManager(manager)
+	for i := int64(0); i < DEVICE_TRACKS; i++ {
+		trackManager.AddHardwareTrack(i)
+	}
 	manager.SetMode(layers.MIX)
 
 	go reaper.Run()
