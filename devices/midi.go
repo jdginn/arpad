@@ -10,11 +10,11 @@ import (
 	"github.com/jdginn/arpad/logging"
 )
 
-var inLog, outLog *slog.Logger
+var midiInLog, midiOutLog *slog.Logger
 
 func init() {
-	inLog = logging.Get(logging.MIDI_IN)
-	outLog = logging.Get(logging.MIDI_OUT)
+	midiInLog = logging.Get(logging.MIDI_IN)
+	midiOutLog = logging.Get(logging.MIDI_OUT)
 }
 
 // MidiDevice represents a generic MIDI device and allows registering effects for various messages the device may receive.
@@ -209,18 +209,18 @@ func (f *MidiDevice) Run() {
 	var stop func()
 
 	stop, err = midi.ListenTo(f.inPort, func(msg midi.Message, timestampms int32) {
-		inLog.Debug("received MIDI message", "type", msg.Type(), "timestamp", timestampms)
+		midiInLog.Debug("received MIDI message", "type", msg.Type(), "timestamp", timestampms)
 		switch msg.Type() {
 		case midi.ControlChangeMsg:
 			var channel, control, value uint8
 			if ok := msg.GetControlChange(&channel, &control, &value); !ok {
-				inLog.Error("failed to parse Control Change message:", err)
+				midiInLog.Error("failed to parse Control Change message:", err)
 				return
 			}
 			for _, cc := range f.cc {
 				if cc.channel == channel && cc.controller == control {
 					if err := cc.callback(value); err != nil {
-						inLog.Error("failed to process Control Change:", err)
+						midiInLog.Error("failed to process Control Change:", err)
 					}
 				}
 			}
@@ -229,59 +229,59 @@ func (f *MidiDevice) Run() {
 			var relative int16
 			var absolute uint16
 			if ok := msg.GetPitchBend(&channel, &relative, &absolute); !ok {
-				inLog.Error("failed to parse Pitch Bend message:", err)
+				midiInLog.Error("failed to parse Pitch Bend message:", err)
 				return
 			}
 			for _, pitchbend := range f.pitchBend {
 				if pitchbend.channel == channel {
 					if err := pitchbend.callback(absolute); err != nil {
-						inLog.Error("failed to process Pitch Bend:", err)
+						midiInLog.Error("failed to process Pitch Bend:", err)
 					}
 				}
 			}
 		case midi.NoteOnMsg:
 			var channel, key, velocity uint8
 			if ok := msg.GetNoteOn(&channel, &key, &velocity); !ok {
-				inLog.Error("failed to parse Note On message:", err)
+				midiInLog.Error("failed to parse Note On message:", err)
 				return
 			}
 			for _, note := range f.noteOn {
 				if note.key == key && note.channel == channel {
 					if err := note.callback(velocity); err != nil {
-						inLog.Error("failed to process Note On:", err)
+						midiInLog.Error("failed to process Note On:", err)
 					}
 				}
 			}
 		case midi.NoteOffMsg:
 			var channel, key, velocity uint8
 			if ok := msg.GetNoteOff(&channel, &key, &velocity); !ok {
-				inLog.Error("failed to parse Note Off message:", err)
+				midiInLog.Error("failed to parse Note Off message:", err)
 				return
 			}
 			for _, note := range f.noteOff {
 				if note.key == key && note.channel == channel {
 					if err := note.callback(); err != nil {
-						inLog.Error("failed to process Note Off:", err)
+						midiInLog.Error("failed to process Note Off:", err)
 					}
 				}
 			}
 		case midi.AfterTouchMsg:
 			var channel, pressure uint8
 			if ok := msg.GetAfterTouch(&channel, &pressure); !ok {
-				inLog.Error("failed to parse After Touch message:", err)
+				midiInLog.Error("failed to parse After Touch message:", err)
 				return
 			}
 			for _, aftertouch := range f.aftertouch {
 				if aftertouch.channel == channel {
 					if err := aftertouch.callback(pressure); err != nil {
-						inLog.Error("failed to process After Touch:", err)
+						midiInLog.Error("failed to process After Touch:", err)
 					}
 				}
 			}
 		case midi.SysExMsg:
 			var data []byte
 			if ok := msg.GetSysEx(&data); !ok {
-				inLog.Error("failed to parse SysEx message:", err)
+				midiInLog.Error("failed to parse SysEx message:", err)
 				return
 			}
 			for _, sysex := range f.sysex {
@@ -298,7 +298,7 @@ func (f *MidiDevice) Run() {
 					}
 					if matches {
 						if err := sysex.callback(data); err != nil {
-							inLog.Error("failed to process SysEx:", err)
+							midiInLog.Error("failed to process SysEx:", err)
 						}
 					}
 				}
@@ -306,7 +306,7 @@ func (f *MidiDevice) Run() {
 		}
 	}, midi.UseSysEx())
 	if err != nil {
-		inLog.Error("ERROR: %s\n", err)
+		midiInLog.Error("ERROR: %s\n", err)
 		return
 	}
 
