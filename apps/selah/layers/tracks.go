@@ -3,13 +3,22 @@ package layers
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"math"
 	"sync"
 
 	"github.com/hypebeast/go-osc/osc"
+
 	reaper "github.com/jdginn/arpad/devices/reaper"
 	xtouchlib "github.com/jdginn/arpad/devices/xtouch"
+	"github.com/jdginn/arpad/logging"
 )
+
+var appLog *slog.Logger
+
+func init() {
+	appLog = logging.Get(logging.APP)
+}
 
 const (
 	FADER_EPSILON float64 = 0.001
@@ -35,6 +44,18 @@ func NewMapper() *mapper {
 		guidToSurfaceIndex: make(map[GUID]int64),
 		surfaceIndexToGuid: make(map[int64]GUID),
 	}
+}
+
+func (m *mapper) AddGuid(guid GUID) *mappingGuid {
+	appLog.Info("Adding GUID to mapper", slog.String("guid", guid))
+	m.Lock()
+	defer m.Unlock()
+	if _, exists := m.guidToSurfaceIndex[guid]; !exists {
+		idx := int64(len(m.guidToSurfaceIndex))
+		m.guidToSurfaceIndex[guid] = idx
+		m.surfaceIndexToGuid[idx] = guid
+	}
+	return &mappingGuid{m, guid}
 }
 
 func (m *mapper) ByGuid(guid GUID) *mappingGuid {
@@ -109,7 +130,12 @@ type TrackManager struct {
 }
 
 func (m *TrackManager) getTrackAtIdx(idx int64) (*TrackData, bool) {
-	guid := m.BySurfIdx(idx).Guid()
+	guid, ok := m.BySurfIdx(idx).MaybeGuid()
+	if !ok {
+		fmt.Printf("s2g: %v\n", m.mapper.surfaceIndexToGuid)
+		fmt.Printf("g2s: %v\n", m.mapper.guidToSurfaceIndex)
+		return nil, false
+	}
 	m.Lock()
 	defer m.Unlock()
 	track, ok := m.tracks[guid]
@@ -120,6 +146,9 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 	// Select
 	m.x.Channels[idx].Select.On.Bind(func() (errs error) {
 		if track, ok := m.getTrackAtIdx(idx); ok {
+			if _, ok := m.BySurfIdx(idx).MaybeGuid(); !ok {
+				return nil
+			}
 			switch m.CurrMode() {
 			case MIX:
 				errs = errors.Join(errs, m.r.Track(m.selectedTrack.guid).Selected.Set(false))
@@ -131,33 +160,42 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 	})
 	// REC
 	m.x.Channels[idx].Rec.On.Bind(func() error {
-		if t, ok := m.getTrackAtIdx(idx); ok {
+		if track, ok := m.getTrackAtIdx(idx); ok {
+			if _, ok := m.BySurfIdx(idx).MaybeGuid(); !ok {
+				return nil
+			}
 			switch m.CurrMode() {
 			case MIX:
-				t.rec = !t.rec
-				return m.r.Track(m.BySurfIdx(idx).Guid()).Recarm.Set(t.rec)
+				track.rec = !track.rec
+				return m.r.Track(m.BySurfIdx(idx).Guid()).Recarm.Set(track.rec)
 			}
 		}
 		return nil
 	})
 	// SOLO
 	m.x.Channels[idx].Solo.On.Bind(func() error {
-		if t, ok := m.getTrackAtIdx(idx); ok {
+		if track, ok := m.getTrackAtIdx(idx); ok {
+			if _, ok := m.BySurfIdx(idx).MaybeGuid(); !ok {
+				return nil
+			}
 			switch m.CurrMode() {
 			case MIX:
-				t.solo = !t.solo
-				return m.r.Track(m.BySurfIdx(idx).Guid()).Solo.Set(t.solo)
+				track.solo = !track.solo
+				return m.r.Track(m.BySurfIdx(idx).Guid()).Solo.Set(track.solo)
 			}
 		}
 		return nil
 	})
 	// MUTE
 	m.x.Channels[idx].Mute.On.Bind(func() error {
-		if t, ok := m.getTrackAtIdx(idx); ok {
+		if track, ok := m.getTrackAtIdx(idx); ok {
+			if _, ok := m.BySurfIdx(idx).MaybeGuid(); !ok {
+				return nil
+			}
 			switch m.CurrMode() {
 			case MIX:
-				t.mute = !t.mute
-				return m.r.Track(m.BySurfIdx(idx).Guid()).Mute.Set(t.mute)
+				track.mute = !track.mute
+				return m.r.Track(m.BySurfIdx(idx).Guid()).Mute.Set(track.mute)
 			case MIX_SELECTED_TRACK_SENDS:
 			}
 		}
@@ -165,19 +203,22 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 	})
 	// Fader
 	m.x.Channels[idx].Fader.Bind(func(v uint16) error {
-		if t, ok := m.getTrackAtIdx(idx); ok {
+		if track, ok := m.getTrackAtIdx(idx); ok {
+			if _, ok := m.BySurfIdx(idx).MaybeGuid(); !ok {
+				return nil
+			}
 			switch m.CurrMode() {
 			case MIX:
 				newVal := intToNormFloat(v)
 				// Because both feedback and input are implemented on the same physical control for fader,
 				// we need some deduplication to avoid jittering the faders or flooding the system with
 				// echoing messages.
-				if math.Abs(newVal-t.volume) < FADER_EPSILON {
-					t.volume = newVal
+				if math.Abs(newVal-track.volume) < FADER_EPSILON {
+					track.volume = newVal
 					return nil
 				}
-				t.volume = newVal
-				err := m.r.Track(m.BySurfIdx(idx).Guid()).Volume.Set(t.volume)
+				track.volume = newVal
+				err := m.r.Track(m.BySurfIdx(idx).Guid()).Volume.Set(track.volume)
 				if err != nil {
 					panic(err)
 				}
@@ -187,12 +228,12 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 				// Because both feedback and input are implemented on the same physical control for fader,
 				// we need some deduplication to avoid jittering the faders or flooding the system with
 				// echoing messages.
-				if math.Abs(newVal-t.sends[idx].volume) < FADER_EPSILON {
-					t.sends[idx].volume = newVal
+				if math.Abs(newVal-track.sends[idx].volume) < FADER_EPSILON {
+					track.sends[idx].volume = newVal
 					return nil
 				}
-				t.sends[idx].volume = newVal
-				return m.r.Track(m.selectedTrack.guid).Send(idx).Volume.Set(t.volume)
+				track.sends[idx].volume = newVal
+				return m.r.Track(m.selectedTrack.guid).Send(idx).Volume.Set(track.volume)
 			}
 		}
 		return nil
@@ -215,8 +256,9 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 
 func (t *TrackManager) listenForNewTracks() {
 	// Find and populate our collection of track states
-	if err := t.r.OscDispatcher().AddMsgHandler("/track/@/*", func(m *osc.Message) {
-		guid := m.Arguments[0].(GUID)
+	if err := t.r.OscDispatcher().AddMsgHandler("/track/*", func(msg *osc.Message) {
+		guid := msg.Arguments[0].(GUID)
+		t.mapper.AddGuid(guid)
 		if _, exists := t.tracks[guid]; !exists {
 			t.tracks[guid] = NewTrackData(t, guid)
 		}
