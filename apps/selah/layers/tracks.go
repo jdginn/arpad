@@ -255,6 +255,7 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 
 func (t *TrackManager) listenForNewTracks() {
 	// Find and populate our collection of track states
+	// TODO: we need to do a little custom handling for the master track to make sure it gets mapped to fader 9
 	if err := t.r.OscDispatcher().AddMsgHandler("/track/*", func(msg *osc.Message) {
 		segments := strings.Split(msg.Address, "/")
 		guid := GUID(segments[2])
@@ -324,6 +325,7 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 	// TODO: how do we get color? What do we put on the bottom line?
 	// TODO: how do we truncate names?
 	t.r.Track(guid).Name.Bind(func(v string) error {
+		appLog.Debug("Track name changed", slog.String("guid", guid), slog.String("name", v))
 		t.name = v
 		switch m.CurrMode() {
 		case MIX:
@@ -337,6 +339,7 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 	})
 	// Select
 	t.r.Track(guid).Selected.Bind(func(v bool) (errs error) {
+		appLog.Debug("Track selected changed", slog.String("guid", guid), slog.Bool("selected", v))
 		switch m.CurrMode() {
 		case MIX:
 			// Turn off select button for the previously selected track
@@ -351,6 +354,7 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 	})
 	// REC
 	t.r.Track(guid).Recarm.Bind(func(v bool) error {
+		appLog.Debug("Track recarm changed", slog.String("guid", guid), slog.Bool("recarm", v))
 		t.rec = v
 		switch m.CurrMode() {
 		case MIX:
@@ -361,6 +365,7 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 	})
 	// SOLO
 	t.r.Track(guid).Solo.Bind(func(v bool) error {
+		appLog.Debug("Track solo changed", slog.String("guid", guid), slog.Bool("solo", v))
 		t.solo = v
 		switch m.CurrMode() {
 		case MIX:
@@ -371,6 +376,7 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 	})
 	// MUTE
 	t.r.Track(guid).Mute.Bind(func(v bool) error {
+		appLog.Debug("Track mute changed", slog.String("guid", guid), slog.Bool("mute", v))
 		t.mute = v
 		switch m.CurrMode() {
 		case MIX:
