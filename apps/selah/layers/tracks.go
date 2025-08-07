@@ -90,6 +90,7 @@ func (m *mappingGuid) SurfIdx() int64 {
 func (m *mappingGuid) SetSurfIdx(idx int64) {
 	m.mux.Lock()
 	defer m.mux.Unlock()
+	delete(m.surfaceIndexToGuid, idx)
 	m.guidToSurfaceIndex[m.guid] = idx
 	m.surfaceIndexToGuid[idx] = m.guid
 }
