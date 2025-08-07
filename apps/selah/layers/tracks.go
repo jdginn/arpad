@@ -33,22 +33,22 @@ type trackMapping struct {
 }
 
 type mapper struct {
-	*sync.Mutex
+	mux                *sync.Mutex
 	guidToSurfaceIndex map[GUID]int64
 	surfaceIndexToGuid map[int64]GUID
 }
 
 func NewMapper() *mapper {
 	return &mapper{
-		Mutex:              &sync.Mutex{},
+		mux:                &sync.Mutex{},
 		guidToSurfaceIndex: make(map[GUID]int64),
 		surfaceIndexToGuid: make(map[int64]GUID),
 	}
 }
 
 func (m *mapper) AddGuid(guid GUID) *mappingGuid {
-	m.Lock()
-	defer m.Unlock()
+	m.mux.Lock()
+	defer m.mux.Unlock()
 	if _, exists := m.guidToSurfaceIndex[guid]; !exists {
 		appLog.Info("Adding GUID to mapper", slog.String("guid", guid))
 		idx := int64(len(m.guidToSurfaceIndex))
@@ -72,8 +72,8 @@ type mappingGuid struct {
 }
 
 func (m *mappingGuid) MaybeSurfIdx() (int64, bool) {
-	m.Lock()
-	defer m.Unlock()
+	m.mux.Lock()
+	defer m.mux.Unlock()
 	if surfaceIdx, ok := m.guidToSurfaceIndex[m.guid]; ok {
 		return surfaceIdx, true
 	}
@@ -88,8 +88,8 @@ func (m *mappingGuid) SurfIdx() int64 {
 }
 
 func (m *mappingGuid) SetSurfIdx(idx int64) {
-	m.Lock()
-	defer m.Unlock()
+	m.mux.Lock()
+	defer m.mux.Unlock()
 	m.guidToSurfaceIndex[m.guid] = idx
 	m.surfaceIndexToGuid[idx] = m.guid
 }
@@ -100,8 +100,8 @@ type mappingSurfaceIdx struct {
 }
 
 func (m *mappingSurfaceIdx) MaybeGuid() (GUID, bool) {
-	m.Lock()
-	defer m.Unlock()
+	m.mux.Lock()
+	defer m.mux.Unlock()
 	if guid, ok := m.surfaceIndexToGuid[m.idx]; ok {
 		return guid, true
 	}
@@ -116,8 +116,8 @@ func (m *mappingSurfaceIdx) Guid() GUID {
 }
 
 func (m *mappingSurfaceIdx) SetGuid(guid GUID) {
-	m.Lock()
-	defer m.Unlock()
+	m.mux.Lock()
+	defer m.mux.Unlock()
 	m.surfaceIndexToGuid[m.idx] = guid
 	m.guidToSurfaceIndex[guid] = m.idx
 }
@@ -134,8 +134,8 @@ func (m *TrackManager) getTrackAtIdx(idx int64) (*TrackData, bool) {
 	if !ok {
 		return nil, false
 	}
-	m.Lock()
-	defer m.Unlock()
+	m.mux.Lock()
+	defer m.mux.Unlock()
 	track, ok := m.tracks[guid]
 	return track, ok
 }
