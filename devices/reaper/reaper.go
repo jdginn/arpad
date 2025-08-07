@@ -128,7 +128,7 @@ type trackIndexState struct {
 
 func (ep *trackIndex) Bind(callback func(int64) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/index",
+		"/track/%v/index",
 		ep.state.track_guid,
 	)
 
@@ -146,7 +146,7 @@ type trackNameState struct {
 
 func (ep *trackName) Bind(callback func(string) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/name",
+		"/track/%v/name",
 		ep.state.track_guid,
 	)
 
@@ -155,7 +155,7 @@ func (ep *trackName) Bind(callback func(string) error) {
 
 func (ep *trackName) Set(val string) error {
 	addr := fmt.Sprintf(
-		"/track/%d/name",
+		"/track/%v/name",
 		ep.state.track_guid,
 	)
 
@@ -173,7 +173,7 @@ type trackSelectedState struct {
 
 func (ep *trackSelected) Bind(callback func(bool) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/selected",
+		"/track/%v/selected",
 		ep.state.track_guid,
 	)
 
@@ -182,7 +182,7 @@ func (ep *trackSelected) Bind(callback func(bool) error) {
 
 func (ep *trackSelected) Set(val bool) error {
 	addr := fmt.Sprintf(
-		"/track/%d/selected",
+		"/track/%v/selected",
 		ep.state.track_guid,
 	)
 
@@ -200,7 +200,7 @@ type trackVolumeState struct {
 
 func (ep *trackVolume) Bind(callback func(float64) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/volume",
+		"/track/%v/volume",
 		ep.state.track_guid,
 	)
 
@@ -209,7 +209,7 @@ func (ep *trackVolume) Bind(callback func(float64) error) {
 
 func (ep *trackVolume) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/track/%d/volume",
+		"/track/%v/volume",
 		ep.state.track_guid,
 	)
 
@@ -227,7 +227,7 @@ type trackPanState struct {
 
 func (ep *trackPan) Bind(callback func(float64) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/pan",
+		"/track/%v/pan",
 		ep.state.track_guid,
 	)
 
@@ -236,7 +236,7 @@ func (ep *trackPan) Bind(callback func(float64) error) {
 
 func (ep *trackPan) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/track/%d/pan",
+		"/track/%v/pan",
 		ep.state.track_guid,
 	)
 
@@ -254,7 +254,7 @@ type trackMuteState struct {
 
 func (ep *trackMute) Bind(callback func(bool) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/mute",
+		"/track/%v/mute",
 		ep.state.track_guid,
 	)
 
@@ -263,7 +263,7 @@ func (ep *trackMute) Bind(callback func(bool) error) {
 
 func (ep *trackMute) Set(val bool) error {
 	addr := fmt.Sprintf(
-		"/track/%d/mute",
+		"/track/%v/mute",
 		ep.state.track_guid,
 	)
 
@@ -281,7 +281,7 @@ type trackSoloState struct {
 
 func (ep *trackSolo) Bind(callback func(bool) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/solo",
+		"/track/%v/solo",
 		ep.state.track_guid,
 	)
 
@@ -290,7 +290,7 @@ func (ep *trackSolo) Bind(callback func(bool) error) {
 
 func (ep *trackSolo) Set(val bool) error {
 	addr := fmt.Sprintf(
-		"/track/%d/solo",
+		"/track/%v/solo",
 		ep.state.track_guid,
 	)
 
@@ -308,7 +308,7 @@ type trackRecarmState struct {
 
 func (ep *trackRecarm) Bind(callback func(bool) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/recarm",
+		"/track/%v/recarm",
 		ep.state.track_guid,
 	)
 
@@ -317,7 +317,7 @@ func (ep *trackRecarm) Bind(callback func(bool) error) {
 
 func (ep *trackRecarm) Set(val bool) error {
 	addr := fmt.Sprintf(
-		"/track/%d/recarm",
+		"/track/%v/recarm",
 		ep.state.track_guid,
 	)
 
@@ -349,7 +349,7 @@ type trackSendGuidState struct {
 
 func (ep *trackSendGuid) Bind(callback func(string) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/send/%d/guid",
+		"/track/%v/send/%v/guid",
 		ep.state.track_guid,
 		ep.state.send_index,
 	)
@@ -369,7 +369,7 @@ type trackSendVolumeState struct {
 
 func (ep *trackSendVolume) Bind(callback func(float64) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/send/%d/volume",
+		"/track/%v/send/%v/volume",
 		ep.state.track_guid,
 		ep.state.send_index,
 	)
@@ -379,7 +379,7 @@ func (ep *trackSendVolume) Bind(callback func(float64) error) {
 
 func (ep *trackSendVolume) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/track/%d/send/%d/volume",
+		"/track/%v/send/%v/volume",
 		ep.state.track_guid,
 		ep.state.send_index,
 	)
@@ -399,7 +399,7 @@ type trackSendPanState struct {
 
 func (ep *trackSendPan) Bind(callback func(float64) error) {
 	addr := fmt.Sprintf(
-		"/track/%d/send/%d/pan",
+		"/track/%v/send/%v/pan",
 		ep.state.track_guid,
 		ep.state.send_index,
 	)
@@ -409,7 +409,7 @@ func (ep *trackSendPan) Bind(callback func(float64) error) {
 
 func (ep *trackSendPan) Set(val float64) error {
 	addr := fmt.Sprintf(
-		"/track/%d/send/%d/pan",
+		"/track/%v/send/%v/pan",
 		ep.state.track_guid,
 		ep.state.send_index,
 	)
