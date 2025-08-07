@@ -82,6 +82,7 @@ func (ep *cC) Bind(callback func(value uint8) error) {
 }
 
 func (ep *cC) Set(value uint8) error {
+	midiOutLog.Debug("Sending Control Change", "channel", ep.channel, "controller", ep.controller, "value", value)
 	return ep.device.outPort.Send(midi.ControlChange(ep.channel, ep.controller, value))
 }
 
@@ -97,6 +98,7 @@ func (ep *pitchBend) Bind(callback func(uint16) error) {
 }
 
 func (ep *pitchBend) Set(value uint16) error {
+	midiOutLog.Debug("Sending Pitch Bend", "channel", ep.channel, "value", value)
 	return ep.device.outPort.Send(midi.Pitchbend(ep.channel, int16(value-0x2000)))
 }
 
@@ -118,6 +120,7 @@ func (ep *noteOn) Bind(callback func(uint8) error) {
 }
 
 func (ep *noteOn) Set(velocity uint8) error {
+	midiOutLog.Debug("Sending Note On", "channel", ep.channel, "key", ep.key, "velocity", velocity)
 	return ep.device.outPort.Send(midi.NoteOn(ep.channel, ep.key, velocity))
 }
 
@@ -134,6 +137,7 @@ func (ep *noteOff) Bind(callback func() error) {
 }
 
 func (ep *noteOff) Set() error {
+	midiOutLog.Debug("Sending Note Off", "channel", ep.channel, "key", ep.key)
 	return ep.device.outPort.Send(midi.NoteOff(ep.channel, ep.key))
 }
 
@@ -149,6 +153,7 @@ func (ep *afterTouch) Bind(callback func(uint8) error) {
 }
 
 func (ep *afterTouch) Set(value uint8) error {
+	midiOutLog.Debug("Sending After Touch", "channel", ep.channel, "value", value)
 	return ep.device.outPort.Send(midi.AfterTouch(ep.channel, value))
 }
 
@@ -164,6 +169,7 @@ func (ep *sysEx) Match(pattern []byte) *sysExMatch {
 }
 
 func (ep *sysEx) Set(value []byte) error {
+	midiOutLog.Debug("Sending SysEx", "data", value)
 	return ep.device.outPort.Send(midi.SysEx(value))
 }
 
