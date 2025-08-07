@@ -73,17 +73,15 @@ var HeaderScribble SysExHeader = []byte{0x00, 0x00, 0x66, 0x58}
 type Scribble struct {
 	d *dev.MidiDevice
 
-	channel uint8
+	channel       uint8
+	color         ScribbleColor
+	topMessage    string
+	bottomMessage string
 }
 
-func (s *Scribble) WithColor(c ScribbleColor) scribbleColor {
-	return scribbleColor{s, c}
-}
-
-type scribbleColor struct {
-	*Scribble
-
-	color ScribbleColor
+func (s *Scribble) ChangeColor(c ScribbleColor) *Scribble {
+	s.color = c
+	return s
 }
 
 func normalizeTo7CharsNullPad(m string) string {
@@ -124,14 +122,9 @@ func normalizeTo7CharsNullPad(m string) string {
 	return string(runes)
 }
 
-func (s scribbleColor) WithTopMessage(m string) scribbleTopMessage {
-	return scribbleTopMessage{s, normalizeTo7CharsNullPad(m)}
-}
-
-type scribbleTopMessage struct {
-	scribbleColor
-
-	msgTop string
+func (s *Scribble) ChangeTopMessage(m string) *Scribble {
+	s.topMessage = normalizeTo7CharsNullPad(m)
+	return s
 }
 
 func normalizeTo7CharsPrependSpace(m string) string {
@@ -173,24 +166,19 @@ func normalizeTo7CharsPrependSpace(m string) string {
 	return string(runes)
 }
 
-func (s scribbleTopMessage) WithBottomMessage(m string) scribbleBottomMessage {
-	return scribbleBottomMessage{s, normalizeTo7CharsPrependSpace(m)}
-}
-
-type scribbleBottomMessage struct {
-	scribbleTopMessage
-
-	msgBottom string
+func (s *Scribble) ChangeBottomMessage(m string) *Scribble {
+	s.bottomMessage = normalizeTo7CharsPrependSpace(m)
+	return s
 }
 
 // TODO: consider making this take strings instead of []byte?
-func (s scribbleBottomMessage) Set() error {
+func (s *Scribble) Set() error {
 	// TODO: check msg for length, support best-effort truncation?
 	b := make([]byte, 0, 20)
 	b = append(HeaderScribble, byte(s.channel))
 	b = append(b, byte(s.color))
-	b = append(b, s.msgTop...)
-	b = append(b, s.msgBottom...)
+	b = append(b, []byte(s.topMessage)...)
+	b = append(b, []byte(s.bottomMessage)...)
 	return s.d.SysEx.Set(midi.SysEx(b)) // TODO: check this
 }
 
@@ -321,6 +309,9 @@ func (x *XTouch) NewScribble(channel uint8) *Scribble {
 	return &Scribble{
 		x.base,
 		channel,
+		Off,
+		"", // topMessage
+		"", // bottomMessage
 	}
 }
 
