@@ -170,7 +170,7 @@ func (ep *sysEx) Match(pattern []byte) *sysExMatch {
 
 func (ep *sysEx) Set(value []byte) error {
 	midiOutLog.Debug("Sending SysEx", "data", value)
-	return ep.device.outPort.Send(midi.SysEx(value))
+	return ep.device.outPort.Send(value)
 }
 
 type sysExMatch struct {

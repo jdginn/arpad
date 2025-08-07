@@ -3,6 +3,7 @@ package xtouch
 import (
 	"fmt"
 	"math"
+	"strings"
 	"sync"
 	"time"
 
@@ -85,8 +86,46 @@ type scribbleColor struct {
 	color ScribbleColor
 }
 
+func normalizeTo7CharsNullPad(m string) string {
+	vowels := "aeiouAEIOU"
+	runes := []rune(m)
+
+	// Step 1: If longer than 7, try to remove vowels left to right
+	for len(runes) > 7 {
+		found := false
+		for i, r := range runes {
+			if strings.ContainsRune(vowels, r) {
+				runes = append(runes[:i], runes[i+1:]...)
+				found = true
+				break
+			}
+		}
+		// If no vowels left to remove, break
+		if !found {
+			break
+		}
+	}
+
+	// Step 2: If still too long, truncate
+	if len(runes) > 7 {
+		runes = runes[:7]
+	}
+
+	// Step 3: If less than 7, pad with 0x00 at the front
+	padLen := 7 - len(runes)
+	if padLen > 0 {
+		pad := make([]rune, padLen)
+		for i := range pad {
+			pad[i] = '\x00'
+		}
+		runes = append(runes, pad...)
+	}
+
+	return string(runes)
+}
+
 func (s scribbleColor) WithTopMessage(m string) scribbleTopMessage {
-	return scribbleTopMessage{s, m}
+	return scribbleTopMessage{s, normalizeTo7CharsNullPad(m)}
 }
 
 type scribbleTopMessage struct {
@@ -95,8 +134,47 @@ type scribbleTopMessage struct {
 	msgTop string
 }
 
+func normalizeTo7CharsPrependSpace(m string) string {
+	vowels := "aeiouAEIOU"
+
+	// Step 1: If already 7, return as is
+	if len(m) == 7 {
+		return m
+	}
+
+	// Step 2: If less than 7, pad with spaces at the front
+	if len(m) < 7 {
+		return strings.Repeat(" ", 7-len(m)) + m
+	}
+
+	// Step 3: If longer than 7, try to remove vowels (from left to right)
+	// Convert to []rune for Unicode safety
+	runes := []rune(m)
+	// Remove vowels left to right until length <= 7 or no vowels left
+	for len(runes) > 7 {
+		found := false
+		for i, r := range runes {
+			if strings.ContainsRune(vowels, r) {
+				runes = append(runes[:i], runes[i+1:]...)
+				found = true
+				break
+			}
+		}
+		// If no vowels left to remove, break the loop
+		if !found {
+			break
+		}
+	}
+	// Step 4: If still too long, truncate
+	if len(runes) > 7 {
+		runes = runes[:7]
+	}
+
+	return string(runes)
+}
+
 func (s scribbleTopMessage) WithBottomMessage(m string) scribbleBottomMessage {
-	return scribbleBottomMessage{s, m}
+	return scribbleBottomMessage{s, normalizeTo7CharsPrependSpace(m)}
 }
 
 type scribbleBottomMessage struct {
@@ -276,7 +354,7 @@ func (x *XTouch) NewChannelStrip(id uint8) *channelStrip {
 	return &channelStrip{
 		Encoder:       x.NewEncoder(0, id+32),
 		EncoderButton: x.NewButton(0, id+16),
-		Scribble:      x.NewScribble(id + 20),
+		Scribble:      x.NewScribble(id + 0x20),
 		Rec:           x.NewButton(0, id),
 		Solo:          x.NewButton(0, id+8),
 		Mute:          x.NewButton(0, id+16),
