@@ -27,10 +27,8 @@ func (s *Dispatcher) AddMsgHandler(addr string, handler func(*osc.Message)) erro
 }
 
 // matchAddr checks if messageAddr matches the path pattern.
-// Each "@" in path acts as a wildcard for a segment, and captured segments are returned.
-// If path ends with "*", any additional segments in messageAddr are ignored.
-// "*" does not capture anything.
-func matchAddr(path, messageAddr string) (bool, []string) {
+// Any * is treated as a wildcard. Paths are also allowed to end with a "*",
+func matchAddr(path, messageAddr string) bool {
 	pathSegs := strings.Split(path, "/")
 	addrSegs := strings.Split(messageAddr, "/")
 
@@ -40,26 +38,24 @@ func matchAddr(path, messageAddr string) (bool, []string) {
 		// Remove the "*" for matching; allow extra segments in addrSegs
 		matchLen--
 		if len(addrSegs) < matchLen {
-			return false, nil
+			return false
 		}
 	} else {
 		if len(pathSegs) != len(addrSegs) {
-			return false, nil
+			return false
 		}
 	}
 
-	var captures []string
 	for i := 0; i < matchLen; i++ {
 		p := pathSegs[i]
-		if p == "@" {
-			captures = append(captures, addrSegs[i])
-		} else if p != addrSegs[i] {
-			return false, nil
+		if p == "*" {
+			continue
+		}
+		if p != addrSegs[i] {
+			return false
 		}
 	}
-
-	// If endsWithStar, allow any suffix
-	return true, captures
+	return true
 }
 
 // Dispatch dispatches OSC packets. Implements the Dispatcher interface.
@@ -70,10 +66,7 @@ func (s *Dispatcher) Dispatch(packet osc.Packet) {
 
 	case *osc.Message:
 		for _, namedHandler := range s.handlers {
-			if match, args := matchAddr(namedHandler.name, p.Address); match {
-				for _, arg := range args {
-					p.Arguments = append(p.Arguments, arg)
-				}
+			if matchAddr(namedHandler.name, p.Address) {
 				namedHandler.handler(p)
 			}
 		}
@@ -85,10 +78,7 @@ func (s *Dispatcher) Dispatch(packet osc.Packet) {
 			<-timer.C
 			for _, message := range p.Messages {
 				for _, namedHandler := range s.handlers {
-					if match, args := matchAddr(namedHandler.name, message.Address); match {
-						for _, arg := range args {
-							message.Arguments = append(message.Arguments, arg)
-						}
+					if matchAddr(namedHandler.name, message.Address) {
 						namedHandler.handler(message)
 					}
 				}
