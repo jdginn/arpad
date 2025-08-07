@@ -72,6 +72,11 @@ func (reaper *Reaper) Track(track_guid string) *track {
 			state: trackRecarmState{
 				track_guid: track_guid,
 			}},
+		Color: &trackColor{
+			device: reaper.device,
+			state: trackColorState{
+				track_guid: track_guid,
+			}},
 	}
 }
 
@@ -85,6 +90,7 @@ type track struct {
 	Mute     *trackMute
 	Solo     *trackSolo
 	Recarm   *trackRecarm
+	Color    *trackColor
 	state    trackState
 }
 
@@ -415,4 +421,31 @@ func (ep *trackSendPan) Set(val float64) error {
 	)
 
 	return ep.device.SetFloat(addr, val)
+}
+
+type trackColor struct {
+	device *devices.OscDevice
+	state  trackColorState
+}
+
+type trackColorState struct {
+	track_guid string
+}
+
+func (ep *trackColor) Bind(callback func(int64) error) {
+	addr := fmt.Sprintf(
+		"/track/%v/color",
+		ep.state.track_guid,
+	)
+
+	ep.device.BindInt(addr, callback)
+}
+
+func (ep *trackColor) Set(val int64) error {
+	addr := fmt.Sprintf(
+		"/track/%v/color",
+		ep.state.track_guid,
+	)
+
+	return ep.device.SetInt(addr, val)
 }

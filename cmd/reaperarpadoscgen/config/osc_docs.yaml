@@ -97,3 +97,11 @@
   - name: pan
     type: float
     description: pan of the send, normalized to -1.0 to 1.0
+- osc_address: /track/{track_guid}/color
+  arguments:
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
+  - name: color
+    type: int
+    description: color of the track, represented as an RGB integer
