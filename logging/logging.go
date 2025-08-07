@@ -21,6 +21,25 @@ const (
 	APP      LogCategory = "app" // For application-specific logs (i.e. business logic)
 )
 
+func strToLogCategory(s string) (LogCategory, bool) {
+	switch s {
+	case "meta":
+		return META, true
+	case "midi_in":
+		return MIDI_IN, true
+	case "midi_out":
+		return MIDI_OUT, true
+	case "osc_in":
+		return OSC_IN, true
+	case "osc_out":
+		return OSC_OUT, true
+	case "app":
+		return APP, true
+	default:
+		return "", false
+	}
+}
+
 const (
 	// LOGGER_OSC_SEND_IP = "0.0.0.0"
 	// LOGGER_OSC_SEND_PORT = 9090
@@ -163,7 +182,11 @@ func HandleOSCSetCategoryLevel(msg *osc.Message) {
 		return
 	}
 	if len(pathSegs) == 4 && pathSegs[3] == "level" {
-		cat := LogCategory(pathSegs[2])
+		cat, ok := strToLogCategory(pathSegs[2])
+		if !ok {
+			slog.Info("Unrecognized log category in OSC message", "category", pathSegs[2])
+			return
+		}
 		level, ok := msg.Arguments[0].(int32)
 		if !ok {
 			slog.Error("Invalid level type in OSC message", "expected", "int32", "got", fmt.Sprintf("%T", msg.Arguments[0]))
