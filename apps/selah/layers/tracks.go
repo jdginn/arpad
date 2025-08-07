@@ -2,9 +2,9 @@ package layers
 
 import (
 	"errors"
-	"fmt"
 	"log/slog"
 	"math"
+	"strings"
 	"sync"
 
 	"github.com/hypebeast/go-osc/osc"
@@ -47,10 +47,10 @@ func NewMapper() *mapper {
 }
 
 func (m *mapper) AddGuid(guid GUID) *mappingGuid {
-	appLog.Info("Adding GUID to mapper", slog.String("guid", guid))
 	m.Lock()
 	defer m.Unlock()
 	if _, exists := m.guidToSurfaceIndex[guid]; !exists {
+		appLog.Info("Adding GUID to mapper", slog.String("guid", guid))
 		idx := int64(len(m.guidToSurfaceIndex))
 		m.guidToSurfaceIndex[guid] = idx
 		m.surfaceIndexToGuid[idx] = guid
@@ -132,8 +132,6 @@ type TrackManager struct {
 func (m *TrackManager) getTrackAtIdx(idx int64) (*TrackData, bool) {
 	guid, ok := m.BySurfIdx(idx).MaybeGuid()
 	if !ok {
-		fmt.Printf("s2g: %v\n", m.mapper.surfaceIndexToGuid)
-		fmt.Printf("g2s: %v\n", m.mapper.guidToSurfaceIndex)
 		return nil, false
 	}
 	m.Lock()
@@ -257,14 +255,14 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 func (t *TrackManager) listenForNewTracks() {
 	// Find and populate our collection of track states
 	if err := t.r.OscDispatcher().AddMsgHandler("/track/*", func(msg *osc.Message) {
-		guid := msg.Arguments[0].(GUID)
+		segments := strings.Split(msg.Address, "/")
+		guid := GUID(segments[2])
 		t.mapper.AddGuid(guid)
 		if _, exists := t.tracks[guid]; !exists {
 			t.tracks[guid] = NewTrackData(t, guid)
 		}
 	}); err != nil {
-		// TODO: find a better logging solution
-		fmt.Println(err)
+		appLog.Error(err.Error())
 	}
 }
 
@@ -274,6 +272,7 @@ func NewTrackManager(m *Manager) *TrackManager {
 		mapper:  NewMapper(),
 		tracks:  make(map[GUID]*TrackData),
 	}
+	t.listenForNewTracks()
 	return t
 }
 
@@ -316,7 +315,7 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 		rcvs:  make(map[int64]*trackSendData),
 	}
 	t.r.Track(guid).Index.Bind(func(idx int64) error {
-		m.ByGuid(guid).SetSurfIdx(idx)
+		m.ByGuid(guid).SetSurfIdx(idx - 1)
 		return nil
 	})
 	// Track name to scribble strip
