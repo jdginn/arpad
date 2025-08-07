@@ -199,7 +199,13 @@ func NewMidiDevice(inPort drivers.In, outPort drivers.Out) *MidiDevice {
 // Run starts this device and causes it to listen and respond to incoming MIDI messages.
 //
 // For any message with an effect registered, that effect will be run each time such a message is received.
-func (f *MidiDevice) Run() {
+
+func (d *MidiDevice) Run() {
+	midiInLog.Info("Starting MIDI device", "inPort", d.inPort.String(), "outPort", d.outPort.String())
+	go d.run()
+}
+
+func (f *MidiDevice) run() {
 	f.inPort.Open()
 	defer f.inPort.Close()
 	f.outPort.Open()
@@ -209,7 +215,6 @@ func (f *MidiDevice) Run() {
 	var stop func()
 
 	stop, err = midi.ListenTo(f.inPort, func(msg midi.Message, timestampms int32) {
-		midiInLog.Debug("received MIDI message", "type", msg.Type(), "timestamp", timestampms)
 		switch msg.Type() {
 		case midi.ControlChangeMsg:
 			var channel, control, value uint8
@@ -217,6 +222,7 @@ func (f *MidiDevice) Run() {
 				midiInLog.Error("failed to parse Control Change message:", err)
 				return
 			}
+			midiInLog.Debug("received Control Change message", "channel", channel, "control", control, "value", value, "timestamp", timestampms)
 			for _, cc := range f.cc {
 				if cc.channel == channel && cc.controller == control {
 					if err := cc.callback(value); err != nil {
@@ -232,6 +238,7 @@ func (f *MidiDevice) Run() {
 				midiInLog.Error("failed to parse Pitch Bend message:", err)
 				return
 			}
+			midiInLog.Debug("received Pitch Bend message", "channel", channel, "absolute", absolute, "timestamp", timestampms)
 			for _, pitchbend := range f.pitchBend {
 				if pitchbend.channel == channel {
 					if err := pitchbend.callback(absolute); err != nil {
@@ -245,6 +252,7 @@ func (f *MidiDevice) Run() {
 				midiInLog.Error("failed to parse Note On message:", err)
 				return
 			}
+			midiInLog.Debug("received Note On message", "channel", channel, "key", key, "velocity", velocity, "timestamp", timestampms)
 			for _, note := range f.noteOn {
 				if note.key == key && note.channel == channel {
 					if err := note.callback(velocity); err != nil {
@@ -258,6 +266,7 @@ func (f *MidiDevice) Run() {
 				midiInLog.Error("failed to parse Note Off message:", err)
 				return
 			}
+			midiInLog.Debug("received Note Off message", "channel", channel, "key", key, "velocity", velocity, "timestamp", timestampms)
 			for _, note := range f.noteOff {
 				if note.key == key && note.channel == channel {
 					if err := note.callback(); err != nil {
@@ -271,6 +280,7 @@ func (f *MidiDevice) Run() {
 				midiInLog.Error("failed to parse After Touch message:", err)
 				return
 			}
+			midiInLog.Debug("received After Touch message", "channel", channel, "pressure", pressure, "timestamp", timestampms)
 			for _, aftertouch := range f.aftertouch {
 				if aftertouch.channel == channel {
 					if err := aftertouch.callback(pressure); err != nil {
@@ -284,6 +294,7 @@ func (f *MidiDevice) Run() {
 				midiInLog.Error("failed to parse SysEx message:", err)
 				return
 			}
+			// midiInLog.Debug("received SysEx message", "data", data, "timestamp", timestampms)
 			for _, sysex := range f.sysex {
 				// Check if the message matches the pattern
 				//
@@ -310,6 +321,7 @@ func (f *MidiDevice) Run() {
 		return
 	}
 
+	// TODO: put this in a goroutine instead of sleeping!
 	time.Sleep(time.Second * 1000)
 
 	stop()
