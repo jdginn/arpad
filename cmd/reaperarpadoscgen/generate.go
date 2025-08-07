@@ -207,7 +207,7 @@ func getOscPathRegex(n *Node) string {
 	for curr != nil {
 		if curr.Qualifier != nil {
 			// Prepend wildcard segment
-			segments = append([]string{"/%d"}, segments...)
+			segments = append([]string{"/%v"}, segments...)
 		}
 		if curr.PathElement != "" {
 			segments = append([]string{"/" + curr.PathElement}, segments...)
