@@ -150,9 +150,12 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 			}
 			switch m.CurrMode() {
 			case MIX:
-				errs = errors.Join(errs, m.r.Track(m.selectedTrack.guid).Selected.Set(false))
+				if m.selectedTrack != nil {
+					errs = errors.Join(errs, m.r.Track(m.selectedTrack.guid).Selected.Set(false))
+				}
 				m.selectedTrack = track
 				errs = errors.Join(errs, m.r.Track(m.BySurfIdx(idx).Guid()).Selected.Set(true))
+				return errs
 			}
 		}
 		return nil
