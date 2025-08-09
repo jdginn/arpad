@@ -1,7 +1,9 @@
 package devices
 
 import (
+	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	midi "gitlab.com/gomidi/midi/v2"
@@ -168,8 +170,25 @@ func (ep *sysEx) Match(pattern []byte) *sysExMatch {
 	}
 }
 
+func byteSliceToHexLiteral(b []byte) string {
+	var sb strings.Builder
+	sb.WriteString("[]byte{")
+	for i, v := range b {
+		if i > 0 {
+			sb.WriteString(", ")
+		}
+		sb.WriteString(fmt.Sprintf("0x%02x", v))
+	}
+	sb.WriteString("}")
+	return sb.String()
+}
+
 func (ep *sysEx) Set(value []byte) error {
-	midiOutLog.Debug("Sending SysEx", "data", value)
+	midiOutLog.Debug("Sending SysEx", "bytes", byteSliceToHexLiteral(value))
+	return ep.device.outPort.Send(value)
+}
+
+func (ep *sysEx) SetSilent(value []byte) error {
 	return ep.device.outPort.Send(value)
 }
 
