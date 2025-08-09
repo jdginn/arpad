@@ -335,9 +335,7 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 		switch m.CurrMode() {
 		case MIX:
 			return m.x.Channels[m.ByGuid(guid).SurfIdx()].Scribble.
-				WithColor(xtouchlib.White).
-				WithTopMessage(t.name).
-				WithBottomMessage("").
+				ChangeTopMessage(t.name).
 				Set()
 		}
 		return nil
