@@ -263,6 +263,8 @@ func (t *TrackManager) listenForNewTracks() {
 		segments := strings.Split(msg.Address, "/")
 		guid := GUID(segments[2])
 		t.mapper.AddGuid(guid)
+		t.mux.Lock()
+		defer t.mux.Unlock()
 		if _, exists := t.tracks[guid]; !exists {
 			t.tracks[guid] = NewTrackData(t, guid)
 		}
