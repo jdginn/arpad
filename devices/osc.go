@@ -14,7 +14,7 @@ var oscInLog, oscOutLog *slog.Logger
 
 func init() {
 	oscInLog = logging.Get(logging.OSC_IN)
-	oscOutLog = logging.Get(logging.OSC_IN)
+	oscOutLog = logging.Get(logging.OSC_OUT)
 }
 
 type Dispatcher interface {
@@ -89,7 +89,7 @@ func (o *OscDevice) SetBool(key string, val bool) error {
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as an int.
 func (o *OscDevice) BindInt(addr string, effect func(int64) error) {
 	o.Dispatcher.AddMsgHandler(addr, func(msg *osc.Message) {
-		oscInLog.Debug("Received OSC message", slog.String("address", msg.Address), slog.Any("arguments", msg.Arguments))
+		// oscInLog.Debug("Received OSC message", slog.String("address", msg.Address), slog.Any("arguments", msg.Arguments))
 		var val any
 		if len(msg.Arguments) == 0 {
 			val = 0
@@ -128,7 +128,7 @@ func (o *OscDevice) BindInt(addr string, effect func(int64) error) {
 // WARNING: Conversions are best-effort and could panic.
 func (o *OscDevice) BindFloat(key string, effect func(float64) error) {
 	o.Dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
-		oscInLog.Debug("Received OSC message", slog.String("address", msg.Address), slog.Any("arguments", msg.Arguments))
+		// oscInLog.Debug("Received OSC message", slog.String("address", msg.Address), slog.Any("arguments", msg.Arguments))
 		var val any
 		if len(msg.Arguments) == 0 {
 			val = 0.0
@@ -204,7 +204,7 @@ func (o *OscDevice) BindString(key string, effect func(string) error) {
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as a boolean.
 func (o *OscDevice) BindBool(key string, effect func(bool) error) {
 	o.Dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
-		oscInLog.Debug("Received OSC message", slog.String("address", msg.Address), slog.Any("arguments", msg.Arguments))
+		// oscInLog.Debug("Received OSC message", slog.String("address", msg.Address), slog.Any("arguments", msg.Arguments))
 		var val any
 		if len(msg.Arguments) == 0 {
 			val = false

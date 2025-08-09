@@ -1,11 +1,19 @@
 package reaper
 
 import (
+	"log/slog"
 	"strings"
 	stdTime "time"
 
 	"github.com/hypebeast/go-osc/osc"
+	"github.com/jdginn/arpad/logging"
 )
+
+var oscInLog *slog.Logger
+
+func init() {
+	oscInLog = logging.Get(logging.OSC_IN)
+}
 
 type namedHandler struct {
 	name    string
@@ -65,6 +73,7 @@ func (s *Dispatcher) Dispatch(packet osc.Packet) {
 		return
 
 	case *osc.Message:
+		oscInLog.Debug("Received OSC message", slog.String("address", p.Address), slog.Any("arguments", p.Arguments))
 		for _, namedHandler := range s.handlers {
 			if matchAddr(namedHandler.name, p.Address) {
 				namedHandler.handler(p)
