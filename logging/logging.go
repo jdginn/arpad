@@ -198,6 +198,8 @@ func HandleOSCSetCategoryLevel(msg *osc.Message) {
 		Get(META).Info("Setting category level via OSC",
 			"category", cat,
 			"level", level)
-		categoryLvls[cat].Set(slog.Level(level))
+		if handle, ok := categoryLvls[cat]; ok {
+			handle.Set(slog.Level(level))
+		}
 	}
 }
