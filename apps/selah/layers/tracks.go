@@ -10,6 +10,7 @@ import (
 	"github.com/hypebeast/go-osc/osc"
 
 	reaper "github.com/jdginn/arpad/devices/reaper"
+	"github.com/jdginn/arpad/devices/xtouch"
 	xtouchlib "github.com/jdginn/arpad/devices/xtouch"
 	"github.com/jdginn/arpad/logging"
 )
@@ -340,6 +341,15 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 		}
 		return nil
 	})
+	t.r.Track(guid).Color.Bind(func(v int64) error {
+		appLog.Debug("Track color changed", slog.String("guid", guid), slog.Int64("color", v))
+		switch m.CurrMode() {
+		case MIX:
+			return m.x.Channels[m.ByGuid(guid).SurfIdx()].Scribble.ChangeColor(xtouch.Red).Set() // TODO: need to get colors from v
+		}
+		return nil
+	})
+
 	// Select
 	t.r.Track(guid).Selected.Bind(func(v bool) (errs error) {
 		appLog.Debug("Track selected changed", slog.String("guid", guid), slog.Bool("selected", v))
