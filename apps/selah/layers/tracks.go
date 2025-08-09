@@ -142,6 +142,23 @@ func (m *TrackManager) getTrackAtIdx(idx int64) (*TrackData, bool) {
 	return track, ok
 }
 
+func (t *TrackManager) listenForNewTracks() {
+	// Find and populate our collection of track states
+	// TODO: we need to do a little custom handling for the master track to make sure it gets mapped to fader 9
+	if err := t.r.OscDispatcher().AddMsgHandler("/track/*", func(msg *osc.Message) {
+		segments := strings.Split(msg.Address, "/")
+		guid := GUID(segments[2])
+		t.mapper.AddGuid(guid)
+		t.mux.Lock()
+		defer t.mux.Unlock()
+		if _, exists := t.tracks[guid]; !exists {
+			t.tracks[guid] = NewTrackData(t, guid)
+		}
+	}); err != nil {
+		appLog.Error(err.Error())
+	}
+}
+
 func (m *TrackManager) AddHardwareTrack(idx int64) {
 	// Select
 	m.x.Channels[idx].Select.On.Bind(func() (errs error) {
@@ -255,23 +272,6 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 		}
 		return nil
 	})
-}
-
-func (t *TrackManager) listenForNewTracks() {
-	// Find and populate our collection of track states
-	// TODO: we need to do a little custom handling for the master track to make sure it gets mapped to fader 9
-	if err := t.r.OscDispatcher().AddMsgHandler("/track/*", func(msg *osc.Message) {
-		segments := strings.Split(msg.Address, "/")
-		guid := GUID(segments[2])
-		t.mapper.AddGuid(guid)
-		t.mux.Lock()
-		defer t.mux.Unlock()
-		if _, exists := t.tracks[guid]; !exists {
-			t.tracks[guid] = NewTrackData(t, guid)
-		}
-	}); err != nil {
-		appLog.Error(err.Error())
-	}
 }
 
 func NewTrackManager(m *Manager) *TrackManager {
