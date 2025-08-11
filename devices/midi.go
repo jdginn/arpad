@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"sync"
 	"time"
 
 	midi "gitlab.com/gomidi/midi/v2"
@@ -26,12 +27,13 @@ type MidiDevice struct {
 
 	SysEx *sysEx
 
-	cc         []*cC
-	pitchBend  []*pitchBend
-	noteOn     []*noteOn
-	noteOff    []*noteOff
-	aftertouch []*afterTouch
-	sysex      []*sysExMatch
+	mu         sync.RWMutex
+	cc         map[*cC]struct{}
+	pitchBend  map[*pitchBend]struct{}
+	noteOn     map[*noteOn]struct{}
+	noteOff    map[*noteOff]struct{}
+	aftertouch map[*afterTouch]struct{}
+	sysex      map[*sysExMatch]struct{}
 }
 
 func (f *MidiDevice) CC(channel, controller uint8) *cC {
@@ -78,9 +80,16 @@ type cC struct {
 	callback   func(value uint8) error
 }
 
-func (ep *cC) Bind(callback func(value uint8) error) {
+func (ep *cC) Bind(callback func(value uint8) error) func() {
 	ep.callback = callback
-	ep.device.cc = append(ep.device.cc, ep)
+	ep.device.mu.Lock()
+	ep.device.cc[ep] = struct{}{}
+	ep.device.mu.Unlock()
+	return func() {
+		ep.device.mu.Lock()
+		delete(ep.device.cc, ep)
+		ep.device.mu.Unlock()
+	}
 }
 
 func (ep *cC) Set(value uint8) error {
@@ -94,9 +103,16 @@ type pitchBend struct {
 	callback func(uint16) error
 }
 
-func (ep *pitchBend) Bind(callback func(uint16) error) {
+func (ep *pitchBend) Bind(callback func(uint16) error) func() {
 	ep.callback = callback
-	ep.device.pitchBend = append(ep.device.pitchBend, ep)
+	ep.device.mu.Lock()
+	ep.device.pitchBend[ep] = struct{}{}
+	ep.device.mu.Unlock()
+	return func() {
+		ep.device.mu.Lock()
+		delete(ep.device.pitchBend, ep)
+		ep.device.mu.Unlock()
+	}
 }
 
 func (ep *pitchBend) Set(value uint16) error {
@@ -116,9 +132,16 @@ type noteOn struct {
 	callback func(uint8) error
 }
 
-func (ep *noteOn) Bind(callback func(uint8) error) {
+func (ep *noteOn) Bind(callback func(uint8) error) func() {
 	ep.callback = callback
-	ep.device.noteOn = append(ep.device.noteOn, ep)
+	ep.device.mu.Lock()
+	ep.device.noteOn[ep] = struct{}{}
+	ep.device.mu.Unlock()
+	return func() {
+		ep.device.mu.Lock()
+		delete(ep.device.noteOn, ep)
+		ep.device.mu.Unlock()
+	}
 }
 
 func (ep *noteOn) Set(velocity uint8) error {
@@ -133,9 +156,16 @@ type noteOff struct {
 	callback func() error
 }
 
-func (ep *noteOff) Bind(callback func() error) {
+func (ep *noteOff) Bind(callback func() error) func() {
 	ep.callback = callback
-	ep.device.noteOff = append(ep.device.noteOff, ep)
+	ep.device.mu.Lock()
+	ep.device.noteOff[ep] = struct{}{}
+	ep.device.mu.Unlock()
+	return func() {
+		ep.device.mu.Lock()
+		delete(ep.device.noteOff, ep)
+		ep.device.mu.Unlock()
+	}
 }
 
 func (ep *noteOff) Set() error {
@@ -149,9 +179,16 @@ type afterTouch struct {
 	callback func(uint8) error
 }
 
-func (ep *afterTouch) Bind(callback func(uint8) error) {
+func (ep *afterTouch) Bind(callback func(uint8) error) func() {
 	ep.callback = callback
-	ep.device.aftertouch = append(ep.device.aftertouch, ep)
+	ep.device.mu.Lock()
+	ep.device.aftertouch[ep] = struct{}{}
+	ep.device.mu.Unlock()
+	return func() {
+		ep.device.mu.Lock()
+		delete(ep.device.aftertouch, ep)
+		ep.device.mu.Unlock()
+	}
 }
 
 func (ep *afterTouch) Set(value uint8) error {
@@ -198,9 +235,16 @@ type sysExMatch struct {
 	callback func([]byte) error
 }
 
-func (ep *sysExMatch) Bind(callback func([]byte) error) {
+func (ep *sysExMatch) Bind(callback func([]byte) error) func() {
 	ep.callback = callback
-	ep.device.sysex = append(ep.device.sysex, ep)
+	ep.device.mu.Lock()
+	ep.device.sysex[ep] = struct{}{}
+	ep.device.mu.Unlock()
+	return func() {
+		ep.device.mu.Lock()
+		delete(ep.device.sysex, ep)
+		ep.device.mu.Unlock()
+	}
 }
 
 func NewMidiDevice(inPort drivers.In, outPort drivers.Out) *MidiDevice {
@@ -210,12 +254,12 @@ func NewMidiDevice(inPort drivers.In, outPort drivers.Out) *MidiDevice {
 		SysEx: &sysEx{
 			device: &MidiDevice{},
 		},
-		cc:         []*cC{},
-		pitchBend:  []*pitchBend{},
-		noteOn:     []*noteOn{},
-		noteOff:    []*noteOff{},
-		aftertouch: []*afterTouch{},
-		sysex:      []*sysExMatch{},
+		cc:         make(map[*cC]struct{}),
+		pitchBend:  make(map[*pitchBend]struct{}),
+		noteOn:     make(map[*noteOn]struct{}),
+		noteOff:    make(map[*noteOff]struct{}),
+		aftertouch: make(map[*afterTouch]struct{}),
+		sysex:      make(map[*sysExMatch]struct{}),
 	}
 	d.SysEx = &sysEx{device: d}
 	return d
@@ -248,13 +292,15 @@ func (f *MidiDevice) run() {
 				return
 			}
 			midiInLog.Debug("received Control Change message", "channel", channel, "control", control, "value", value, "timestamp", timestampms)
-			for _, cc := range f.cc {
+			f.mu.RLock()
+			for cc := range f.cc {
 				if cc.channel == channel && cc.controller == control {
 					if err := cc.callback(value); err != nil {
 						midiInLog.Error("failed to process Control Change:", err)
 					}
 				}
 			}
+			f.mu.RUnlock()
 		case midi.PitchBendMsg:
 			var channel uint8
 			var relative int16
@@ -264,13 +310,15 @@ func (f *MidiDevice) run() {
 				return
 			}
 			midiInLog.Debug("received Pitch Bend message", "channel", channel, "absolute", absolute, "timestamp", timestampms)
-			for _, pitchbend := range f.pitchBend {
+			f.mu.RLock()
+			for pitchbend := range f.pitchBend {
 				if pitchbend.channel == channel {
 					if err := pitchbend.callback(absolute); err != nil {
 						midiInLog.Error("failed to process Pitch Bend:", err)
 					}
 				}
 			}
+			f.mu.RUnlock()
 		case midi.NoteOnMsg:
 			var channel, key, velocity uint8
 			if ok := msg.GetNoteOn(&channel, &key, &velocity); !ok {
@@ -278,13 +326,15 @@ func (f *MidiDevice) run() {
 				return
 			}
 			midiInLog.Debug("received Note On message", "channel", channel, "key", key, "velocity", velocity, "timestamp", timestampms)
-			for _, note := range f.noteOn {
+			f.mu.RLock()
+			for note := range f.noteOn {
 				if note.key == key && note.channel == channel {
 					if err := note.callback(velocity); err != nil {
 						midiInLog.Error("failed to process Note On:", err)
 					}
 				}
 			}
+			f.mu.RUnlock()
 		case midi.NoteOffMsg:
 			var channel, key, velocity uint8
 			if ok := msg.GetNoteOff(&channel, &key, &velocity); !ok {
@@ -292,13 +342,15 @@ func (f *MidiDevice) run() {
 				return
 			}
 			midiInLog.Debug("received Note Off message", "channel", channel, "key", key, "velocity", velocity, "timestamp", timestampms)
-			for _, note := range f.noteOff {
+			f.mu.RLock()
+			for note := range f.noteOff {
 				if note.key == key && note.channel == channel {
 					if err := note.callback(); err != nil {
 						midiInLog.Error("failed to process Note Off:", err)
 					}
 				}
 			}
+			f.mu.RUnlock()
 		case midi.AfterTouchMsg:
 			var channel, pressure uint8
 			if ok := msg.GetAfterTouch(&channel, &pressure); !ok {
@@ -306,21 +358,24 @@ func (f *MidiDevice) run() {
 				return
 			}
 			midiInLog.Debug("received After Touch message", "channel", channel, "pressure", pressure, "timestamp", timestampms)
-			for _, aftertouch := range f.aftertouch {
+			f.mu.RLock()
+			for aftertouch := range f.aftertouch {
 				if aftertouch.channel == channel {
 					if err := aftertouch.callback(pressure); err != nil {
 						midiInLog.Error("failed to process After Touch:", err)
 					}
 				}
 			}
+			f.mu.RUnlock()
 		case midi.SysExMsg:
 			var data []byte
 			if ok := msg.GetSysEx(&data); !ok {
 				midiInLog.Error("failed to parse SysEx message:", err)
 				return
 			}
-			// midiInLog.Debug("received SysEx message", "data", data, "timestamp", timestampms)
-			for _, sysex := range f.sysex {
+			midiInLog.Debug("received SysEx message", "data", data, "timestamp", timestampms)
+			f.mu.RLock()
+			for sysex := range f.sysex {
 				// Check if the message matches the pattern
 				//
 				// NOTE: currently, we check for directly matching patterns; this won't work with variable arguments embedded into the data
@@ -339,6 +394,7 @@ func (f *MidiDevice) run() {
 					}
 				}
 			}
+			f.mu.RUnlock()
 		}
 	}, midi.UseSysEx())
 	if err != nil {
