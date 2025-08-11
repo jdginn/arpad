@@ -3,6 +3,7 @@ package reaper
 import (
 	"log/slog"
 	"strings"
+	"sync"
 	stdTime "time"
 
 	"github.com/hypebeast/go-osc/osc"
@@ -22,16 +23,26 @@ type namedHandler struct {
 
 // Dispatcher is a custom osc.Dispatcher, implementing the osc.Dispatcher interface
 type Dispatcher struct {
-	handlers []namedHandler
+	mu       sync.RWMutex
+	handlers map[int]namedHandler
+	nextID   int
 }
 
 func NewDispatcher() *Dispatcher {
-	return &Dispatcher{handlers: []namedHandler{}}
+	return &Dispatcher{handlers: make(map[int]namedHandler)}
 }
 
-func (s *Dispatcher) AddMsgHandler(addr string, handler func(*osc.Message)) error {
-	s.handlers = append(s.handlers, namedHandler{addr, handler})
-	return nil
+func (s *Dispatcher) AddMsgHandler(addr string, handler func(*osc.Message)) func() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	id := s.nextID
+	s.nextID++
+	s.handlers[id] = namedHandler{addr, handler}
+	return func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		delete(s.handlers, id)
+	}
 }
 
 // matchAddr checks if messageAddr matches the path pattern.
@@ -76,7 +87,9 @@ func (s *Dispatcher) Dispatch(packet osc.Packet) {
 		oscInLog.Debug("Received OSC message", slog.String("address", p.Address), slog.Any("arguments", p.Arguments))
 		for _, namedHandler := range s.handlers {
 			if matchAddr(namedHandler.name, p.Address) {
+				s.mu.RLock()
 				namedHandler.handler(p)
+				s.mu.RUnlock()
 			}
 		}
 
@@ -88,7 +101,9 @@ func (s *Dispatcher) Dispatch(packet osc.Packet) {
 			for _, message := range p.Messages {
 				for _, namedHandler := range s.handlers {
 					if matchAddr(namedHandler.name, message.Address) {
+						s.mu.RLock()
 						namedHandler.handler(message)
+						s.mu.RUnlock()
 					}
 				}
 			}

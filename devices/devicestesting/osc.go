@@ -61,7 +61,8 @@ func NewTestOscDevice(t *testing.T) *TestOscDevice {
 		handlers: make(map[string][]func(*osc.Message)),
 	}
 
-	device := devices.NewOscDevice(mockClient, mockServer, mockDispatcher)
+	// device := devices.NewOscDevice(mockClient, mockServer, mockDispatcher)
+	device := &devices.OscDevice{}
 
 	return &TestOscDevice{
 		OscDevice:      device,

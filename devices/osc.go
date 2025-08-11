@@ -19,7 +19,7 @@ func init() {
 
 type Dispatcher interface {
 	osc.Dispatcher
-	AddMsgHandler(string, func(*osc.Message)) error
+	AddMsgHandler(string, func(*osc.Message)) func()
 }
 
 type OscDevice struct {
@@ -87,9 +87,8 @@ func (o *OscDevice) SetBool(key string, val bool) error {
 // The given address should return a value that can be interpreted as an int.
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as an int.
-func (o *OscDevice) BindInt(addr string, effect func(int64) error) {
-	o.Dispatcher.AddMsgHandler(addr, func(msg *osc.Message) {
-		// oscInLog.Debug("Received OSC message", slog.String("address", msg.Address), slog.Any("arguments", msg.Arguments))
+func (o *OscDevice) BindInt(addr string, effect func(int64) error) func() {
+	return o.Dispatcher.AddMsgHandler(addr, func(msg *osc.Message) {
 		var val any
 		if len(msg.Arguments) == 0 {
 			val = 0
@@ -126,8 +125,8 @@ func (o *OscDevice) BindInt(addr string, effect func(int64) error) {
 //
 // The given address MUST return a float or be convertable to float.
 // WARNING: Conversions are best-effort and could panic.
-func (o *OscDevice) BindFloat(key string, effect func(float64) error) {
-	o.Dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
+func (o *OscDevice) BindFloat(key string, effect func(float64) error) func() {
+	return o.Dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
 		// oscInLog.Debug("Received OSC message", slog.String("address", msg.Address), slog.Any("arguments", msg.Arguments))
 		var val any
 		if len(msg.Arguments) == 0 {
@@ -166,8 +165,8 @@ func (o *OscDevice) BindFloat(key string, effect func(float64) error) {
 // The given address should return a value that can be interpreted as a string.
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as a string.
-func (o *OscDevice) BindString(key string, effect func(string) error) {
-	o.Dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
+func (o *OscDevice) BindString(key string, effect func(string) error) func() {
+	return o.Dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
 		oscInLog.Debug("Received OSC message", slog.String("address", msg.Address), slog.Any("arguments", msg.Arguments))
 		var val any
 		if len(msg.Arguments) == 0 {
@@ -202,8 +201,8 @@ func (o *OscDevice) BindString(key string, effect func(string) error) {
 // The given address should return a value that can be interpreted as a boolean.
 //
 // WARNING: Conversions are best-effort and could panic if the value cannot be interpreted as a boolean.
-func (o *OscDevice) BindBool(key string, effect func(bool) error) {
-	o.Dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
+func (o *OscDevice) BindBool(key string, effect func(bool) error) func() {
+	return o.Dispatcher.AddMsgHandler(key, func(msg *osc.Message) {
 		// oscInLog.Debug("Received OSC message", slog.String("address", msg.Address), slog.Any("arguments", msg.Arguments))
 		var val any
 		if len(msg.Arguments) == 0 {

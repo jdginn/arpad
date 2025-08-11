@@ -242,17 +242,17 @@ func getOscPathForNode(n *Node) string {
 
 func generateBindMethod(n *Node, w io.Writer) {
 	typeName := typeNameForNode(n)
-	fmt.Fprintf(w, "func (ep *%s) Bind(callback func(%s) error) {\n", typeName, n.Endpoint.ValueType)
+	fmt.Fprintf(w, "func (ep *%s) Bind(callback func(%s) error) func() {\n", typeName, n.Endpoint.ValueType)
 	fmt.Fprintf(w, "    addr := %s\n", getOscPathForNode(n)) // TODO
 	switch n.Endpoint.ValueType {
 	case "int64":
-		fmt.Fprintf(w, "    ep.device.BindInt(addr, callback)\n")
+		fmt.Fprintf(w, "    return ep.device.BindInt(addr, callback)\n")
 	case "float64":
-		fmt.Fprintf(w, "    ep.device.BindFloat(addr, callback)\n")
+		fmt.Fprintf(w, "    return ep.device.BindFloat(addr, callback)\n")
 	case "string":
-		fmt.Fprintf(w, "    ep.device.BindString(addr, callback)\n")
+		fmt.Fprintf(w, "    return ep.device.BindString(addr, callback)\n")
 	case "bool":
-		fmt.Fprintf(w, "    ep.device.BindBool(addr, callback)\n")
+		fmt.Fprintf(w, "    return ep.device.BindBool(addr, callback)\n")
 	default:
 		panic("bug")
 	}

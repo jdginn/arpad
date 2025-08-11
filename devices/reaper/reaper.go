@@ -36,52 +36,62 @@ func (reaper *Reaper) Track(track_guid string) *track {
 			device: reaper.device,
 			state: trackIndexState{
 				track_guid: track_guid,
-			}},
+			},
+		},
 		Delete: &trackDelete{
 			device: reaper.device,
 			state: trackDeleteState{
 				track_guid: track_guid,
-			}},
+			},
+		},
 		Name: &trackName{
 			device: reaper.device,
 			state: trackNameState{
 				track_guid: track_guid,
-			}},
+			},
+		},
 		Selected: &trackSelected{
 			device: reaper.device,
 			state: trackSelectedState{
 				track_guid: track_guid,
-			}},
+			},
+		},
 		Volume: &trackVolume{
 			device: reaper.device,
 			state: trackVolumeState{
 				track_guid: track_guid,
-			}},
+			},
+		},
 		Pan: &trackPan{
 			device: reaper.device,
 			state: trackPanState{
 				track_guid: track_guid,
-			}},
+			},
+		},
 		Mute: &trackMute{
 			device: reaper.device,
 			state: trackMuteState{
 				track_guid: track_guid,
-			}},
+			},
+		},
 		Solo: &trackSolo{
 			device: reaper.device,
 			state: trackSoloState{
 				track_guid: track_guid,
-			}},
+			},
+		},
 		Recarm: &trackRecarm{
 			device: reaper.device,
 			state: trackRecarmState{
 				track_guid: track_guid,
-			}},
+			},
+		},
 		Color: &trackColor{
 			device: reaper.device,
 			state: trackColorState{
 				track_guid: track_guid,
-			}},
+			},
+		},
 	}
 }
 
@@ -115,17 +125,20 @@ func (track *track) Send(send_index int64) *trackSend {
 			device: track.device,
 			state: trackSendGuidState{
 				send_index: send_index,
-			}},
+			},
+		},
 		Volume: &trackSendVolume{
 			device: track.device,
 			state: trackSendVolumeState{
 				send_index: send_index,
-			}},
+			},
+		},
 		Pan: &trackSendPan{
 			device: track.device,
 			state: trackSendPanState{
 				send_index: send_index,
-			}},
+			},
+		},
 	}
 }
 
@@ -138,13 +151,13 @@ type trackIndexState struct {
 	track_guid string
 }
 
-func (ep *trackIndex) Bind(callback func(int64) error) {
+func (ep *trackIndex) Bind(callback func(int64) error) func() {
 	addr := fmt.Sprintf(
 		"/track/%v/index",
 		ep.state.track_guid,
 	)
 
-	ep.device.BindInt(addr, callback)
+	return ep.device.BindInt(addr, callback)
 }
 
 type trackDelete struct {
@@ -156,13 +169,13 @@ type trackDeleteState struct {
 	track_guid string
 }
 
-func (ep *trackDelete) Bind(callback func(string) error) {
+func (ep *trackDelete) Bind(callback func(string) error) func() {
 	addr := fmt.Sprintf(
 		"/track/%v/delete",
 		ep.state.track_guid,
 	)
 
-	ep.device.BindString(addr, callback)
+	return ep.device.BindString(addr, callback)
 }
 
 func (ep *trackDelete) Set(val string) error {
@@ -183,13 +196,13 @@ type trackNameState struct {
 	track_guid string
 }
 
-func (ep *trackName) Bind(callback func(string) error) {
+func (ep *trackName) Bind(callback func(string) error) func() {
 	addr := fmt.Sprintf(
 		"/track/%v/name",
 		ep.state.track_guid,
 	)
 
-	ep.device.BindString(addr, callback)
+	return ep.device.BindString(addr, callback)
 }
 
 func (ep *trackName) Set(val string) error {
@@ -210,13 +223,13 @@ type trackSelectedState struct {
 	track_guid string
 }
 
-func (ep *trackSelected) Bind(callback func(bool) error) {
+func (ep *trackSelected) Bind(callback func(bool) error) func() {
 	addr := fmt.Sprintf(
 		"/track/%v/selected",
 		ep.state.track_guid,
 	)
 
-	ep.device.BindBool(addr, callback)
+	return ep.device.BindBool(addr, callback)
 }
 
 func (ep *trackSelected) Set(val bool) error {
@@ -237,13 +250,13 @@ type trackVolumeState struct {
 	track_guid string
 }
 
-func (ep *trackVolume) Bind(callback func(float64) error) {
+func (ep *trackVolume) Bind(callback func(float64) error) func() {
 	addr := fmt.Sprintf(
 		"/track/%v/volume",
 		ep.state.track_guid,
 	)
 
-	ep.device.BindFloat(addr, callback)
+	return ep.device.BindFloat(addr, callback)
 }
 
 func (ep *trackVolume) Set(val float64) error {
@@ -264,13 +277,13 @@ type trackPanState struct {
 	track_guid string
 }
 
-func (ep *trackPan) Bind(callback func(float64) error) {
+func (ep *trackPan) Bind(callback func(float64) error) func() {
 	addr := fmt.Sprintf(
 		"/track/%v/pan",
 		ep.state.track_guid,
 	)
 
-	ep.device.BindFloat(addr, callback)
+	return ep.device.BindFloat(addr, callback)
 }
 
 func (ep *trackPan) Set(val float64) error {
@@ -291,13 +304,13 @@ type trackMuteState struct {
 	track_guid string
 }
 
-func (ep *trackMute) Bind(callback func(bool) error) {
+func (ep *trackMute) Bind(callback func(bool) error) func() {
 	addr := fmt.Sprintf(
 		"/track/%v/mute",
 		ep.state.track_guid,
 	)
 
-	ep.device.BindBool(addr, callback)
+	return ep.device.BindBool(addr, callback)
 }
 
 func (ep *trackMute) Set(val bool) error {
@@ -318,13 +331,13 @@ type trackSoloState struct {
 	track_guid string
 }
 
-func (ep *trackSolo) Bind(callback func(bool) error) {
+func (ep *trackSolo) Bind(callback func(bool) error) func() {
 	addr := fmt.Sprintf(
 		"/track/%v/solo",
 		ep.state.track_guid,
 	)
 
-	ep.device.BindBool(addr, callback)
+	return ep.device.BindBool(addr, callback)
 }
 
 func (ep *trackSolo) Set(val bool) error {
@@ -345,13 +358,13 @@ type trackRecarmState struct {
 	track_guid string
 }
 
-func (ep *trackRecarm) Bind(callback func(bool) error) {
+func (ep *trackRecarm) Bind(callback func(bool) error) func() {
 	addr := fmt.Sprintf(
 		"/track/%v/recarm",
 		ep.state.track_guid,
 	)
 
-	ep.device.BindBool(addr, callback)
+	return ep.device.BindBool(addr, callback)
 }
 
 func (ep *trackRecarm) Set(val bool) error {
@@ -386,14 +399,14 @@ type trackSendGuidState struct {
 	send_index int64
 }
 
-func (ep *trackSendGuid) Bind(callback func(string) error) {
+func (ep *trackSendGuid) Bind(callback func(string) error) func() {
 	addr := fmt.Sprintf(
 		"/track/%v/send/%v/guid",
 		ep.state.track_guid,
 		ep.state.send_index,
 	)
 
-	ep.device.BindString(addr, callback)
+	return ep.device.BindString(addr, callback)
 }
 
 type trackSendVolume struct {
@@ -406,14 +419,14 @@ type trackSendVolumeState struct {
 	send_index int64
 }
 
-func (ep *trackSendVolume) Bind(callback func(float64) error) {
+func (ep *trackSendVolume) Bind(callback func(float64) error) func() {
 	addr := fmt.Sprintf(
 		"/track/%v/send/%v/volume",
 		ep.state.track_guid,
 		ep.state.send_index,
 	)
 
-	ep.device.BindFloat(addr, callback)
+	return ep.device.BindFloat(addr, callback)
 }
 
 func (ep *trackSendVolume) Set(val float64) error {
@@ -436,14 +449,14 @@ type trackSendPanState struct {
 	send_index int64
 }
 
-func (ep *trackSendPan) Bind(callback func(float64) error) {
+func (ep *trackSendPan) Bind(callback func(float64) error) func() {
 	addr := fmt.Sprintf(
 		"/track/%v/send/%v/pan",
 		ep.state.track_guid,
 		ep.state.send_index,
 	)
 
-	ep.device.BindFloat(addr, callback)
+	return ep.device.BindFloat(addr, callback)
 }
 
 func (ep *trackSendPan) Set(val float64) error {
@@ -465,13 +478,13 @@ type trackColorState struct {
 	track_guid string
 }
 
-func (ep *trackColor) Bind(callback func(int64) error) {
+func (ep *trackColor) Bind(callback func(int64) error) func() {
 	addr := fmt.Sprintf(
 		"/track/%v/color",
 		ep.state.track_guid,
 	)
 
-	ep.device.BindInt(addr, callback)
+	return ep.device.BindInt(addr, callback)
 }
 
 func (ep *trackColor) Set(val int64) error {

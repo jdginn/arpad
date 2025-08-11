@@ -175,7 +175,7 @@ func (t *TrackManager) deleteTrack(guid GUID) {
 func (t *TrackManager) listenForNewTracks() {
 	// Find and populate our collection of track states
 	// TODO: we need to do a little custom handling for the master track to make sure it gets mapped to fader 9
-	if err := t.r.OscDispatcher().AddMsgHandler("/track/*", func(msg *osc.Message) {
+	t.r.OscDispatcher().AddMsgHandler("/track/*", func(msg *osc.Message) {
 		segments := strings.Split(msg.Address, "/")
 		guid := GUID(segments[2])
 		if len(segments) == 3 && segments[2] == "delete" {
@@ -183,9 +183,7 @@ func (t *TrackManager) listenForNewTracks() {
 			return
 		}
 		t.addTrack(guid)
-	}); err != nil {
-		appLog.Error(err.Error())
-	}
+	})
 }
 
 func (m *TrackManager) AddHardwareTrack(idx int64) {
