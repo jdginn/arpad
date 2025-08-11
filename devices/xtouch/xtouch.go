@@ -34,8 +34,8 @@ type Fader struct {
 	ChannelNo uint8
 }
 
-func (f *Fader) Bind(callback func(uint16) error) {
-	f.d.PitchBend(uint8(f.ChannelNo)).Bind(
+func (f *Fader) Bind(callback func(uint16) error) func() {
+	return f.d.PitchBend(uint8(f.ChannelNo)).Bind(
 		func(v uint16) error {
 			f.d.PitchBend(uint8(f.ChannelNo)).Set(v)
 			return callback(v)

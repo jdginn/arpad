@@ -34,8 +34,8 @@ type buttonOn struct {
 }
 
 // Bind specifies the callback to run when this button is pressed.
-func (b *buttonOn) Bind(callback func() error) {
-	b.d.Note(b.channel, b.key).On.Bind(func(v uint8) error {
+func (b *buttonOn) Bind(callback func() error) func() {
+	return b.d.Note(b.channel, b.key).On.Bind(func(v uint8) error {
 		if v == 127 {
 			return callback()
 		}
@@ -49,8 +49,8 @@ type buttonOff struct {
 }
 
 // Bind specifies the callback to run when this button is pressed.
-func (b *buttonOff) Bind(callback func() error) {
-	b.d.Note(b.channel, b.key).On.Bind(func(v uint8) error {
+func (b *buttonOff) Bind(callback func() error) func() {
+	return b.d.Note(b.channel, b.key).On.Bind(func(v uint8) error {
 		if v == 0 {
 			return callback()
 		}

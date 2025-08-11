@@ -31,8 +31,8 @@ type Encoder struct {
 }
 
 // TODO: binding needs to be a little more carefully thought through...
-func (e *Encoder) Bind(callback func(uint8) error) {
-	e.d.CC(e.channel, e.encoderCC).Bind(callback)
+func (e *Encoder) Bind(callback func(uint8) error) func() {
+	return e.d.CC(e.channel, e.encoderCC).Bind(callback)
 }
 
 type ring struct {
