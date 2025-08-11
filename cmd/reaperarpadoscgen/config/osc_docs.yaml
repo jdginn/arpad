@@ -7,6 +7,11 @@
     type: int
     description: index of the track in the project according to reaper's mixer view
   direction: readonly
+- osc_address: /track/{track_guid}/delete
+  arguments:
+  - name: track_guid
+    type: string
+    description: unique identifier for the track
 - osc_address: /track/{track_guid}/name
   arguments:
   - name: track_guid

@@ -37,6 +37,11 @@ func (reaper *Reaper) Track(track_guid string) *track {
 			state: trackIndexState{
 				track_guid: track_guid,
 			}},
+		Delete: &trackDelete{
+			device: reaper.device,
+			state: trackDeleteState{
+				track_guid: track_guid,
+			}},
 		Name: &trackName{
 			device: reaper.device,
 			state: trackNameState{
@@ -83,6 +88,7 @@ func (reaper *Reaper) Track(track_guid string) *track {
 type track struct {
 	device   *devices.OscDevice
 	Index    *trackIndex
+	Delete   *trackDelete
 	Name     *trackName
 	Selected *trackSelected
 	Volume   *trackVolume
@@ -139,6 +145,33 @@ func (ep *trackIndex) Bind(callback func(int64) error) {
 	)
 
 	ep.device.BindInt(addr, callback)
+}
+
+type trackDelete struct {
+	device *devices.OscDevice
+	state  trackDeleteState
+}
+
+type trackDeleteState struct {
+	track_guid string
+}
+
+func (ep *trackDelete) Bind(callback func(string) error) {
+	addr := fmt.Sprintf(
+		"/track/%v/delete",
+		ep.state.track_guid,
+	)
+
+	ep.device.BindString(addr, callback)
+}
+
+func (ep *trackDelete) Set(val string) error {
+	addr := fmt.Sprintf(
+		"/track/%v/delete",
+		ep.state.track_guid,
+	)
+
+	return ep.device.SetString(addr, val)
 }
 
 type trackName struct {
