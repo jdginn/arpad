@@ -59,6 +59,16 @@ func (m *mapper) AddGuid(guid GUID) *mappingGuid {
 	return &mappingGuid{m, guid}
 }
 
+func (m *mapper) DeleteGuid(guid GUID) {
+	m.mux.Lock()
+	defer m.mux.Unlock()
+	if idx, exists := m.guidToSurfaceIndex[guid]; exists {
+		appLog.Info("Deleting GUID from mapper", slog.String("guid", guid))
+		delete(m.guidToSurfaceIndex, guid)
+		delete(m.surfaceIndexToGuid, idx)
+	}
+}
+
 func (m *mapper) ByGuid(guid GUID) *mappingGuid {
 	return &mappingGuid{m, guid}
 }
@@ -142,18 +152,37 @@ func (m *TrackManager) getTrackAtIdx(idx int64) (*TrackData, bool) {
 	return track, ok
 }
 
+func (t *TrackManager) addTrack(guid GUID) {
+	appLog.Info("Adding track", slog.String("guid", guid), slog.String("name", guid))
+	t.mapper.AddGuid(guid)
+	t.mux.Lock()
+	defer t.mux.Unlock()
+	if _, exists := t.tracks[guid]; !exists {
+		t.tracks[guid] = NewTrackData(t, guid)
+	}
+}
+
+func (t *TrackManager) deleteTrack(guid GUID) {
+	t.mux.Lock()
+	defer t.mux.Unlock()
+	if track, exists := t.tracks[guid]; exists {
+		appLog.Info("Deleting track", slog.String("guid", guid), slog.String("name", track.name))
+		t.mapper.DeleteGuid(guid)
+		delete(t.tracks, guid)
+	}
+}
+
 func (t *TrackManager) listenForNewTracks() {
 	// Find and populate our collection of track states
 	// TODO: we need to do a little custom handling for the master track to make sure it gets mapped to fader 9
 	if err := t.r.OscDispatcher().AddMsgHandler("/track/*", func(msg *osc.Message) {
 		segments := strings.Split(msg.Address, "/")
 		guid := GUID(segments[2])
-		t.mapper.AddGuid(guid)
-		t.mux.Lock()
-		defer t.mux.Unlock()
-		if _, exists := t.tracks[guid]; !exists {
-			t.tracks[guid] = NewTrackData(t, guid)
+		if len(segments) == 3 && segments[2] == "delete" {
+			t.deleteTrack(guid)
+			return
 		}
+		t.addTrack(guid)
 	}); err != nil {
 		appLog.Error(err.Error())
 	}
