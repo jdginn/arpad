@@ -123,7 +123,7 @@ func normalizeTo7CharsNullPad(m string) string {
 }
 
 func (s *Scribble) ChangeTopMessage(m string) *Scribble {
-	s.topMessage = normalizeTo7CharsNullPad(m)
+	s.topMessage = m
 	return s
 }
 
@@ -167,19 +167,18 @@ func normalizeTo7CharsPrependSpace(m string) string {
 }
 
 func (s *Scribble) ChangeBottomMessage(m string) *Scribble {
-	s.bottomMessage = normalizeTo7CharsPrependSpace(m)
+	s.bottomMessage = m
 	return s
 }
 
-// TODO: consider making this take strings instead of []byte?
 func (s *Scribble) Set() error {
-	// TODO: check msg for length, support best-effort truncation?
 	b := make([]byte, 0, 20)
-	b = append(HeaderScribble, byte(s.channel))
-	b = append(b, byte(s.color))
-	b = append(b, []byte(s.topMessage)...)
-	b = append(b, []byte(s.bottomMessage)...)
-	return s.d.SysEx.Set(midi.SysEx(b)) // TODO: check this
+	b = append([]byte{0x00, 0x20, 0x32, 0x14, 0x4c}, byte(s.channel))
+	// b = append(b, byte(s.color))
+	b = append(b, 0x60)
+	b = append(b, []byte(normalizeTo7CharsNullPad(s.topMessage))...)
+	b = append(b, []byte(normalizeTo7CharsPrependSpace(s.bottomMessage))...)
+	return s.d.SysEx.Set(midi.SysEx(b))
 }
 
 type Meter struct {
@@ -227,7 +226,7 @@ func (x *XTouch) startHandshake() error {
 		for {
 			select {
 			case <-ticker.C:
-				if err := x.base.SysEx.Set(midi.SysEx([]byte(handshakePingMessage))); err != nil {
+				if err := x.base.SysEx.SetSilent(midi.SysEx([]byte(handshakePingMessage))); err != nil {
 					fmt.Printf("Error sending handshake ping: %v\n", err)
 				}
 
@@ -345,7 +344,7 @@ func (x *XTouch) NewChannelStrip(id uint8) *channelStrip {
 	return &channelStrip{
 		Encoder:       x.NewEncoder(0, id+32),
 		EncoderButton: x.NewButton(0, id+16),
-		Scribble:      x.NewScribble(id + 0x20),
+		Scribble:      x.NewScribble(id),
 		Rec:           x.NewButton(0, id),
 		Solo:          x.NewButton(0, id+8),
 		Mute:          x.NewButton(0, id+16),
