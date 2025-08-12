@@ -16,6 +16,7 @@ import (
 	"github.com/jdginn/arpad/logging"
 
 	"github.com/jdginn/arpad/apps/selah/layers"
+	mode "github.com/jdginn/arpad/apps/selah/modemanager"
 )
 
 // Modes:
@@ -116,13 +117,16 @@ func main() {
 
 	reaper := reaperlib.NewReaper(devices.NewOscDevice(OSC_ARPAD_IP, OSC_ARPAD_PORT, OSC_REAPER_IP, OSC_REAPER_PORT, reaperlib.NewDispatcher()))
 
-	manager := layers.NewManager(xtouch, reaper)
-	layers.NewEncoderAssign(manager)
-	trackManager := layers.NewTrackManager(manager)
+	modeManager := mode.NewManager(xtouch, reaper)
+	layers.NewEncoderAssign(modeManager)
+	trackManager := layers.NewTrackManager(layers.Devices{
+		XTouch: xtouch,
+		Reaper: reaper,
+	}, modeManager)
 	for i := int64(0); i < DEVICE_TRACKS; i++ {
 		trackManager.AddHardwareTrack(i)
 	}
-	if err := manager.SetMode(layers.MIX); err != nil {
+	if err := modeManager.SetMode(mode.MIX); err != nil {
 		log.Error("Failed to set initial mode", "error", err)
 		return
 	}

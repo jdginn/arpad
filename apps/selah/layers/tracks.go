@@ -5,12 +5,16 @@ import (
 	"log/slog"
 	"math"
 	"strings"
+	"sync"
 
 	"github.com/hypebeast/go-osc/osc"
 
 	reaper "github.com/jdginn/arpad/devices/reaper"
 	"github.com/jdginn/arpad/devices/xtouch"
 	"github.com/jdginn/arpad/logging"
+
+	"github.com/jdginn/arpad/apps/selah/mapper"
+	mode "github.com/jdginn/arpad/apps/selah/modemanager"
 )
 
 var appLog *slog.Logger
@@ -26,9 +30,17 @@ const (
 
 type GUID = string
 
+type Devices struct {
+	XTouch *xtouch.XTouchDefault
+	Reaper *reaper.Reaper
+}
+
 type TrackManager struct {
-	*Manager
-	*mapper
+	*Devices
+	*mode.Manager
+	*mapper.Mapper
+
+	mux           sync.RWMutex
 	tracks        map[GUID]*TrackData
 	selectedTrack *TrackData
 }
@@ -46,7 +58,7 @@ func (m *TrackManager) getTrackAtIdx(idx int64) (*TrackData, bool) {
 
 func (t *TrackManager) addTrack(guid GUID) {
 	appLog.Info("Adding track", slog.String("guid", guid), slog.String("name", guid))
-	t.mapper.AddGuid(guid)
+	t.AddGuid(guid)
 	t.mux.Lock()
 	defer t.mux.Unlock()
 	if _, exists := t.tracks[guid]; !exists {
@@ -59,7 +71,7 @@ func (t *TrackManager) deleteTrack(guid GUID) {
 	defer t.mux.Unlock()
 	if track, exists := t.tracks[guid]; exists {
 		appLog.Info("Deleting track", slog.String("guid", guid), slog.String("name", track.name))
-		t.mapper.DeleteGuid(guid)
+		t.DeleteGuid(guid)
 		delete(t.tracks, guid)
 	}
 }
@@ -67,7 +79,7 @@ func (t *TrackManager) deleteTrack(guid GUID) {
 func (t *TrackManager) listenForNewTracks() {
 	// Find and populate our collection of track states
 	// TODO: we need to do a little custom handling for the master track to make sure it gets mapped to fader 9
-	t.r.OscDispatcher().AddMsgHandler("/track/*", func(msg *osc.Message) {
+	t.Reaper.OscDispatcher().AddMsgHandler("/track/*", func(msg *osc.Message) {
 		segments := strings.Split(msg.Address, "/")
 		guid := GUID(segments[2])
 		if len(segments) == 3 && segments[2] == "delete" {
@@ -80,74 +92,74 @@ func (t *TrackManager) listenForNewTracks() {
 
 func (m *TrackManager) AddHardwareTrack(idx int64) {
 	// Select
-	m.x.Channels[idx].Select.On.Bind(func() (errs error) {
+	m.XTouch.Channels[idx].Select.On.Bind(func() (errs error) {
 		if track, ok := m.getTrackAtIdx(idx); ok {
 			if _, ok := m.BySurfIdx(idx).MaybeGuid(); !ok {
 				return nil
 			}
 			switch m.CurrMode() {
-			case MIX:
+			case mode.MIX:
 				if m.selectedTrack != nil {
-					errs = errors.Join(errs, m.r.Track(m.selectedTrack.guid).Selected.Set(false))
+					errs = errors.Join(errs, m.Reaper.Track(m.selectedTrack.guid).Selected.Set(false))
 				}
 				m.selectedTrack = track
-				errs = errors.Join(errs, m.r.Track(m.BySurfIdx(idx).Guid()).Selected.Set(true))
+				errs = errors.Join(errs, m.Reaper.Track(m.BySurfIdx(idx).Guid()).Selected.Set(true))
 				return errs
 			}
 		}
 		return nil
 	})
 	// REC
-	m.x.Channels[idx].Rec.On.Bind(func() error {
+	m.XTouch.Channels[idx].Rec.On.Bind(func() error {
 		if track, ok := m.getTrackAtIdx(idx); ok {
 			if _, ok := m.BySurfIdx(idx).MaybeGuid(); !ok {
 				return nil
 			}
 			switch m.CurrMode() {
-			case MIX:
+			case mode.MIX:
 				track.rec = !track.rec
-				return m.r.Track(m.BySurfIdx(idx).Guid()).Recarm.Set(track.rec)
+				return m.Reaper.Track(m.BySurfIdx(idx).Guid()).Recarm.Set(track.rec)
 			}
 		}
 		return nil
 	})
 	// SOLO
-	m.x.Channels[idx].Solo.On.Bind(func() error {
+	m.XTouch.Channels[idx].Solo.On.Bind(func() error {
 		if track, ok := m.getTrackAtIdx(idx); ok {
 			if _, ok := m.BySurfIdx(idx).MaybeGuid(); !ok {
 				return nil
 			}
 			switch m.CurrMode() {
-			case MIX:
+			case mode.MIX:
 				track.solo = !track.solo
-				return m.r.Track(m.BySurfIdx(idx).Guid()).Solo.Set(track.solo)
+				return m.Reaper.Track(m.BySurfIdx(idx).Guid()).Solo.Set(track.solo)
 			}
 		}
 		return nil
 	})
 	// MUTE
-	m.x.Channels[idx].Mute.On.Bind(func() error {
+	m.XTouch.Channels[idx].Mute.On.Bind(func() error {
 		if track, ok := m.getTrackAtIdx(idx); ok {
 			if _, ok := m.BySurfIdx(idx).MaybeGuid(); !ok {
 				return nil
 			}
 			switch m.CurrMode() {
-			case MIX:
+			case mode.MIX:
 				track.mute = !track.mute
-				return m.r.Track(m.BySurfIdx(idx).Guid()).Mute.Set(track.mute)
-			case MIX_SELECTED_TRACK_SENDS:
+				return m.Reaper.Track(m.BySurfIdx(idx).Guid()).Mute.Set(track.mute)
+			case mode.MIX_SELECTED_TRACK_SENDS:
 			}
 		}
 		return nil
 	})
 	// Fader
-	m.x.Channels[idx].Fader.Bind(func(v uint16) error {
+	m.XTouch.Channels[idx].Fader.Bind(func(v uint16) error {
 		if track, ok := m.getTrackAtIdx(idx); ok {
 			if _, ok := m.BySurfIdx(idx).MaybeGuid(); !ok {
 				return nil
 			}
 			switch m.CurrMode() {
-			case MIX:
+			case mode.MIX:
 				newVal := intToNormFloat(v)
 				// Because both feedback and input are implemented on the same physical control for fader,
 				// we need some deduplication to avoid jittering the faders or flooding the system with
@@ -157,12 +169,12 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 					return nil
 				}
 				track.volume = newVal
-				err := m.r.Track(m.BySurfIdx(idx).Guid()).Volume.Set(track.volume)
+				err := m.Reaper.Track(m.BySurfIdx(idx).Guid()).Volume.Set(track.volume)
 				if err != nil {
 					panic(err)
 				}
 				return err
-			case MIX_SELECTED_TRACK_SENDS:
+			case mode.MIX_SELECTED_TRACK_SENDS:
 				newVal := intToNormFloat(v)
 				// Because both feedback and input are implemented on the same physical control for fader,
 				// we need some deduplication to avoid jittering the faders or flooding the system with
@@ -172,31 +184,31 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 					return nil
 				}
 				track.sends[idx].volume = newVal
-				return m.r.Track(m.selectedTrack.guid).Send(idx).Volume.Set(track.volume)
+				return m.Reaper.Track(m.selectedTrack.guid).Send(idx).Volume.Set(track.volume)
 			}
 		}
 		return nil
 	})
 	// Pan
-	m.x.Channels[idx].Encoder.Bind(func(v uint8) error {
+	m.XTouch.Channels[idx].Encoder.Bind(func(v uint8) error {
 		if t, ok := m.getTrackAtIdx(idx); ok {
 			switch m.CurrMode() {
-			case MIX:
+			case mode.MIX:
 				t.pan = float64(v) / float64(math.MaxUint8)
-				return m.r.Track(m.BySurfIdx(idx).Guid()).Pan.Set(t.pan)
-			case MIX_SELECTED_TRACK_SENDS:
+				return m.Reaper.Track(m.BySurfIdx(idx).Guid()).Pan.Set(t.pan)
+			case mode.MIX_SELECTED_TRACK_SENDS:
 				t.pan = float64(v) / float64(math.MaxUint8)
-				return m.r.Track(m.selectedTrack.guid).Send(idx).Pan.Set(t.volume)
+				return m.Reaper.Track(m.selectedTrack.guid).Send(idx).Pan.Set(t.volume)
 			}
 		}
 		return nil
 	})
 }
 
-func NewTrackManager(m *Manager) *TrackManager {
+func NewTrackManager(m *mode.Manager) *TrackManager {
 	t := &TrackManager{
 		Manager: m,
-		mapper:  NewMapper(),
+		Mapper:  mapper.NewMapper(),
 		tracks:  make(map[GUID]*TrackData),
 	}
 	t.listenForNewTracks()
@@ -235,8 +247,8 @@ type TrackData struct {
 
 func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 	t := &TrackData{
-		x:     m.x,
-		r:     m.r,
+		x:     m.XTouch,
+		r:     m.Reaper,
 		guid:  guid,
 		sends: make(map[int64]*trackSendData),
 		rcvs:  make(map[int64]*trackSendData),
@@ -253,8 +265,8 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 		appLog.Debug("Track name changed", slog.String("guid", guid), slog.String("name", v))
 		t.name = v
 		switch m.CurrMode() {
-		case MIX:
-			return m.x.Channels[m.ByGuid(guid).SurfIdx()].Scribble.
+		case mode.MIX:
+			return m.XTouch.Channels[m.ByGuid(guid).SurfIdx()].Scribble.
 				ChangeTopMessage(t.name).
 				Set()
 		}
@@ -263,8 +275,8 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 	t.r.Track(guid).Color.Bind(func(v int64) error {
 		appLog.Debug("Track color changed", slog.String("guid", guid), slog.Int64("color", v))
 		switch m.CurrMode() {
-		case MIX:
-			return m.x.Channels[m.ByGuid(guid).SurfIdx()].Scribble.ChangeColor(xtouch.Red).Set() // TODO: need to get colors from v
+		case mode.MIX:
+			return m.XTouch.Channels[m.ByGuid(guid).SurfIdx()].Scribble.ChangeColor(xtouch.Red).Set() // TODO: need to get colors from v
 		}
 		return nil
 	})
@@ -273,9 +285,9 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 	t.r.Track(guid).Selected.Bind(func(v bool) (errs error) {
 		appLog.Debug("Track selected changed", slog.String("guid", guid), slog.Bool("selected", v))
 		switch m.CurrMode() {
-		case MIX:
+		case mode.MIX:
 			// Turn off select button for the previously selected track
-			errs = errors.Join(errs, m.x.Channels[m.ByGuid(m.selectedTrack.guid).SurfIdx()].
+			errs = errors.Join(errs, m.XTouch.Channels[m.ByGuid(m.selectedTrack.guid).SurfIdx()].
 				Select.LED.Set(!v))
 			m.selectedTrack = t
 			// Turn on select button for the newly selected track
@@ -289,7 +301,7 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 		appLog.Debug("Track recarm changed", slog.String("guid", guid), slog.Bool("recarm", v))
 		t.rec = v
 		switch m.CurrMode() {
-		case MIX:
+		case mode.MIX:
 			return t.x.Channels[m.ByGuid(guid).SurfIdx()].
 				Rec.LED.Set(v)
 		}
@@ -300,7 +312,7 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 		appLog.Debug("Track solo changed", slog.String("guid", guid), slog.Bool("solo", v))
 		t.solo = v
 		switch m.CurrMode() {
-		case MIX:
+		case mode.MIX:
 			return t.x.Channels[m.ByGuid(guid).SurfIdx()].
 				Solo.LED.Set(v)
 		}
@@ -311,7 +323,7 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 		appLog.Debug("Track mute changed", slog.String("guid", guid), slog.Bool("mute", v))
 		t.mute = v
 		switch m.CurrMode() {
-		case MIX:
+		case mode.MIX:
 			return t.x.Channels[m.ByGuid(guid).SurfIdx()].
 				Mute.LED.Set(v)
 		}
@@ -321,7 +333,7 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 	t.r.Track(guid).Volume.Bind(func(v float64) error {
 		t.volume = v
 		switch m.CurrMode() {
-		case MIX:
+		case mode.MIX:
 			return t.x.Channels[m.ByGuid(guid).SurfIdx()].Fader.Set(normFloatToInt(v))
 		}
 		return nil
@@ -330,12 +342,12 @@ func NewTrackData(m *TrackManager, guid GUID) *TrackData {
 	t.r.Track(guid).Pan.Bind(func(v float64) error {
 		t.pan = v
 		switch m.CurrMode() {
-		case MIX:
+		case mode.MIX:
 			return t.x.Channels[m.ByGuid(guid).SurfIdx()].Encoder.Ring.Set(v) // TODO: verify
 		}
 		return nil
 	})
-	m.OnTransition(MIX, t.TransitionMix)
+	m.OnTransition(mode.MIX, t.TransitionMix)
 	return t
 }
 

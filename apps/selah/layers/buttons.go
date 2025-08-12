@@ -4,39 +4,42 @@ import (
 	"errors"
 
 	xtouchlib "github.com/jdginn/arpad/devices/xtouch"
+
+	mode "github.com/jdginn/arpad/apps/selah/modemanager"
 )
 
 type EncoderAssign struct {
-	*Manager
+	*Devices
+	*mode.Manager
 	currentlyIlluminated *xtouchlib.Button
 }
 
-func NewEncoderAssign(m *Manager) *EncoderAssign {
+func NewEncoderAssign(m *mode.Manager) *EncoderAssign {
 	e := &EncoderAssign{
 		Manager: m,
 	}
 
-	e.x.EncoderAssign.TRACK.On.Bind(func() error {
-		return e.SetMode(MIX)
+	e.XTouch.EncoderAssign.TRACK.On.Bind(func() error {
+		return e.SetMode(mode.MIX)
 	})
-	e.OnTransition(MIX, func() (errs error) {
-		if e.currentlyIlluminated == e.x.EncoderAssign.TRACK {
+	e.OnTransition(mode.MIX, func() (errs error) {
+		if e.currentlyIlluminated == e.XTouch.EncoderAssign.TRACK {
 			return
 		}
 		errs = errors.Join(errs, e.currentlyIlluminated.LED.Off.Set())
-		errs = errors.Join(errs, e.x.EncoderAssign.TRACK.LED.On.Set())
+		errs = errors.Join(errs, e.XTouch.EncoderAssign.TRACK.LED.On.Set())
 		return errs
 	})
 
-	e.x.EncoderAssign.PAN_SURROUND.On.Bind(func() error {
-		return e.SetMode(MIX_SELECTED_TRACK_SENDS)
+	e.XTouch.EncoderAssign.PAN_SURROUND.On.Bind(func() error {
+		return e.SetMode(mode.MIX_SELECTED_TRACK_SENDS)
 	})
-	e.OnTransition(MIX_SELECTED_TRACK_SENDS, func() (errs error) {
-		if e.currentlyIlluminated == e.x.EncoderAssign.PAN_SURROUND {
+	e.OnTransition(mode.MIX_SELECTED_TRACK_SENDS, func() (errs error) {
+		if e.currentlyIlluminated == e.XTouch.EncoderAssign.PAN_SURROUND {
 			return
 		}
 		errs = errors.Join(errs, e.currentlyIlluminated.LED.Off.Set())
-		errs = errors.Join(errs, e.x.EncoderAssign.PAN_SURROUND.LED.On.Set())
+		errs = errors.Join(errs, e.XTouch.EncoderAssign.PAN_SURROUND.LED.On.Set())
 		return errs
 	})
 

@@ -1,26 +1,36 @@
-package layers
+package mapper
 
 import (
 	"fmt"
 	"log/slog"
 	"sync"
+
+	"github.com/jdginn/arpad/logging"
 )
 
-type mapper struct {
+var appLog *slog.Logger
+
+func init() {
+	appLog = logging.Get(logging.APP)
+}
+
+type GUID = string
+
+type Mapper struct {
 	mux                *sync.Mutex
 	guidToSurfaceIndex map[GUID]int64
 	surfaceIndexToGuid map[int64]GUID
 }
 
-func NewMapper() *mapper {
-	return &mapper{
+func NewMapper() *Mapper {
+	return &Mapper{
 		mux:                &sync.Mutex{},
 		guidToSurfaceIndex: make(map[GUID]int64),
 		surfaceIndexToGuid: make(map[int64]GUID),
 	}
 }
 
-func (m *mapper) AddGuid(guid GUID) *mappingGuid {
+func (m *Mapper) AddGuid(guid GUID) *mappingGuid {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 	if _, exists := m.guidToSurfaceIndex[guid]; !exists {
@@ -32,7 +42,7 @@ func (m *mapper) AddGuid(guid GUID) *mappingGuid {
 	return &mappingGuid{m, guid}
 }
 
-func (m *mapper) DeleteGuid(guid GUID) {
+func (m *Mapper) DeleteGuid(guid GUID) {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 	if idx, exists := m.guidToSurfaceIndex[guid]; exists {
@@ -42,16 +52,16 @@ func (m *mapper) DeleteGuid(guid GUID) {
 	}
 }
 
-func (m *mapper) ByGuid(guid GUID) *mappingGuid {
+func (m *Mapper) ByGuid(guid GUID) *mappingGuid {
 	return &mappingGuid{m, guid}
 }
 
-func (m *mapper) BySurfIdx(idx int64) *mappingSurfaceIdx {
+func (m *Mapper) BySurfIdx(idx int64) *mappingSurfaceIdx {
 	return &mappingSurfaceIdx{m, idx}
 }
 
 type mappingGuid struct {
-	*mapper
+	*Mapper
 	guid GUID
 }
 
@@ -80,7 +90,7 @@ func (m *mappingGuid) SetSurfIdx(idx int64) {
 }
 
 type mappingSurfaceIdx struct {
-	*mapper
+	*Mapper
 	idx int64
 }
 
