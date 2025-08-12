@@ -100,21 +100,40 @@ func (o *OscDevice) BindInt(addr string, effect func(int64) error) func() {
 		}
 		switch val := val.(type) {
 		case int:
-			effect(int64(val))
-		case int32:
-			effect(int64(val))
-		case int64:
-			effect(int64(val))
-		case float64:
-			effect(int64(val))
-		case float32:
-			effect(int64(val))
-		case string:
-			asint, err := strconv.Atoi(val)
-			if err != nil {
-				panic("bad")
+			if err := effect(int64(val)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
 			}
-			effect(int64(asint))
+		case int32:
+			if err := effect(int64(val)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
+		case int64:
+			if err := effect(int64(val)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
+		case float64:
+			if err := effect(int64(val)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
+		case float32:
+			if err := effect(int64(val)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
+		case string:
+			asInt, err := strconv.Atoi(val)
+			if err != nil {
+				oscInLog.Error("Error converting string to int when handling OSC route", slog.String("route", msg.Address), slog.Any("value", val), slog.Any("err", err))
+				return
+			}
+			if err := effect(int64(asInt)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		default:
 			panic(fmt.Sprintf("Unsupported message type %T", val))
 		}
@@ -139,21 +158,40 @@ func (o *OscDevice) BindFloat(key string, effect func(float64) error) func() {
 		}
 		switch val := val.(type) {
 		case float64:
-			effect(val)
+			if err := effect(val); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case float32:
-			effect(float64(val))
+			if err := effect(float64(val)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case int:
-			effect(float64(val))
+			if err := effect(float64(val)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case int32:
-			effect(float64(val))
+			if err := effect(float64(val)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case int64:
-			effect(float64(val))
+			if err := effect(float64(val)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case string:
 			asNum, err := strconv.Atoi(val)
 			if err != nil {
-				panic("bad")
+				oscInLog.Error("Error converting string to int when handling OSC route", slog.String("route", msg.Address), slog.Any("value", val), slog.Any("err", err))
+				return
 			}
-			effect(float64(asNum))
+			if err := effect(float64(asNum)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		default:
 			panic(fmt.Sprintf("Unsupported message type %T", val))
 		}
@@ -179,17 +217,35 @@ func (o *OscDevice) BindString(key string, effect func(string) error) func() {
 		}
 		switch val := val.(type) {
 		case float64:
-			effect(fmt.Sprintf("%f", val))
+			if err := effect(fmt.Sprintf("%f", val)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case float32:
-			effect(fmt.Sprintf("%f", val))
+			if err := effect(fmt.Sprintf("%f", val)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case int:
-			effect(fmt.Sprintf("%d", val))
+			if err := effect(fmt.Sprintf("%d", val)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case int32:
-			effect(fmt.Sprintf("%d", val))
+			if err := effect(fmt.Sprintf("%d", val)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case int64:
-			effect(fmt.Sprintf("%d", val))
+			if err := effect(fmt.Sprintf("%d", val)); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case string:
-			effect(val)
+			if err := effect(val); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		default:
 			panic(fmt.Sprintf("Unsupported message type %T", val))
 		}
@@ -215,19 +271,40 @@ func (o *OscDevice) BindBool(key string, effect func(bool) error) func() {
 		}
 		switch val := val.(type) {
 		case bool:
-			effect(val)
+			if err := effect(val); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case float64:
-			effect(val > 0)
+			if err := effect(val > 0); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case float32:
-			effect(val > 0)
+			if err := effect(val > 0); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case int:
-			effect(val > 0)
+			if err := effect(val > 0); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case int32:
-			effect(val > 0)
+			if err := effect(val > 0); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case int64:
-			effect(val > 0)
+			if err := effect(val > 0); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		case string:
-			effect(val == "true")
+			if err := effect(val == "true"); err != nil {
+				oscInLog.Error("Error in function bound to osc route", slog.String("route", msg.Address), slog.Any("err", err))
+				return
+			}
 		default:
 			panic(fmt.Sprintf("Unsupported message type %T", val))
 		}
