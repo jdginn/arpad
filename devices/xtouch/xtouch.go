@@ -37,7 +37,9 @@ type Fader struct {
 func (f *Fader) Bind(callback func(uint16) error) func() {
 	return f.d.PitchBend(uint8(f.ChannelNo)).Bind(
 		func(v uint16) error {
-			f.d.PitchBend(uint8(f.ChannelNo)).Set(v)
+			// if err := f.d.PitchBend(uint8(f.ChannelNo)).Set(v); err != nil {
+			// 	return fmt.Errorf("error setting fader %d value %d: %w", f.ChannelNo, v, err)
+			// }
 			return callback(v)
 		})
 }
@@ -172,8 +174,7 @@ func (s *Scribble) ChangeBottomMessage(m string) *Scribble {
 }
 
 func (s *Scribble) Set() error {
-	b := make([]byte, 0, 20)
-	b = append([]byte{0x00, 0x20, 0x32, 0x14, 0x4c}, byte(s.channel))
+	b := append([]byte{0x00, 0x20, 0x32, 0x14, 0x4c}, byte(s.channel))
 	// b = append(b, byte(s.color))
 	b = append(b, 0x60)
 	b = append(b, []byte(normalizeTo7CharsNullPad(s.topMessage))...)
@@ -189,7 +190,7 @@ type Meter struct {
 
 func (m *Meter) Send(val float64) error {
 	if val > 1.0 {
-		return fmt.Errorf("Invalid val: val must be between 0 and 1.0")
+		return fmt.Errorf("invalid val %f: val must be between 0 and 1.0", val)
 	}
 	offset := m.channel*16 + uint8(math.Round(8*val))
 	return m.d.Aftertouch(0).Set(offset) // TODO: check this
@@ -272,6 +273,7 @@ func (x *XTouch) Run() {
 	if err := x.startHandshake(); err != nil {
 		fmt.Printf("Failed to start handshake: %v\n", err)
 	}
+	defer x.stopHandshake()
 	x.base.Run()
 }
 

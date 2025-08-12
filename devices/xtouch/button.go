@@ -4,18 +4,6 @@ import (
 	dev "github.com/jdginn/arpad/devices"
 )
 
-type ledState uint8
-
-type baseButton struct {
-	// TODO: this needs a mutex...
-	d *dev.MidiDevice
-
-	channel uint8
-	key     uint8
-
-	isPressed bool
-}
-
 // Button that executes a function when the button is pressed
 type Button struct {
 	d *dev.MidiDevice
@@ -30,7 +18,6 @@ type Button struct {
 
 type buttonOn struct {
 	*Button
-	callbacks []func(uint8) error
 }
 
 // Bind specifies the callback to run when this button is pressed.
@@ -45,7 +32,6 @@ func (b *buttonOn) Bind(callback func() error) func() {
 
 type buttonOff struct {
 	*Button
-	callbacks []func() error
 }
 
 // Bind specifies the callback to run when this button is pressed.

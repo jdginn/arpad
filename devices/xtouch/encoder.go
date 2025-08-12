@@ -23,7 +23,6 @@ type Encoder struct {
 
 	channel     uint8
 	encoderCC   uint8 // CC 16-23 for encoder rotation
-	buttonCC    uint8 // CC 32-29 for button press
 	ledRingLow  uint8 // For CC 48-55
 	ledRingHigh uint8 // For CC 56-63
 
