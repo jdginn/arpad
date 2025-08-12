@@ -9,7 +9,7 @@ import (
 
 	"github.com/hypebeast/go-osc/osc"
 
-	reaper "github.com/jdginn/arpad/devices/reaper"
+	"github.com/jdginn/arpad/devices/reaper"
 	"github.com/jdginn/arpad/devices/xtouch"
 	"github.com/jdginn/arpad/logging"
 
@@ -94,9 +94,6 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 	// Select
 	m.XTouch.Channels[idx].Select.On.Bind(func() (errs error) {
 		if track, ok := m.getTrackAtIdx(idx); ok {
-			if _, ok := m.BySurfIdx(idx).MaybeGuid(); !ok {
-				return nil
-			}
 			switch m.CurrMode() {
 			case mode.MIX:
 				if m.selectedTrack != nil {
@@ -112,9 +109,6 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 	// REC
 	m.XTouch.Channels[idx].Rec.On.Bind(func() error {
 		if track, ok := m.getTrackAtIdx(idx); ok {
-			if _, ok := m.BySurfIdx(idx).MaybeGuid(); !ok {
-				return nil
-			}
 			switch m.CurrMode() {
 			case mode.MIX:
 				track.rec = !track.rec
@@ -126,9 +120,6 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 	// SOLO
 	m.XTouch.Channels[idx].Solo.On.Bind(func() error {
 		if track, ok := m.getTrackAtIdx(idx); ok {
-			if _, ok := m.BySurfIdx(idx).MaybeGuid(); !ok {
-				return nil
-			}
 			switch m.CurrMode() {
 			case mode.MIX:
 				track.solo = !track.solo
@@ -140,9 +131,6 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 	// MUTE
 	m.XTouch.Channels[idx].Mute.On.Bind(func() error {
 		if track, ok := m.getTrackAtIdx(idx); ok {
-			if _, ok := m.BySurfIdx(idx).MaybeGuid(); !ok {
-				return nil
-			}
 			switch m.CurrMode() {
 			case mode.MIX:
 				track.mute = !track.mute
@@ -155,9 +143,6 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 	// Fader
 	m.XTouch.Channels[idx].Fader.Bind(func(v uint16) error {
 		if track, ok := m.getTrackAtIdx(idx); ok {
-			if _, ok := m.BySurfIdx(idx).MaybeGuid(); !ok {
-				return nil
-			}
 			switch m.CurrMode() {
 			case mode.MIX:
 				newVal := intToNormFloat(v)
