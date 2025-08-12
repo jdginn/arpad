@@ -47,11 +47,6 @@ const (
 	LOGGER_OSC_LISTEN_PORT = 9085
 )
 
-type namedHandler struct {
-	name    string
-	handler func(*osc.Message)
-}
-
 // Dispatcher is a custom osc.Dispatcher, implementing the osc.Dispatcher interface
 type Dispatcher struct{}
 
@@ -93,7 +88,6 @@ func (o *OscRouter) Run() error {
 
 // Internal state for loggers per category
 var (
-	rootLogger       *slog.Logger
 	mu               *sync.RWMutex
 	loggers          = map[LogCategory]*slog.Logger{}
 	categoryLvls     map[LogCategory]*slog.LevelVar
@@ -113,7 +107,6 @@ func init() {
 	}
 	categoryLvls = make(map[LogCategory]*slog.LevelVar)
 	// Default to text output, can be customized
-	rootLogger = slog.New(slog.NewTextHandler(os.Stderr, nil))
 	dispatcher := NewDispatcher()
 	oscRouter = &OscRouter{
 		Dispatcher: dispatcher,
