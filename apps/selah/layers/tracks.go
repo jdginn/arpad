@@ -10,7 +10,6 @@ import (
 
 	reaper "github.com/jdginn/arpad/devices/reaper"
 	"github.com/jdginn/arpad/devices/xtouch"
-	xtouchlib "github.com/jdginn/arpad/devices/xtouch"
 	"github.com/jdginn/arpad/logging"
 )
 
@@ -220,7 +219,7 @@ func intToNormFloat(val uint16) float64 {
 }
 
 type TrackData struct {
-	x      *xtouchlib.XTouchDefault
+	x      *xtouch.XTouchDefault
 	r      *reaper.Reaper
 	m      *TrackManager
 	guid   GUID

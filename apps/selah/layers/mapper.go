@@ -1,6 +1,7 @@
 package layers
 
 import (
+	"fmt"
 	"log/slog"
 	"sync"
 )
@@ -96,7 +97,7 @@ func (m *mappingSurfaceIdx) Guid() GUID {
 	if guid, ok := m.surfaceIndexToGuid[m.idx]; ok {
 		return guid
 	}
-	panic("mappingSurfaceIdx: no guid found for surface index " + string(m.idx))
+	panic(fmt.Sprintf("mappingSurfaceIdx: no guid found for surface index %d", m.idx))
 }
 
 func (m *mappingSurfaceIdx) SetGuid(guid GUID) {

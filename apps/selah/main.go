@@ -122,7 +122,10 @@ func main() {
 	for i := int64(0); i < DEVICE_TRACKS; i++ {
 		trackManager.AddHardwareTrack(i)
 	}
-	manager.SetMode(layers.MIX)
+	if err := manager.SetMode(layers.MIX); err != nil {
+		log.Error("Failed to set initial mode", "error", err)
+		return
+	}
 
 	go reaper.Run()
 	log.Info("Reaper is running...")

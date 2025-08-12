@@ -8,16 +8,6 @@ import (
 	"github.com/jdginn/arpad/devices/xtouch"
 )
 
-// bindable represents an endpoint that can have a callback bound to it to monitor state changes.
-// The callback will be invoked whenever the endpoint's value changes.
-type bindable[A any] interface {
-	Bind(func(A) error)
-}
-
-type setable[T any] interface {
-	Set(T) error
-}
-
 type callbackEvent struct {
 	mode     Mode
 	callback func() error
