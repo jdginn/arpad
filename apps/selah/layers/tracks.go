@@ -66,6 +66,22 @@ func (t *TrackManager) addTrack(guid GUID) {
 	}
 }
 
+func (m *TrackManager) resetSurfaceChannel(idx int64) {
+	xt := m.XTouch.Channels[idx]
+	err := xt.Fader.Set(0)
+	err = errors.Join(err, xt.Encoder.Ring.Set(0))
+	err = errors.Join(err, xt.Mute.LED.Set(false))
+	err = errors.Join(err, xt.Solo.LED.Set(false))
+	err = errors.Join(err, xt.Rec.LED.Set(false))
+	err = errors.Join(err, xt.Select.LED.Set(false))
+	err = errors.Join(err, xt.Scribble.ChangeTopMessage("Track").ChangeBottomMessage("Name").ChangeColor(xtouch.Off).Set())
+	if err != nil {
+		appLog.Error("Error resetting surface", slog.Int64("idx", idx), slog.Any("error", err))
+	} else {
+		appLog.Debug("Reset surface", slog.Int64("idx", idx))
+	}
+}
+
 func (t *TrackManager) deleteTrack(guid GUID) {
 	t.mux.Lock()
 	defer t.mux.Unlock()
@@ -73,6 +89,14 @@ func (t *TrackManager) deleteTrack(guid GUID) {
 		appLog.Info("Deleting track", slog.String("guid", guid), slog.String("name", track.name))
 		t.DeleteGuid(guid)
 		delete(t.tracks, guid)
+	}
+	// If after deleting the track, we have fewer than NUM_CHANNELS tracks, reset any channels on the surface that
+	// are no longer in use.
+	for idx := int64(0); idx < NUM_CHANNELS; idx++ {
+		if _, ok := t.BySurfIdx(idx).MaybeGuid(); !ok {
+			appLog.Debug("Resetting surface for deleted track", slog.Int64("idx", idx), slog.String("guid", guid))
+			t.resetSurfaceChannel(idx)
+		}
 	}
 }
 
@@ -190,11 +214,14 @@ func (m *TrackManager) AddHardwareTrack(idx int64) {
 	})
 }
 
-func NewTrackManager(m *mode.Manager) *TrackManager {
+func NewTrackManager(d Devices, m *mode.Manager) *TrackManager {
 	t := &TrackManager{
-		Manager: m,
-		Mapper:  mapper.NewMapper(),
-		tracks:  make(map[GUID]*TrackData),
+		Devices:       &d,
+		Manager:       m,
+		Mapper:        mapper.NewMapper(),
+		mux:           sync.RWMutex{},
+		tracks:        make(map[GUID]*TrackData),
+		selectedTrack: &TrackData{},
 	}
 	t.listenForNewTracks()
 	return t
